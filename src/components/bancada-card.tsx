@@ -182,8 +182,12 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <Tabs defaultValue="status" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => setTab(v as "status" | "manual")}
+          className="w-full"
+        >
+          <TabsList className="sr-only">
             <TabsTrigger value="status">Status</TabsTrigger>
             <TabsTrigger value="manual">Manual</TabsTrigger>
           </TabsList>
