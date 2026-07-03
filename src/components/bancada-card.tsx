@@ -325,16 +325,27 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
             <Settings2 className="mr-1.5 h-3.5 w-3.5" />
             Configurar
           </Button>
-          <Button
-            size="sm"
-            onClick={() => setTab(tab === "manual" ? "status" : "manual")}
-            className="bg-blue-600 text-white hover:bg-blue-700"
-            aria-label="Alternar modo manual"
-            aria-pressed={tab === "manual"}
-          >
-            <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
-            Manual
-          </Button>
+          {tab === "manual" ? (
+            <Button
+              size="sm"
+              onClick={() => setTab("status")}
+              variant="outline"
+              aria-label="Voltar para Status"
+            >
+              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+              Sair
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={() => setTab("manual")}
+              className="bg-blue-600 text-white hover:bg-blue-700"
+              aria-label="Abrir modo manual"
+            >
+              <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
+              Manual
+            </Button>
+          )}
           <Button
             size="sm"
             onClick={handleStop}
