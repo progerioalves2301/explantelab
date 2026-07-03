@@ -176,6 +176,40 @@
   50% { box-shadow: 0 0 0 6px transparent; opacity: 0.85; }
 }
 
+@keyframes flow-drops {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+@utility flow-track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 0.5rem;
+  min-width: 2.5rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: color-mix(in oklab, currentColor 12%, transparent);
+}
+
+@utility flow-drop {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0.375rem;
+  height: 0.375rem;
+  margin-top: -0.1875rem;
+  border-radius: 9999px;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  animation: flow-drops 1.6s linear infinite;
+}
+
+@utility flow-drop-reverse {
+  animation-direction: reverse;
+}
+
 @utility valve-active-leaf {
   background-color: var(--color-leaf);
   color: var(--color-leaf-foreground);
