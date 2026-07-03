@@ -6,6 +6,7 @@ export type BancadaStatus =
   | "Injetando"
   | "Pausado"
   | "Retornando"
+  | "Alivio"
   | "Offline";
 
 export interface ValvulasEstado {
@@ -13,6 +14,7 @@ export interface ValvulasEstado {
   v2: boolean;
   v3: boolean;
   v4: boolean;
+  v5: boolean;
 }
 
 export interface Configuracoes {
