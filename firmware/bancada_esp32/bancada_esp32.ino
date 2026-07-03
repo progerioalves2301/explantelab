@@ -138,12 +138,70 @@ void apagarTudo() {
 }
 
 // -------- Portal AP (Wi-Fi + código de pareamento) --------
+// CSS + branding injetados no <head> de todas as páginas do WiFiManager.
+static const char PORTAL_HEAD[] PROGMEM =
+  "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1\">"
+  "<style>"
+  ":root{--bg:#0b1220;--card:#111a2e;--border:#1f2b45;--text:#e6edf7;"
+  "--muted:#8ea0be;--accent:#22c55e;--accent2:#16a34a;--danger:#ef4444;}"
+  "*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}"
+  "html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 20% -10%,#152346 0%,#0b1220 55%),"
+  "linear-gradient(180deg,#0b1220,#0a1020);color:var(--text);"
+  "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,Arial,sans-serif;"
+  "min-height:100vh;font-size:15px;line-height:1.45;}"
+  ".wrap{max-width:440px;margin:0 auto;padding:28px 20px 40px;}"
+  ".brand{display:flex;align-items:center;gap:12px;margin-bottom:22px;}"
+  ".logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#22c55e,#0ea5e9);"
+  "display:flex;align-items:center;justify-content:center;font-weight:800;color:#0b1220;font-size:20px;"
+  "box-shadow:0 8px 22px rgba(34,197,94,.35);}"
+  ".brand h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.2px;}"
+  ".brand p{margin:2px 0 0;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.14em;}"
+  ".card{background:linear-gradient(180deg,#111a2e,#0e1628);border:1px solid var(--border);"
+  "border-radius:18px;padding:22px 20px;box-shadow:0 20px 40px rgba(0,0,0,.35);}"
+  "h2,h3{margin:0 0 14px;font-weight:600;color:var(--text);font-size:16px;}"
+  "label,.wm-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;"
+  "display:block;margin:14px 0 6px;}"
+  "input,select{width:100%;background:#0a1224;color:var(--text);border:1px solid var(--border);"
+  "border-radius:12px;padding:12px 14px;font-size:15px;outline:none;transition:border .15s,box-shadow .15s;}"
+  "input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.18);}"
+  "input[name='pair']{letter-spacing:.5em;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"
+  "text-align:center;font-size:22px;font-weight:700;}"
+  "button,input[type=submit],.btn,.msg a{appearance:none;border:0;cursor:pointer;"
+  "background:linear-gradient(135deg,var(--accent),var(--accent2));color:#04140a;font-weight:700;"
+  "padding:13px 16px;border-radius:12px;font-size:15px;width:100%;margin-top:16px;"
+  "box-shadow:0 10px 22px rgba(34,197,94,.28);text-decoration:none;display:block;text-align:center;}"
+  "button:active{transform:translateY(1px);}"
+  ".msg{background:#0a1224;border:1px solid var(--border);border-radius:12px;padding:12px 14px;"
+  "color:var(--muted);margin-top:12px;font-size:13px;}"
+  ".q{color:var(--muted);}"
+  "hr{border:0;border-top:1px solid var(--border);margin:18px 0;}"
+  "a{color:#7dd3fc;}"
+  ".footer{text-align:center;color:var(--muted);font-size:11px;margin-top:22px;letter-spacing:.08em;"
+  "text-transform:uppercase;}"
+  "</style>"
+  "<div class=\"wrap\"><div class=\"brand\">"
+  "<div class=\"logo\">G</div>"
+  "<div><h1>GeneLab IoT</h1><p>Configuração da Bancada</p></div>"
+  "</div><div class=\"card\">";
+
+static const char PORTAL_FOOT[] PROGMEM =
+  "</div><div class=\"footer\">ESP32 • Firmware 1.1.0</div></div>";
+
 void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
   wm.setConfigPortalTimeout(300); // 5 min
+  wm.setClass("invert"); // tema base escuro
+  wm.setTitle("GeneLab IoT — Bancada");
+  wm.setCustomHeadElement(PORTAL_HEAD);
+  wm.setCustomMenuHTML(PORTAL_FOOT);
+  wm.setShowInfoUpdate(false);
+  wm.setShowInfoErase(false);
+  std::vector<const char*> menu = {"wifi","info","exit"};
+  wm.setMenu(menu);
 
   WiFiManagerParameter param_pair(
-    "pair", "Código de pareamento (6 dígitos)", "", 7);
+    "pair", "Código de pareamento (6 dígitos)", "", 7,
+    "pattern='\\d{6}' inputmode='numeric' maxlength='6' placeholder='000000'");
   wm.addParameter(&param_pair);
 
   const char* apName = "BancadaSetup";
