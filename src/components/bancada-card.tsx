@@ -35,6 +35,7 @@ import { proximoDisparoSegundos } from "@/lib/schedule";
 import { enviarComando, excluirBancada } from "@/lib/bancadas.functions";
 import { toast } from "sonner";
 import type { Bancada, ValvulasEstado } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface Props {
   bancada: Bancada;
