@@ -410,7 +410,8 @@ void tickCiclo() {
   uint32_t decorrido = (millis() - fase_inicio_ms) / 1000;
   switch (fase) {
     case REPOUSO:
-      if (decorrido >= cfg.intervalo_ciclo_horas * 3600UL) aplicarFase(INJETANDO);
+      // Não dispara sozinho: o backend agenda os ciclos por horário
+      // (America/Sao_Paulo) e envia FORCE_CYCLE via bench_pull_commands.
       break;
     case INJETANDO:
       if (decorrido >= cfg.tempo_injecao_segundos) aplicarFase(PAUSADO);

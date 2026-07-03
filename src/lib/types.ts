@@ -21,7 +21,8 @@ export interface Configuracoes {
   tempo_pausa_segundos: number;
   tempo_retorno_segundos: number;
   tempo_alivio_segundos: number;
-  intervalo_ciclo_horas: number;
+  /** Lista de horários (formato "HH:MM", fuso America/Sao_Paulo). */
+  horarios_disparo: string[];
 }
 
 export interface Bancada {
@@ -55,7 +56,7 @@ export const DEFAULT_CONFIG: Configuracoes = {
   tempo_pausa_segundos: 60,
   tempo_retorno_segundos: 150,
   tempo_alivio_segundos: 10,
-  intervalo_ciclo_horas: 4,
+  horarios_disparo: ["06:00", "12:00", "18:00", "00:00"],
 };
 
 export const DEFAULT_VALVULAS: ValvulasEstado = {

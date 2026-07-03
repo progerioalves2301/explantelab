@@ -2,12 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Bancada, ComandoTipo, Configuracoes } from "./types";
 
+const HORARIO_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 const configSchema = z.object({
   tempo_injecao_segundos: z.number().int().min(1).max(3600),
   tempo_pausa_segundos: z.number().int().min(0).max(3600),
   tempo_retorno_segundos: z.number().int().min(1).max(3600),
   tempo_alivio_segundos: z.number().int().min(0).max(600),
-  intervalo_ciclo_horas: z.number().int().min(1).max(72),
+  horarios_disparo: z
+    .array(z.string().regex(HORARIO_REGEX, "Formato HH:MM"))
+    .min(1, "Ao menos 1 horário")
+    .max(24, "Máximo 24 horários"),
 });
 
 // Lista todas as bancadas (público — dashboard usa realtime a partir daqui).
