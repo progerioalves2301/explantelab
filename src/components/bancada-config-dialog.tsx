@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, Clock, Plus, Save, Trash2, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +41,29 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
 
   const update = (k: keyof Configuracoes, v: string) =>
     setConfig((prev) => ({ ...prev, [k]: Number(v) || 0 }));
+
+  const horarios = config.horarios_disparo ?? [];
+
+  const setHorario = (idx: number, v: string) =>
+    setConfig((prev) => {
+      const list = [...(prev.horarios_disparo ?? [])];
+      list[idx] = v;
+      return { ...prev, horarios_disparo: list };
+    });
+
+  const addHorario = () =>
+    setConfig((prev) => ({
+      ...prev,
+      horarios_disparo: [...(prev.horarios_disparo ?? []), "12:00"],
+    }));
+
+  const removeHorario = (idx: number) =>
+    setConfig((prev) => ({
+      ...prev,
+      horarios_disparo: (prev.horarios_disparo ?? []).filter(
+        (_, i) => i !== idx,
+      ),
+    }));
 
   const handleSave = async () => {
     try {
