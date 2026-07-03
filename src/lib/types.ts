@@ -47,6 +47,8 @@ export interface Bancada {
   firmware_version: string | null;
   ip_local: string | null;
   temperatura_planta: number | null;
+  laboratorio_id: string | null;
+  posicao: number | null;
   created_at: string;
 }
 
