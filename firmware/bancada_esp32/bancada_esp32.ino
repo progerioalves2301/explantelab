@@ -419,6 +419,7 @@ void puxarComandos() {
 
 // -------- Máquina de estados --------
 void tickCiclo() {
+  if (fase == MANUAL) return;   // controle manual — nao interferir
   if (pausado_manual) { aplicarFase(REPOUSO); return; }
   uint32_t decorrido = (millis() - fase_inicio_ms) / 1000;
   switch (fase) {
