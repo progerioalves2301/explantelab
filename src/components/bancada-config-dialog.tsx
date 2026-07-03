@@ -109,14 +109,49 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
 
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">
-            <Label htmlFor="intervalo">Intervalo do Ciclo (horas)</Label>
-            <Input
-              id="intervalo"
-              type="number"
-              min={1}
-              value={config.intervalo_ciclo_horas}
-              onChange={(e) => update("intervalo_ciclo_horas", e.target.value)}
-            />
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-primary" />
+                Horários de disparo por dia
+              </Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addHorario}
+                disabled={horarios.length >= 24}
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Adicionar
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Fuso America/Sao_Paulo. O ciclo dispara automaticamente em cada
+              horário listado.
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {horarios.map((h, idx) => (
+                <div key={idx} className="flex items-center gap-1">
+                  <Input
+                    type="time"
+                    value={h}
+                    onChange={(e) => setHorario(idx, e.target.value)}
+                    className="font-mono"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeHorario(idx)}
+                    disabled={horarios.length <= 1}
+                    aria-label="Remover horário"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
