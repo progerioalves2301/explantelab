@@ -73,6 +73,11 @@ export const excluirBancada = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
     );
+    await supabaseAdmin.from("comandos").delete().eq("bancada_id", data.id);
+    await supabaseAdmin
+      .from("bancada_secrets")
+      .delete()
+      .eq("bancada_id", data.id);
     const { error } = await supabaseAdmin
       .from("bancadas")
       .delete()
