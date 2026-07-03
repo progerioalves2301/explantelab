@@ -55,7 +55,7 @@ DallasTemperature dsSensor(&oneWire);
 float g_temperatura_planta = NAN;
 
 // -------- Estado --------
-enum FaseCiclo { REPOUSO, INJETANDO, PAUSADO, RETORNANDO, ALIVIO, OFFLINE };
+enum FaseCiclo { REPOUSO, INJETANDO, PAUSADO, RETORNANDO, ALIVIO, MANUAL, OFFLINE };
 
 struct Config {
   uint32_t tempo_injecao_segundos   = 150;
@@ -94,6 +94,7 @@ static const char* faseNome(FaseCiclo f) {
     case PAUSADO:    return "Pausado";
     case RETORNANDO: return "Retornando";
     case ALIVIO:     return "Alivio";
+    case MANUAL:     return "Manual";
     case OFFLINE:    return "Offline";
   }
   return "Offline";
