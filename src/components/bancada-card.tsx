@@ -1,7 +1,6 @@
 import {
   ArrowRight,
   Clock,
-  Droplets,
   FlaskConical,
   Leaf,
   Settings2,
@@ -15,7 +14,6 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -64,18 +62,6 @@ const PRESET_OFF: ValvulasEstado = {
   v4: false,
   v5: false,
 };
-
-const VALVES: {
-  key: keyof ValvulasEstado;
-  label: string;
-  gpio: number;
-}[] = [
-  { key: "v1", label: "V1", gpio: 25 },
-  { key: "v2", label: "V2", gpio: 26 },
-  { key: "v3", label: "V3", gpio: 27 },
-  { key: "v4", label: "V4", gpio: 32 },
-  { key: "v5", label: "V5", gpio: 33 },
-];
 
 function eq(a: ValvulasEstado, b: ValvulasEstado) {
   return (
