@@ -53,6 +53,21 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
     }
   };
 
+  const handleTest = async () => {
+    setTesting(true);
+    try {
+      await comandar({
+        data: { bancada_id: bancada.id, tipo: "FORCE_CYCLE" },
+      });
+      toast.success(`Ciclo de teste enviado para ${bancada.nome}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao enviar teste");
+    } finally {
+      setTesting(false);
+    }
+  };
+
+
   return (
     <Card className="card-elevated overflow-hidden transition hover:border-primary/40">
       <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-3">
