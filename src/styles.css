@@ -177,10 +177,10 @@
 }
 
 @keyframes flow-drops {
-  0%   { transform: translateX(-100%); opacity: 0; }
+  0%   { transform: translateX(0%);   opacity: 0; }
   15%  { opacity: 1; }
   85%  { opacity: 1; }
-  100% { transform: translateX(100%); opacity: 0; }
+  100% { transform: translateX(2000%); opacity: 0; }
 }
 
 @utility flow-track {
@@ -196,18 +196,18 @@
 @utility flow-drop {
   position: absolute;
   top: 50%;
-  left: 0;
+  left: -0.375rem;
   width: 0.375rem;
   height: 0.375rem;
   margin-top: -0.1875rem;
   border-radius: 9999px;
   background: currentColor;
   box-shadow: 0 0 6px currentColor;
-  animation: flow-drops 1.6s linear infinite;
+  animation: flow-drops 0.9s linear infinite;
 }
 
-@utility flow-drop-reverse {
-  animation-direction: reverse;
+@utility flow-track-reverse {
+  transform: scaleX(-1);
 }
 
 @utility valve-active-leaf {
