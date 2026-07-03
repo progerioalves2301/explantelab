@@ -325,9 +325,9 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
             </div>
 
             <p className="text-[11px] text-muted-foreground">
-              O modo manual pausa o ciclo automático. Para retomar o
-              agendamento, clique em <span className="font-semibold">STOP</span>{" "}
-              e aguarde o próximo horário.
+              O modo manual pausa o ciclo automático. Clique em{" "}
+              <span className="font-semibold">Sair</span> para retomar o
+              agendamento programado.
             </p>
           </TabsContent>
         </Tabs>
