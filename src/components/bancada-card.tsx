@@ -54,13 +54,6 @@ const PRESET_MEIO: ValvulasEstado = {
   v4: false,
   v5: false,
 };
-const PRESET_OFF: ValvulasEstado = {
-  v1: false,
-  v2: false,
-  v3: false,
-  v4: false,
-  v5: false,
-};
 
 function eq(a: ValvulasEstado, b: ValvulasEstado) {
   return (
@@ -112,17 +105,29 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
   };
 
 
+  const sendPause = async (label: string) => {
+    setSending(true);
+    try {
+      await comandar({
+        data: { bancada_id: bancada.id, tipo: "PAUSE" },
+      });
+      toast.success(label);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao pausar");
+    } finally {
+      setSending(false);
+    }
+  };
+
   const togglePlanta = () =>
-    sendValves(
-      isPlanta ? PRESET_OFF : PRESET_PLANTA,
-      isPlanta ? "Bio Reator Planta desligado" : "Bio Reator Planta ligado",
-    );
+    isPlanta
+      ? sendPause("Bio Reator Planta pausado — repouso")
+      : sendValves(PRESET_PLANTA, "Bio Reator Planta ligado");
 
   const toggleMeio = () =>
-    sendValves(
-      isMeio ? PRESET_OFF : PRESET_MEIO,
-      isMeio ? "Bio Reator Meio desligado" : "Bio Reator Meio ligado",
-    );
+    isMeio
+      ? sendPause("Bio Reator Meio pausado — repouso")
+      : sendValves(PRESET_MEIO, "Bio Reator Meio ligado");
 
   const handleDelete = async () => {
     setDeleting(true);
