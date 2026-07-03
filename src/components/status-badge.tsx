@@ -3,7 +3,8 @@ import type { BancadaStatus } from "@/lib/types";
 
 const styles: Record<BancadaStatus, string> = {
   Injetando: "bg-leaf text-leaf-foreground",
-  Retornando: "bg-leaf text-leaf-foreground",
+  Retornando: "bg-fluid text-fluid-foreground",
+  Alivio: "bg-warn text-warn-foreground",
   Repouso: "bg-idle text-idle-foreground",
   Pausado: "bg-warn text-warn-foreground",
   Offline: "bg-destructive text-destructive-foreground",
