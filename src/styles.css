@@ -190,6 +190,12 @@
   box-shadow: var(--shadow-glow-fluid);
 }
 
+@utility valve-active-warn {
+  background-color: var(--color-warn);
+  color: var(--color-warn-foreground);
+  animation: valve-pulse 1.6s ease-in-out infinite;
+}
+
 @utility card-elevated {
   box-shadow: var(--shadow-card);
 }

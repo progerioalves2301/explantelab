@@ -17,7 +17,9 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
       ? "injetando"
       : bancada.status === "Retornando"
         ? "retornando"
-        : "idle";
+        : bancada.status === "Alivio"
+          ? "alivio"
+          : "idle";
 
   return (
     <Card className="card-elevated overflow-hidden transition hover:border-primary/40">
