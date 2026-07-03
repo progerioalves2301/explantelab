@@ -124,7 +124,7 @@ export const enviarComando = createServerFn({ method: "POST" })
       z
         .object({
           bancada_id: z.string().uuid(),
-          tipo: z.enum(["FORCE_CYCLE", "UPDATE_CONFIG", "PAUSE", "RESUME"]),
+          tipo: z.enum(["FORCE_CYCLE", "UPDATE_CONFIG", "PAUSE", "RESUME", "SET_VALVE"]),
           payload: z.record(z.string(), z.unknown()).optional(),
         })
         .parse(data),
