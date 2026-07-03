@@ -25,7 +25,9 @@ export const listBancadas = createServerFn({ method: "GET" }).handler(
   },
 );
 
-// Cria bancada + device_token. Retorna o token UMA VEZ.
+// Cria bancada + device_token + código de pareamento de 6 dígitos.
+// O usuário digita esses 6 dígitos no portal AP do ESP32; o dispositivo
+// então troca o código pelas credenciais reais via /api/public/bench/pair.
 export const criarBancada = createServerFn({ method: "POST" })
   .inputValidator((data: { nome: string }) =>
     z.object({ nome: z.string().min(2).max(60) }).parse(data),
@@ -42,7 +44,7 @@ export const criarBancada = createServerFn({ method: "POST" })
       .single();
     if (error || !bancada) throw new Error(error?.message ?? "Falha ao criar");
 
-    // Gera token 32 bytes → base64url
+    // Token 32 bytes → base64url (guardado no ESP32 após o pareamento).
     const raw = new Uint8Array(32);
     crypto.getRandomValues(raw);
     const device_token = btoa(String.fromCharCode(...raw))
@@ -50,17 +52,37 @@ export const criarBancada = createServerFn({ method: "POST" })
       .replace(/\//g, "_")
       .replace(/=+$/, "");
 
-    const { error: secErr } = await supabaseAdmin
-      .from("bancada_secrets")
-      .insert({ bancada_id: bancada.id, device_token });
-    if (secErr) throw new Error(secErr.message);
+    // Código de pareamento único de 6 dígitos, expira em 24h.
+    // Retry algumas vezes em caso de colisão (índice único parcial).
+    let pairing_code = "";
+    let lastErr: string | null = null;
+    for (let i = 0; i < 6; i++) {
+      const n = new Uint32Array(1);
+      crypto.getRandomValues(n);
+      pairing_code = String(n[0] % 1_000_000).padStart(6, "0");
+      const { error: secErr } = await supabaseAdmin
+        .from("bancada_secrets")
+        .insert({
+          bancada_id: bancada.id,
+          device_token,
+          pairing_code,
+          pairing_expires_at: new Date(
+            Date.now() + 24 * 60 * 60 * 1000,
+          ).toISOString(),
+        });
+      if (!secErr) {
+        lastErr = null;
+        break;
+      }
+      lastErr = secErr.message;
+      // Se não for colisão de código, aborta.
+      if (!/pairing_code/i.test(secErr.message)) break;
+    }
+    if (lastErr) throw new Error(lastErr);
 
     return {
       bancada: bancada as unknown as Bancada,
-      device_token,
-      server_url:
-        process.env.PUBLIC_SITE_URL ??
-        "https://project--90989b19-e7c7-43b6-a4a1-5affc6bb05c8.lovable.app",
+      pairing_code,
     };
   });
 
