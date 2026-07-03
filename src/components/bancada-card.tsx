@@ -1,4 +1,5 @@
 import {
+  ArrowRight,
   Clock,
   Droplets,
   FlaskConical,
@@ -34,6 +35,7 @@ import { proximoDisparoSegundos } from "@/lib/schedule";
 import { enviarComando, excluirBancada } from "@/lib/bancadas.functions";
 import { toast } from "sonner";
 import type { Bancada, ValvulasEstado } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface Props {
   bancada: Bancada;
@@ -271,6 +273,43 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
                   );
                 })}
               </div>
+            </div>
+
+            <div
+              className={cn(
+                "flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-xs font-medium transition-colors",
+                isPlanta &&
+                  "border-emerald-500/60 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                isMeio &&
+                  "border-sky-500/60 bg-sky-500/10 text-sky-600 dark:text-sky-400",
+                !isPlanta &&
+                  !isMeio &&
+                  "border-dashed text-muted-foreground",
+              )}
+              aria-live="polite"
+            >
+              {isMeio ? (
+                <>
+                  <Leaf className="h-3.5 w-3.5" />
+                  <span>Planta</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                  <FlaskConical className="h-3.5 w-3.5" />
+                  <span>Meio</span>
+                </>
+              ) : (
+                <>
+                  <FlaskConical className="h-3.5 w-3.5" />
+                  <span>Meio</span>
+                  <ArrowRight
+                    className={cn(
+                      "h-3.5 w-3.5",
+                      !isPlanta && "opacity-40",
+                    )}
+                  />
+                  <Leaf className="h-3.5 w-3.5" />
+                  <span>Planta</span>
+                </>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-2">
