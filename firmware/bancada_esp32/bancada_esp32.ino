@@ -385,6 +385,18 @@ void tratarComando(JsonObject cmd) {
     cfg.intervalo_ciclo_horas  = p["intervalo_ciclo_horas"]  | cfg.intervalo_ciclo_horas;
     cfg.versao++;
     salvarConfig();
+  } else if (strcmp(tipo, "SET_VALVE") == 0) {
+    JsonObject p = cmd["payload"].as<JsonObject>();
+    bool v1 = p["v1"] | false;
+    bool v2 = p["v2"] | false;
+    bool v3 = p["v3"] | false;
+    bool v4 = p["v4"] | false;
+    bool v5 = p["v5"] | false;
+    pausado_manual = true;      // interrompe ciclo automático
+    fase = MANUAL;
+    fase_inicio_ms = millis();
+    escreverValvulas(v1, v2, v3, v4, v5);
+    Serial.printf("[MANUAL] v1=%d v2=%d v3=%d v4=%d v5=%d\n", v1,v2,v3,v4,v5);
   }
 }
 
