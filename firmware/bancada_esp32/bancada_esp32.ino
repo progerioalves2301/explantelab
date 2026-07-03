@@ -317,10 +317,8 @@ void setup() {
     }
   }
 
-  bool precisaPortal = creds.bancada_id.isEmpty() ||
-                       creds.device_token.isEmpty() ||
-                       creds.server_url.isEmpty();
-  abrirPortalConfig(precisaPortal);
+  // Portal AP só para configurar Wi-Fi. Credenciais da bancada são fixas.
+  abrirPortalWifi(false);
 
   Serial.printf("Wi-Fi OK: %s\n", WiFi.localIP().toString().c_str());
   digitalWrite(PIN_LED, HIGH);
