@@ -192,9 +192,6 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
               <AlertTriangle className="mr-1.5 h-4 w-4" />
               Forçar ciclo
             </Button>
-            <Button variant="outline" size="sm" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
           </div>
           <Button onClick={handleSave}>
             <Save className="mr-1.5 h-4 w-4" />
