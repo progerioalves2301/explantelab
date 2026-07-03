@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Save } from "lucide-react";
+import { AlertTriangle, Save, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,30 +12,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  enviarComando,
+  excluirBancada,
+  salvarConfig,
+} from "@/lib/bancadas.functions";
 import type { Bancada, Configuracoes } from "@/lib/types";
+import { DEFAULT_CONFIG } from "@/lib/types";
 
 interface Props {
   bancada: Bancada | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (id: number, config: Configuracoes) => void;
 }
 
-export function BancadaConfigDialog({
-  bancada,
-  open,
-  onOpenChange,
-  onSave,
-}: Props) {
-  const [config, setConfig] = useState<Configuracoes>({
-    intervalo_ciclo_horas: 4,
-    tempo_injecao_segundos: 150,
-    tempo_pausa_segundos: 60,
-    tempo_retorno_segundos: 150,
-  });
+export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
+  const [config, setConfig] = useState<Configuracoes>(DEFAULT_CONFIG);
+  const salvar = useServerFn(salvarConfig);
+  const cmd = useServerFn(enviarComando);
+  const del = useServerFn(excluirBancada);
 
   useEffect(() => {
-    if (bancada) setConfig(bancada.config);
+    if (bancada) setConfig({ ...DEFAULT_CONFIG, ...bancada.config });
   }, [bancada]);
 
   if (!bancada) return null;
@@ -43,20 +42,35 @@ export function BancadaConfigDialog({
   const update = (k: keyof Configuracoes, v: string) =>
     setConfig((prev) => ({ ...prev, [k]: Number(v) || 0 }));
 
-  const handleSave = () => {
-    // TODO(Supabase):
-    //   await supabase.from('configuracoes').update(config).eq('bancada_id', bancada.id)
-    onSave(bancada.id, config);
-    toast.success(`Configuração salva para ${bancada.nome}`);
-    onOpenChange(false);
+  const handleSave = async () => {
+    try {
+      await salvar({ data: { bancada_id: bancada.id, config } });
+      toast.success(`Configuração salva para ${bancada.nome}`);
+      onOpenChange(false);
+    } catch (e) {
+      toast.error("Falha ao salvar", { description: String(e) });
+    }
   };
 
-  const handleForceCycle = () => {
-    // TODO(Supabase): publicar comando via tabela 'comandos' ou canal realtime
-    //   await supabase.from('comandos').insert({ bancada_id: bancada.id, tipo: 'FORCE_CYCLE' })
-    toast.warning(`Ciclo manual disparado em ${bancada.nome}`, {
-      description: "Comando enviado ao ESP32.",
-    });
+  const handleForceCycle = async () => {
+    try {
+      await cmd({ data: { bancada_id: bancada.id, tipo: "FORCE_CYCLE" } });
+      toast.warning(`Ciclo manual disparado em ${bancada.nome}`);
+    } catch (e) {
+      toast.error("Falha ao enviar comando", { description: String(e) });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm(`Excluir ${bancada.nome}? Isso remove o pareamento do ESP32.`))
+      return;
+    try {
+      await del({ data: { id: bancada.id } });
+      toast.success("Bancada removida");
+      onOpenChange(false);
+    } catch (e) {
+      toast.error("Falha ao remover", { description: String(e) });
+    }
   };
 
   return (
@@ -65,7 +79,8 @@ export function BancadaConfigDialog({
         <DialogHeader>
           <DialogTitle>Configurar {bancada.nome}</DialogTitle>
           <DialogDescription>
-            Ajuste os parâmetros do ciclo pneumático deste nó ESP32.
+            Ajuste os parâmetros do ciclo pneumático. O ESP32 recebe a nova
+            config no próximo poll.
           </DialogDescription>
         </DialogHeader>
 
@@ -77,66 +92,55 @@ export function BancadaConfigDialog({
               type="number"
               min={1}
               value={config.intervalo_ciclo_horas}
-              onChange={(e) =>
-                update("intervalo_ciclo_horas", e.target.value)
-              }
+              onChange={(e) => update("intervalo_ciclo_horas", e.target.value)}
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="grid gap-2">
-              <Label htmlFor="inj" className="text-xs">
-                Injeção (s)
-              </Label>
-              <Input
-                id="inj"
-                type="number"
-                min={1}
-                value={config.tempo_injecao_segundos}
-                onChange={(e) =>
-                  update("tempo_injecao_segundos", e.target.value)
-                }
-              />
+              <Label htmlFor="inj" className="text-xs">Injeção (s)</Label>
+              <Input id="inj" type="number" min={1} value={config.tempo_injecao_segundos}
+                onChange={(e) => update("tempo_injecao_segundos", e.target.value)} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="pausa" className="text-xs">
-                Pausa (s)
-              </Label>
-              <Input
-                id="pausa"
-                type="number"
-                min={1}
-                value={config.tempo_pausa_segundos}
-                onChange={(e) =>
-                  update("tempo_pausa_segundos", e.target.value)
-                }
-              />
+              <Label htmlFor="pausa" className="text-xs">Pausa (s)</Label>
+              <Input id="pausa" type="number" min={0} value={config.tempo_pausa_segundos}
+                onChange={(e) => update("tempo_pausa_segundos", e.target.value)} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="ret" className="text-xs">
-                Retorno (s)
-              </Label>
-              <Input
-                id="ret"
-                type="number"
-                min={1}
-                value={config.tempo_retorno_segundos}
-                onChange={(e) =>
-                  update("tempo_retorno_segundos", e.target.value)
-                }
-              />
+              <Label htmlFor="ret" className="text-xs">Retorno (s)</Label>
+              <Input id="ret" type="number" min={1} value={config.tempo_retorno_segundos}
+                onChange={(e) => update("tempo_retorno_segundos", e.target.value)} />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="al" className="text-xs">Alívio (s)</Label>
+              <Input id="al" type="number" min={0} value={config.tempo_alivio_segundos}
+                onChange={(e) => update("tempo_alivio_segundos", e.target.value)} />
+            </div>
+          </div>
+
+          <div className="rounded-md border bg-muted/40 p-2 text-[11px] text-muted-foreground">
+            <div>ID: <span className="font-mono">{bancada.id}</span></div>
+            {bancada.firmware_version && (
+              <div>Firmware: {bancada.firmware_version}</div>
+            )}
+            {bancada.ip_local && <div>IP: {bancada.ip_local}</div>}
           </div>
         </div>
 
         <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
-          <Button variant="destructive" onClick={handleForceCycle}>
-            <AlertTriangle className="mr-1.5 h-4 w-4" />
-            Forçar Ciclo Manual
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="destructive" size="sm" onClick={handleForceCycle}>
+              <AlertTriangle className="mr-1.5 h-4 w-4" />
+              Forçar ciclo
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDelete}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
           <Button onClick={handleSave}>
             <Save className="mr-1.5 h-4 w-4" />
-            Salvar Configuração
+            Salvar
           </Button>
         </DialogFooter>
       </DialogContent>
