@@ -122,6 +122,16 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
             <Settings2 className="mr-1.5 h-3.5 w-3.5" />
             Configurar
           </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleTest}
+            disabled={testing}
+            aria-label="Testar bancada (forçar ciclo)"
+          >
+            <Play className="mr-1.5 h-3.5 w-3.5" />
+            {testing ? "Enviando…" : "Testar"}
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
