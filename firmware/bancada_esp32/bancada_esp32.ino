@@ -158,17 +158,15 @@ void abrirPortalConfig(bool forcar) {
   wm.addParameter(&p_tok);
   wm.addParameter(&p_url);
 
-  char apName[32];
-  uint64_t chip = ESP.getEfuseMac();
-  snprintf(apName, sizeof(apName), "BancadaSetup-%04X",
-           (uint16_t)((chip >> 32) ^ chip));
+  const char* apName = "BancadaSetup";
+  const char* apPass = "12345657890";
 
   bool ok;
   if (forcar) {
     wm.resetSettings();
-    ok = wm.startConfigPortal(apName, "genelab123");
+    ok = wm.startConfigPortal(apName, apPass);
   } else {
-    ok = wm.autoConnect(apName, "genelab123");
+    ok = wm.autoConnect(apName, apPass);
   }
 
   if (!ok) {
