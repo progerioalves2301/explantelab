@@ -7,6 +7,7 @@ const styles: Record<BancadaStatus, string> = {
   Alivio: "bg-warn text-warn-foreground",
   Repouso: "bg-idle text-idle-foreground",
   Pausado: "bg-warn text-warn-foreground",
+  Manual: "bg-primary text-primary-foreground",
   Offline: "bg-destructive text-destructive-foreground",
 };
 

@@ -55,7 +55,7 @@ DallasTemperature dsSensor(&oneWire);
 float g_temperatura_planta = NAN;
 
 // -------- Estado --------
-enum FaseCiclo { REPOUSO, INJETANDO, PAUSADO, RETORNANDO, ALIVIO, OFFLINE };
+enum FaseCiclo { REPOUSO, INJETANDO, PAUSADO, RETORNANDO, ALIVIO, MANUAL, OFFLINE };
 
 struct Config {
   uint32_t tempo_injecao_segundos   = 150;
@@ -94,6 +94,7 @@ static const char* faseNome(FaseCiclo f) {
     case PAUSADO:    return "Pausado";
     case RETORNANDO: return "Retornando";
     case ALIVIO:     return "Alivio";
+    case MANUAL:     return "Manual";
     case OFFLINE:    return "Offline";
   }
   return "Offline";
@@ -384,6 +385,18 @@ void tratarComando(JsonObject cmd) {
     cfg.intervalo_ciclo_horas  = p["intervalo_ciclo_horas"]  | cfg.intervalo_ciclo_horas;
     cfg.versao++;
     salvarConfig();
+  } else if (strcmp(tipo, "SET_VALVE") == 0) {
+    JsonObject p = cmd["payload"].as<JsonObject>();
+    bool v1 = p["v1"] | false;
+    bool v2 = p["v2"] | false;
+    bool v3 = p["v3"] | false;
+    bool v4 = p["v4"] | false;
+    bool v5 = p["v5"] | false;
+    pausado_manual = true;      // interrompe ciclo automático
+    fase = MANUAL;
+    fase_inicio_ms = millis();
+    escreverValvulas(v1, v2, v3, v4, v5);
+    Serial.printf("[MANUAL] v1=%d v2=%d v3=%d v4=%d v5=%d\n", v1,v2,v3,v4,v5);
   }
 }
 
@@ -406,6 +419,7 @@ void puxarComandos() {
 
 // -------- Máquina de estados --------
 void tickCiclo() {
+  if (fase == MANUAL) return;   // controle manual — nao interferir
   if (pausado_manual) { aplicarFase(REPOUSO); return; }
   uint32_t decorrido = (millis() - fase_inicio_ms) / 1000;
   switch (fase) {
@@ -425,6 +439,7 @@ void tickCiclo() {
     case ALIVIO:
       if (decorrido >= cfg.tempo_alivio_segundos) aplicarFase(REPOUSO);
       break;
+    case MANUAL: break;   // valvulas fixas ate novo comando
     case OFFLINE: break;
   }
 }

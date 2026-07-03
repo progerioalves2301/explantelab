@@ -1,8 +1,20 @@
-import { Clock, Settings2, Sprout, Square, Timer, Trash2 } from "lucide-react";
+import {
+  Clock,
+  Droplets,
+  FlaskConical,
+  Leaf,
+  Settings2,
+  Sprout,
+  Square,
+  Timer,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,16 +32,62 @@ import { formatCountdown, timeAgo } from "@/lib/mock-data";
 import { proximoDisparoSegundos } from "@/lib/schedule";
 import { enviarComando, excluirBancada } from "@/lib/bancadas.functions";
 import { toast } from "sonner";
-import type { Bancada } from "@/lib/types";
+import type { Bancada, ValvulasEstado } from "@/lib/types";
 
 interface Props {
   bancada: Bancada;
   onConfigure: (b: Bancada) => void;
 }
 
+// Presets dos botões Bio Reator (V1..V5)
+const PRESET_PLANTA: ValvulasEstado = {
+  v1: true,
+  v2: false,
+  v3: false,
+  v4: true,
+  v5: false,
+};
+const PRESET_MEIO: ValvulasEstado = {
+  v1: false,
+  v2: true,
+  v3: true,
+  v4: false,
+  v5: false,
+};
+const PRESET_OFF: ValvulasEstado = {
+  v1: false,
+  v2: false,
+  v3: false,
+  v4: false,
+  v5: false,
+};
+
+const VALVES: {
+  key: keyof ValvulasEstado;
+  label: string;
+  gpio: number;
+}[] = [
+  { key: "v1", label: "V1", gpio: 25 },
+  { key: "v2", label: "V2", gpio: 26 },
+  { key: "v3", label: "V3", gpio: 27 },
+  { key: "v4", label: "V4", gpio: 32 },
+  { key: "v5", label: "V5", gpio: 33 },
+];
+
+function eq(a: ValvulasEstado, b: ValvulasEstado) {
+  return (
+    a.v1 === b.v1 &&
+    a.v2 === b.v2 &&
+    a.v3 === b.v3 &&
+    a.v4 === b.v4 &&
+    a.v5 === b.v5
+  );
+}
+
 export function BancadaCard({ bancada, onConfigure }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [stopping, setStopping] = useState(false);
+  const [sending, setSending] = useState(false);
   const excluir = useServerFn(excluirBancada);
   const comandar = useServerFn(enviarComando);
 
@@ -41,6 +99,45 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
         : bancada.status === "Alivio"
           ? "alivio"
           : "idle";
+
+  const valvulas = bancada.valvulas;
+  const isPlanta = eq(valvulas, PRESET_PLANTA);
+  const isMeio = eq(valvulas, PRESET_MEIO);
+
+  const sendValves = async (v: ValvulasEstado, label: string) => {
+    setSending(true);
+    try {
+      await comandar({
+        data: {
+          bancada_id: bancada.id,
+          tipo: "SET_VALVE",
+          payload: v as unknown as Record<string, unknown>,
+        },
+      });
+      toast.success(`${label} enviado`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao enviar comando");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const toggleValve = (k: keyof ValvulasEstado, on: boolean) => {
+    const next: ValvulasEstado = { ...valvulas, [k]: on };
+    sendValves(next, `${k.toUpperCase()} ${on ? "aberta" : "fechada"}`);
+  };
+
+  const togglePlanta = () =>
+    sendValves(
+      isPlanta ? PRESET_OFF : PRESET_PLANTA,
+      isPlanta ? "Bio Reator Planta desligado" : "Bio Reator Planta ligado",
+    );
+
+  const toggleMeio = () =>
+    sendValves(
+      isMeio ? PRESET_OFF : PRESET_MEIO,
+      isMeio ? "Bio Reator Meio desligado" : "Bio Reator Meio ligado",
+    );
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -68,7 +165,6 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
     }
   };
 
-
   return (
     <Card className="card-elevated overflow-hidden transition hover:border-primary/40">
       <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-3">
@@ -84,52 +180,131 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="rounded-lg border bg-muted/40 p-3">
-          <ValveIndicator valvulas={bancada.valvulas} mode={mode} />
-        </div>
+        <Tabs defaultValue="status" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="status">Status</TabsTrigger>
+            <TabsTrigger value="manual">Manual</TabsTrigger>
+          </TabsList>
 
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Timer className="h-3.5 w-3.5 text-primary" />
-            <div>
-              <div className="text-[10px] uppercase tracking-wide">
-                Próximo ciclo
+          <TabsContent value="status" className="mt-3 space-y-4">
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <ValveIndicator valvulas={valvulas} mode={mode} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Timer className="h-3.5 w-3.5 text-primary" />
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide">
+                    Próximo ciclo
+                  </div>
+                  <div className="font-mono text-sm text-foreground">
+                    {(() => {
+                      const s = proximoDisparoSegundos(
+                        bancada.config?.horarios_disparo,
+                      );
+                      return s == null ? "—" : formatCountdown(s);
+                    })()}
+                  </div>
+                </div>
               </div>
-              <div className="font-mono text-sm text-foreground">
-                {(() => {
-                  const s = proximoDisparoSegundos(
-                    bancada.config?.horarios_disparo,
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-3.5 w-3.5 text-fluid" />
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide">
+                    Última sync
+                  </div>
+                  <div className="font-mono text-sm text-foreground">
+                    {timeAgo(bancada.ultima_sync)}
+                  </div>
+                </div>
+              </div>
+              <div className="col-span-2 flex items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-2 text-muted-foreground">
+                <Sprout className="h-4 w-4 text-emerald-500" />
+                <div className="flex-1">
+                  <div className="text-[10px] uppercase tracking-wide">
+                    Temperatura planta
+                  </div>
+                  <div className="font-mono text-sm text-foreground">
+                    {bancada.temperatura_planta != null
+                      ? `${bancada.temperatura_planta.toFixed(1)} °C`
+                      : "—"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="manual" className="mt-3 space-y-4">
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <div className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                <Droplets className="h-3.5 w-3.5 text-primary" />
+                Válvulas
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {VALVES.map((v) => {
+                  const on = valvulas[v.key];
+                  return (
+                    <label
+                      key={v.key}
+                      className="flex cursor-pointer flex-col items-center gap-1.5 rounded-md border bg-background/60 p-2 text-center transition hover:border-primary/50"
+                    >
+                      <span className="font-mono text-xs font-semibold">
+                        {v.label}
+                      </span>
+                      <span className="text-[9px] text-muted-foreground">
+                        GPIO {v.gpio}
+                      </span>
+                      <Switch
+                        checked={on}
+                        disabled={sending}
+                        onCheckedChange={(c) => toggleValve(v.key, c)}
+                        aria-label={`${v.label} ${on ? "aberta" : "fechada"}`}
+                      />
+                    </label>
                   );
-                  return s == null ? "—" : formatCountdown(s);
-                })()}
+                })}
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="h-3.5 w-3.5 text-fluid" />
-            <div>
-              <div className="text-[10px] uppercase tracking-wide">
-                Última sync
-              </div>
-              <div className="font-mono text-sm text-foreground">
-                {timeAgo(bancada.ultima_sync)}
-              </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                size="sm"
+                onClick={togglePlanta}
+                disabled={sending}
+                className={
+                  isPlanta
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                    : "bg-background text-foreground hover:bg-muted"
+                }
+                variant={isPlanta ? "default" : "outline"}
+              >
+                <Leaf className="mr-1.5 h-3.5 w-3.5" />
+                Bio Reator Planta
+              </Button>
+              <Button
+                size="sm"
+                onClick={toggleMeio}
+                disabled={sending}
+                className={
+                  isMeio
+                    ? "bg-sky-600 text-white hover:bg-sky-700"
+                    : "bg-background text-foreground hover:bg-muted"
+                }
+                variant={isMeio ? "default" : "outline"}
+              >
+                <FlaskConical className="mr-1.5 h-3.5 w-3.5" />
+                Bio Reator Meio
+              </Button>
             </div>
-          </div>
-          <div className="col-span-2 flex items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-2 text-muted-foreground">
-            <Sprout className="h-4 w-4 text-emerald-500" />
-            <div className="flex-1">
-              <div className="text-[10px] uppercase tracking-wide">
-                Temperatura planta
-              </div>
-              <div className="font-mono text-sm text-foreground">
-                {bancada.temperatura_planta != null
-                  ? `${bancada.temperatura_planta.toFixed(1)} °C`
-                  : "—"}
-              </div>
-            </div>
-          </div>
-        </div>
+
+            <p className="text-[11px] text-muted-foreground">
+              O modo manual pausa o ciclo automático. Para retomar o
+              agendamento, clique em <span className="font-semibold">STOP</span>{" "}
+              e aguarde o próximo horário.
+            </p>
+          </TabsContent>
+        </Tabs>
 
         <div className="flex gap-2">
           <Button
@@ -167,8 +342,9 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
               <AlertDialogHeader>
                 <AlertDialogTitle>Excluir {bancada.nome}?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Isso remove a bancada, seu token e todos os comandos pendentes.
-                  O ESP32 deixará de conseguir enviar telemetria. Ação irreversível.
+                  Isso remove a bancada, seu token e todos os comandos
+                  pendentes. O ESP32 deixará de conseguir enviar telemetria.
+                  Ação irreversível.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -187,4 +363,3 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
     </Card>
   );
 }
-
