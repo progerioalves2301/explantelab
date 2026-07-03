@@ -96,7 +96,12 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
                 Próximo ciclo
               </div>
               <div className="font-mono text-sm text-foreground">
-                {formatCountdown(bancada.proximo_ciclo_segundos)}
+                {(() => {
+                  const s = proximoDisparoSegundos(
+                    bancada.config?.horarios_disparo,
+                  );
+                  return s == null ? "—" : formatCountdown(s);
+                })()}
               </div>
             </div>
           </div>
