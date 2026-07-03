@@ -335,6 +335,11 @@ void enviarTelemetria() {
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
   doc["_firmware_version"]       = "1.2.0";
   doc["_ip_local"]               = WiFi.localIP().toString();
+  if (!isnan(g_temperatura_planta)) {
+    doc["_temperatura_planta"] = g_temperatura_planta;
+  } else {
+    doc["_temperatura_planta"] = nullptr;
+  }
 
   String body;
   serializeJson(doc, body);
