@@ -4,6 +4,7 @@ import {
   FlaskConical,
   Leaf,
   Settings2,
+  SlidersHorizontal,
   Sprout,
   Square,
   Timer,
@@ -88,6 +89,7 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [sending, setSending] = useState(false);
+  const [tab, setTab] = useState<"status" | "manual">("status");
   const excluir = useServerFn(excluirBancada);
   const comandar = useServerFn(enviarComando);
 
@@ -180,8 +182,12 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <Tabs defaultValue="status" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => setTab(v as "status" | "manual")}
+          className="w-full"
+        >
+          <TabsList className="sr-only">
             <TabsTrigger value="status">Status</TabsTrigger>
             <TabsTrigger value="manual">Manual</TabsTrigger>
           </TabsList>
@@ -315,6 +321,16 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
           >
             <Settings2 className="mr-1.5 h-3.5 w-3.5" />
             Configurar
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setTab(tab === "manual" ? "status" : "manual")}
+            className="bg-blue-600 text-white hover:bg-blue-700"
+            aria-label="Alternar modo manual"
+            aria-pressed={tab === "manual"}
+          >
+            <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
+            Manual
           </Button>
           <Button
             size="sm"
