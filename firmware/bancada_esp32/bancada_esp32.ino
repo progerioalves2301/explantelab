@@ -374,11 +374,14 @@ void tratarComando(JsonObject cmd) {
   if (strcmp(tipo, "FORCE_CYCLE") == 0) {
     pausado_manual = false;
     aplicarFase(INJETANDO);
+    lastTelem = 0; // força telemetria no próximo loop
   } else if (strcmp(tipo, "PAUSE") == 0) {
     pausado_manual = true;
     aplicarFase(REPOUSO);
+    lastTelem = 0;
   } else if (strcmp(tipo, "RESUME") == 0) {
     pausado_manual = false;
+    lastTelem = 0;
   } else if (strcmp(tipo, "UPDATE_CONFIG") == 0) {
     JsonObject p = cmd["payload"].as<JsonObject>();
     cfg.tempo_injecao_segundos = p["tempo_injecao_segundos"] | cfg.tempo_injecao_segundos;
