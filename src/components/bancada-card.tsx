@@ -1,7 +1,6 @@
 import {
   ArrowRight,
   Clock,
-  Droplets,
   FlaskConical,
   Leaf,
   Settings2,
@@ -15,7 +14,6 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -64,18 +62,6 @@ const PRESET_OFF: ValvulasEstado = {
   v4: false,
   v5: false,
 };
-
-const VALVES: {
-  key: keyof ValvulasEstado;
-  label: string;
-  gpio: number;
-}[] = [
-  { key: "v1", label: "V1", gpio: 25 },
-  { key: "v2", label: "V2", gpio: 26 },
-  { key: "v3", label: "V3", gpio: 27 },
-  { key: "v4", label: "V4", gpio: 32 },
-  { key: "v5", label: "V5", gpio: 33 },
-];
 
 function eq(a: ValvulasEstado, b: ValvulasEstado) {
   return (
@@ -126,10 +112,6 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
     }
   };
 
-  const toggleValve = (k: keyof ValvulasEstado, on: boolean) => {
-    const next: ValvulasEstado = { ...valvulas, [k]: on };
-    sendValves(next, `${k.toUpperCase()} ${on ? "aberta" : "fechada"}`);
-  };
 
   const togglePlanta = () =>
     sendValves(
@@ -244,36 +226,6 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
           </TabsContent>
 
           <TabsContent value="manual" className="mt-3 space-y-4">
-            <div className="rounded-lg border bg-muted/40 p-3">
-              <div className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-                <Droplets className="h-3.5 w-3.5 text-primary" />
-                Válvulas
-              </div>
-              <div className="grid grid-cols-5 gap-2">
-                {VALVES.map((v) => {
-                  const on = valvulas[v.key];
-                  return (
-                    <label
-                      key={v.key}
-                      className="flex cursor-pointer flex-col items-center gap-1.5 rounded-md border bg-background/60 p-2 text-center transition hover:border-primary/50"
-                    >
-                      <span className="font-mono text-xs font-semibold">
-                        {v.label}
-                      </span>
-                      <span className="text-[9px] text-muted-foreground">
-                        GPIO {v.gpio}
-                      </span>
-                      <Switch
-                        checked={on}
-                        disabled={sending}
-                        onCheckedChange={(c) => toggleValve(v.key, c)}
-                        aria-label={`${v.label} ${on ? "aberta" : "fechada"}`}
-                      />
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
 
             <div
               className={cn(
