@@ -347,20 +347,21 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
               size="sm"
               onClick={async () => {
                 setTab("status");
+                setOptimistic(PRESET_OFF);
                 try {
                   await comandar({
-                    data: { bancada_id: bancada.id, tipo: "RESUME" },
+                    data: { bancada_id: bancada.id, tipo: "PAUSE" },
                   });
-                  setOptimistic(null);
-                  toast.success("Ciclo automático retomado");
+                  toast.success("Modo repouso — aguardando próximo ciclo");
                 } catch (e) {
+                  setOptimistic(null);
                   toast.error(
-                    e instanceof Error ? e.message : "Falha ao retomar ciclo",
+                    e instanceof Error ? e.message : "Falha ao entrar em repouso",
                   );
                 }
               }}
               className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500"
-              aria-label="Sair do modo manual e retomar ciclo"
+              aria-label="Sair do modo manual e entrar em repouso"
             >
               <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
               Sair
