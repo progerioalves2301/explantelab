@@ -324,6 +324,16 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
           </Button>
           <Button
             size="sm"
+            onClick={() => setTab(tab === "manual" ? "status" : "manual")}
+            className="bg-blue-600 text-white hover:bg-blue-700"
+            aria-label="Alternar modo manual"
+            aria-pressed={tab === "manual"}
+          >
+            <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
+            Manual
+          </Button>
+          <Button
+            size="sm"
             onClick={handleStop}
             disabled={stopping}
             className="bg-red-600 text-white hover:bg-red-700"
