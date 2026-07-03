@@ -251,25 +251,15 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
                 Meio
               </span>
 
-              <div className="flow-track">
+              <div
+                className={cn("flow-track", isMeio && "flow-track-reverse")}
+              >
                 {(isPlanta || isMeio) && (
                   <>
-                    <span
-                      className={cn("flow-drop", isMeio && "flow-drop-reverse")}
-                      style={{ animationDelay: "0s" }}
-                    />
-                    <span
-                      className={cn("flow-drop", isMeio && "flow-drop-reverse")}
-                      style={{ animationDelay: "0.4s" }}
-                    />
-                    <span
-                      className={cn("flow-drop", isMeio && "flow-drop-reverse")}
-                      style={{ animationDelay: "0.8s" }}
-                    />
-                    <span
-                      className={cn("flow-drop", isMeio && "flow-drop-reverse")}
-                      style={{ animationDelay: "1.2s" }}
-                    />
+                    <span className="flow-drop" style={{ animationDelay: "0s" }} />
+                    <span className="flow-drop" style={{ animationDelay: "0.22s" }} />
+                    <span className="flow-drop" style={{ animationDelay: "0.45s" }} />
+                    <span className="flow-drop" style={{ animationDelay: "0.67s" }} />
                   </>
                 )}
               </div>
