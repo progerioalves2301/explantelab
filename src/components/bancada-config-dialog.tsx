@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Clock, Plus, Save, X } from "lucide-react";
+import { Clock, Play, Plus, Save, Square, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -77,6 +77,15 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
     try {
       await cmd({ data: { bancada_id: bancada.id, tipo: "FORCE_CYCLE" } });
       toast.warning(`Ciclo manual disparado em ${bancada.nome}`);
+    } catch (e) {
+      toast.error("Falha ao enviar comando", { description: String(e) });
+    }
+  };
+
+  const handleStop = async () => {
+    try {
+      await cmd({ data: { bancada_id: bancada.id, tipo: "PAUSE" } });
+      toast.info(`Bancada ${bancada.nome} parada`);
     } catch (e) {
       toast.error("Falha ao enviar comando", { description: String(e) });
     }
@@ -175,9 +184,21 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
 
         <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
           <div className="flex gap-2">
-            <Button variant="destructive" size="sm" onClick={handleForceCycle}>
-              <AlertTriangle className="mr-1.5 h-4 w-4" />
+            <Button
+              size="sm"
+              onClick={handleForceCycle}
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              <Play className="mr-1.5 h-4 w-4" />
               Forçar ciclo
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleStop}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              <Square className="mr-1.5 h-4 w-4 fill-current" />
+              Parar
             </Button>
           </div>
           <Button onClick={handleSave}>
