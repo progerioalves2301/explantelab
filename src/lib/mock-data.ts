@@ -11,7 +11,7 @@ const statuses: BancadaStatus[] = [
   "Repouso",
   "Retornando",
   "Pausado",
-  "Repouso",
+  "Alivio",
   "Injetando",
   "Offline",
   "Repouso",
@@ -20,11 +20,13 @@ const statuses: BancadaStatus[] = [
 function valvesFor(status: BancadaStatus): ValvulasEstado {
   switch (status) {
     case "Injetando":
-      return { v1: true, v2: false, v3: false, v4: true };
+      return { v1: true, v2: false, v3: false, v4: true, v5: false };
     case "Retornando":
-      return { v1: false, v2: true, v3: true, v4: false };
+      return { v1: false, v2: true, v3: true, v4: false, v5: false };
+    case "Alivio":
+      return { v1: false, v2: false, v3: false, v4: false, v5: true };
     default:
-      return { v1: false, v2: false, v3: false, v4: false };
+      return { v1: false, v2: false, v3: false, v4: false, v5: false };
   }
 }
 
