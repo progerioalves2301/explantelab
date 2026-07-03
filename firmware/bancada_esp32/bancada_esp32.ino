@@ -27,6 +27,9 @@
 #include <WiFiManager.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
 
 // -------- Config Supabase (fixa no binário) --------
 static const char* SUPABASE_URL = "https://ftfboqlapblxndizyaxy.supabase.co";
@@ -44,6 +47,12 @@ static const int PIN_V4 = 32;
 static const int PIN_V5 = 33;
 static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
+static const int PIN_DS18B20 = 4;
+
+// -------- Sensor DS18B20 (temperatura da planta) --------
+OneWire oneWire(PIN_DS18B20);
+DallasTemperature dsSensor(&oneWire);
+float g_temperatura_planta = NAN;
 
 // -------- Estado --------
 enum FaseCiclo { REPOUSO, INJETANDO, PAUSADO, RETORNANDO, ALIVIO, OFFLINE };
@@ -326,6 +335,11 @@ void enviarTelemetria() {
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
   doc["_firmware_version"]       = "1.2.0";
   doc["_ip_local"]               = WiFi.localIP().toString();
+  if (!isnan(g_temperatura_planta)) {
+    doc["_temperatura_planta"] = g_temperatura_planta;
+  } else {
+    doc["_temperatura_planta"] = nullptr;
+  }
 
   String body;
   serializeJson(doc, body);
@@ -425,6 +439,10 @@ void setup() {
   }
   pinMode(PIN_RESET_BTN, INPUT_PULLUP);
 
+  dsSensor.begin();
+  dsSensor.setWaitForConversion(false);
+  dsSensor.requestTemperatures();
+
   carregarPrefs();
 
   if (digitalRead(PIN_RESET_BTN) == LOW) {
@@ -465,12 +483,20 @@ void setup() {
   aplicarFase(REPOUSO);
 }
 
-unsigned long lastTelem = 0, lastCmd = 0, lastTick = 0;
+unsigned long lastTelem = 0, lastCmd = 0, lastTick = 0, lastTemp = 0;
+
+void lerTemperatura() {
+  float t = dsSensor.getTempCByIndex(0);
+  if (t > -50.0 && t < 125.0) g_temperatura_planta = t;
+  else g_temperatura_planta = NAN;
+  dsSensor.requestTemperatures(); // dispara próxima conversão (async)
+}
 
 void loop() {
   unsigned long now = millis();
 
   if (now - lastTick > 1000)  { lastTick  = now; tickCiclo(); }
+  if (now - lastTemp > 2000)  { lastTemp  = now; lerTemperatura(); }
   if (now - lastCmd  > 2000)  { lastCmd   = now; puxarComandos(); }
   if (now - lastTelem > 5000) { lastTelem = now; enviarTelemetria(); }
 

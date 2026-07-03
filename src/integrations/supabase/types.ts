@@ -60,6 +60,7 @@ export type Database = {
           nome: string
           proximo_ciclo_segundos: number
           status: string
+          temperatura_planta: number | null
           ultima_sync: string | null
           valvulas: Json
         }
@@ -73,6 +74,7 @@ export type Database = {
           nome: string
           proximo_ciclo_segundos?: number
           status?: string
+          temperatura_planta?: number | null
           ultima_sync?: string | null
           valvulas?: Json
         }
@@ -86,6 +88,7 @@ export type Database = {
           nome?: string
           proximo_ciclo_segundos?: number
           status?: string
+          temperatura_planta?: number | null
           ultima_sync?: string | null
           valvulas?: Json
         }
@@ -136,18 +139,32 @@ export type Database = {
         Args: { _bancada_id: string; _device_token: string }
         Returns: Json
       }
-      bench_push_telemetry: {
-        Args: {
-          _bancada_id: string
-          _device_token: string
-          _firmware_version: string
-          _ip_local: string
-          _proximo_ciclo_segundos: number
-          _status: string
-          _valvulas: Json
-        }
-        Returns: Json
-      }
+      bench_push_telemetry:
+        | {
+            Args: {
+              _bancada_id: string
+              _device_token: string
+              _firmware_version: string
+              _ip_local: string
+              _proximo_ciclo_segundos: number
+              _status: string
+              _valvulas: Json
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _bancada_id: string
+              _device_token: string
+              _firmware_version: string
+              _ip_local: string
+              _proximo_ciclo_segundos: number
+              _status: string
+              _temperatura_planta?: number
+              _valvulas: Json
+            }
+            Returns: Json
+          }
     }
     Enums: {
       [_ in never]: never

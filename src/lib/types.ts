@@ -35,6 +35,7 @@ export interface Bancada {
   config_version: number;
   firmware_version: string | null;
   ip_local: string | null;
+  temperatura_planta: number | null;
   created_at: string;
 }
 
