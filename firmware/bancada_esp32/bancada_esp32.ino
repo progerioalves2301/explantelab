@@ -364,6 +364,9 @@ void enviarTelemetria() {
   }
 }
 
+// -------- Loop timers (declarados aqui p/ tratarComando poder forçar telemetria) --------
+unsigned long lastTelem = 0, lastCmd = 0, lastTick = 0, lastTemp = 0;
+
 // -------- Comandos --------
 void tratarComando(JsonObject cmd) {
   const char* tipo = cmd["tipo"] | "";
