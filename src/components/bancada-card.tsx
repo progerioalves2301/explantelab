@@ -110,6 +110,19 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
               </div>
             </div>
           </div>
+          <div className="col-span-2 flex items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-2 text-muted-foreground">
+            <Sprout className="h-4 w-4 text-emerald-500" />
+            <div className="flex-1">
+              <div className="text-[10px] uppercase tracking-wide">
+                Temperatura planta
+              </div>
+              <div className="font-mono text-sm text-foreground">
+                {bancada.temperatura_planta != null
+                  ? `${bancada.temperatura_planta.toFixed(1)} °C`
+                  : "—"}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="flex gap-2">
