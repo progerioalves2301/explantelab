@@ -28,7 +28,9 @@ interface Props {
 
 export function BancadaCard({ bancada, onConfigure }: Props) {
   const [deleting, setDeleting] = useState(false);
+  const [testing, setTesting] = useState(false);
   const excluir = useServerFn(excluirBancada);
+  const comandar = useServerFn(enviarComando);
 
   const mode =
     bancada.status === "Injetando"
