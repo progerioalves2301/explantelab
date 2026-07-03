@@ -138,7 +138,7 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    className="h-8 w-8 shrink-0 text-red-600 hover:bg-red-600/10 hover:text-red-600"
                     onClick={() => removeHorario(idx)}
                     disabled={horarios.length <= 1}
                     aria-label="Remover horário"
