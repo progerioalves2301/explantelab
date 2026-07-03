@@ -83,11 +83,21 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
           ? "alivio"
           : "idle";
 
-  const valvulas = bancada.valvulas;
+  // ----- Estado otimista das válvulas -----
+  // Assim que o usuário clica em Bio Reator Planta/Meio, a UI já reflete o
+  // preset sem esperar o round-trip ESP32 → banco → realtime (2–7 s).
+  // Quando a telemetria real chega (ultima_sync muda), o valor otimista é descartado.
+  const [optimistic, setOptimistic] = useState<ValvulasEstado | null>(null);
+  useEffect(() => {
+    setOptimistic(null);
+  }, [bancada.ultima_sync]);
+
+  const valvulas = optimistic ?? bancada.valvulas;
   const isPlanta = eq(valvulas, PRESET_PLANTA);
   const isMeio = eq(valvulas, PRESET_MEIO);
 
   const sendValves = async (v: ValvulasEstado, label: string) => {
+    setOptimistic(v); // feedback imediato
     setSending(true);
     try {
       await comandar({
@@ -99,14 +109,19 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
       });
       toast.success(`${label} enviado`);
     } catch (e) {
+      setOptimistic(null); // reverte em caso de erro
       toast.error(e instanceof Error ? e.message : "Falha ao enviar comando");
     } finally {
       setSending(false);
     }
   };
 
+  const PRESET_OFF: ValvulasEstado = {
+    v1: false, v2: false, v3: false, v4: false, v5: false,
+  };
 
   const sendPause = async (label: string) => {
+    setOptimistic(PRESET_OFF); // reflete repouso na hora
     setSending(true);
     try {
       await comandar({
@@ -114,6 +129,7 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
       });
       toast.success(label);
     } catch (e) {
+      setOptimistic(null);
       toast.error(e instanceof Error ? e.message : "Falha ao pausar");
     } finally {
       setSending(false);
