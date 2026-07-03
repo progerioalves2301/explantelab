@@ -439,6 +439,10 @@ void setup() {
   }
   pinMode(PIN_RESET_BTN, INPUT_PULLUP);
 
+  dsSensor.begin();
+  dsSensor.setWaitForConversion(false);
+  dsSensor.requestTemperatures();
+
   carregarPrefs();
 
   if (digitalRead(PIN_RESET_BTN) == LOW) {
