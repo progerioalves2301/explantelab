@@ -284,8 +284,8 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
                 disabled={sending}
                 className={
                   isPlanta
-                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                    : "bg-background text-foreground hover:bg-muted"
+                    ? "bg-emerald-700 text-white hover:bg-emerald-800"
+                    : "bg-emerald-200 text-emerald-900 hover:bg-emerald-300 border-emerald-300"
                 }
                 variant={isPlanta ? "default" : "outline"}
               >
@@ -298,8 +298,8 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
                 disabled={sending}
                 className={
                   isMeio
-                    ? "bg-sky-600 text-white hover:bg-sky-700"
-                    : "bg-background text-foreground hover:bg-muted"
+                    ? "bg-sky-700 text-white hover:bg-sky-800"
+                    : "bg-sky-200 text-sky-900 hover:bg-sky-300 border-sky-300"
                 }
                 variant={isMeio ? "default" : "outline"}
               >
