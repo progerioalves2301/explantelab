@@ -14,7 +14,109 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bancada_secrets: {
+        Row: {
+          bancada_id: string
+          created_at: string
+          device_token: string
+        }
+        Insert: {
+          bancada_id: string
+          created_at?: string
+          device_token: string
+        }
+        Update: {
+          bancada_id?: string
+          created_at?: string
+          device_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bancada_secrets_bancada_id_fkey"
+            columns: ["bancada_id"]
+            isOneToOne: true
+            referencedRelation: "bancadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bancadas: {
+        Row: {
+          config: Json
+          config_version: number
+          created_at: string
+          firmware_version: string | null
+          id: string
+          ip_local: string | null
+          nome: string
+          proximo_ciclo_segundos: number
+          status: string
+          ultima_sync: string | null
+          valvulas: Json
+        }
+        Insert: {
+          config?: Json
+          config_version?: number
+          created_at?: string
+          firmware_version?: string | null
+          id?: string
+          ip_local?: string | null
+          nome: string
+          proximo_ciclo_segundos?: number
+          status?: string
+          ultima_sync?: string | null
+          valvulas?: Json
+        }
+        Update: {
+          config?: Json
+          config_version?: number
+          created_at?: string
+          firmware_version?: string | null
+          id?: string
+          ip_local?: string | null
+          nome?: string
+          proximo_ciclo_segundos?: number
+          status?: string
+          ultima_sync?: string | null
+          valvulas?: Json
+        }
+        Relationships: []
+      }
+      comandos: {
+        Row: {
+          bancada_id: string
+          created_at: string
+          entregue_em: string | null
+          id: string
+          payload: Json
+          tipo: string
+        }
+        Insert: {
+          bancada_id: string
+          created_at?: string
+          entregue_em?: string | null
+          id?: string
+          payload?: Json
+          tipo: string
+        }
+        Update: {
+          bancada_id?: string
+          created_at?: string
+          entregue_em?: string | null
+          id?: string
+          payload?: Json
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comandos_bancada_id_fkey"
+            columns: ["bancada_id"]
+            isOneToOne: false
+            referencedRelation: "bancadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
