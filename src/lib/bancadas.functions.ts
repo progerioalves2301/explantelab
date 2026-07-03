@@ -126,25 +126,22 @@ export const salvarConfig = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
     );
-    const { data: updated, error } = await supabaseAdmin
+    const { data: current } = await supabaseAdmin
+      .from("bancadas")
+      .select("config_version")
+      .eq("id", data.bancada_id)
+      .single();
+    const nextVersion = (current?.config_version ?? 0) + 1;
+
+    const { error } = await supabaseAdmin
       .from("bancadas")
       .update({
-        config: data.config,
-        config_version: undefined as unknown as number, // será incrementado abaixo
+        config: data.config as never,
+        config_version: nextVersion,
       })
-      .eq("id", data.bancada_id)
-      .select("config_version")
-      .single();
-    if (error || !updated) throw new Error(error?.message ?? "Falha");
-
-    // Incrementa versão em um segundo update (mais simples que RPC).
-    const { error: bumpErr } = await supabaseAdmin
-      .from("bancadas")
-      .update({ config_version: (updated.config_version ?? 0) + 1 })
       .eq("id", data.bancada_id);
-    if (bumpErr) throw new Error(bumpErr.message);
+    if (error) throw new Error(error.message);
 
-    // Comando para o ESP32 puxar a nova config.
     await supabaseAdmin.from("comandos").insert({
       bancada_id: data.bancada_id,
       tipo: "UPDATE_CONFIG",
