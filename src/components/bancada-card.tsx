@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   Clock,
   FlaskConical,
   Leaf,
