@@ -386,17 +386,44 @@ void tratarComando(JsonObject cmd) {
     cfg.versao++;
     salvarConfig();
   } else if (strcmp(tipo, "SET_VALVE") == 0) {
-    JsonObject p = cmd["payload"].as<JsonObject>();
+    // Log bruto do payload para depuração no Monitor Serial
+    String rawPayload;
+    serializeJson(cmd["payload"], rawPayload);
+    Serial.printf("[SET_VALVE] payload bruto: %s\n", rawPayload.c_str());
+
+    JsonVariantConst pv = cmd["payload"];
+    JsonObjectConst p;
+    // Se o payload chegou como string JSON, tenta parsear de novo
+    JsonDocument tmpDoc;
+    if (pv.is<const char*>()) {
+      const char* s = pv.as<const char*>();
+      Serial.printf("[SET_VALVE] payload chegou como string, reparsing: %s\n", s);
+      if (deserializeJson(tmpDoc, s) == DeserializationError::Ok) {
+        p = tmpDoc.as<JsonObjectConst>();
+      }
+    } else {
+      p = pv.as<JsonObjectConst>();
+    }
+
     bool v1 = p["v1"] | false;
     bool v2 = p["v2"] | false;
     bool v3 = p["v3"] | false;
     bool v4 = p["v4"] | false;
     bool v5 = p["v5"] | false;
+
     pausado_manual = true;      // interrompe ciclo automático
     fase = MANUAL;
     fase_inicio_ms = millis();
     escreverValvulas(v1, v2, v3, v4, v5);
-    Serial.printf("[MANUAL] v1=%d v2=%d v3=%d v4=%d v5=%d\n", v1,v2,v3,v4,v5);
+
+    Serial.printf("[SET_VALVE] aplicado -> V1=%d V2=%d V3=%d V4=%d V5=%d\n",
+                  v1, v2, v3, v4, v5);
+    Serial.printf("[SET_VALVE] GPIOs -> PIN_V1(%d)=%d PIN_V2(%d)=%d PIN_V3(%d)=%d PIN_V4(%d)=%d PIN_V5(%d)=%d\n",
+                  PIN_V1, digitalRead(PIN_V1),
+                  PIN_V2, digitalRead(PIN_V2),
+                  PIN_V3, digitalRead(PIN_V3),
+                  PIN_V4, digitalRead(PIN_V4),
+                  PIN_V5, digitalRead(PIN_V5));
   }
 }
 
