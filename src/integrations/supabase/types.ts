@@ -57,7 +57,9 @@ export type Database = {
           firmware_version: string | null
           id: string
           ip_local: string | null
+          laboratorio_id: string | null
           nome: string
+          posicao: number | null
           proximo_ciclo_segundos: number
           status: string
           temperatura_planta: number | null
@@ -71,7 +73,9 @@ export type Database = {
           firmware_version?: string | null
           id?: string
           ip_local?: string | null
+          laboratorio_id?: string | null
           nome: string
+          posicao?: number | null
           proximo_ciclo_segundos?: number
           status?: string
           temperatura_planta?: number | null
@@ -85,14 +89,24 @@ export type Database = {
           firmware_version?: string | null
           id?: string
           ip_local?: string | null
+          laboratorio_id?: string | null
           nome?: string
+          posicao?: number | null
           proximo_ciclo_segundos?: number
           status?: string
           temperatura_planta?: number | null
           ultima_sync?: string | null
           valvulas?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bancadas_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comandos: {
         Row: {
@@ -128,6 +142,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      laboratorios: {
+        Row: {
+          cor: string
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          cor?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: []
       }
     }
     Views: {
