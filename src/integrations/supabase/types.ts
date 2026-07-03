@@ -131,7 +131,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      bench_pair: { Args: { _pairing_code: string }; Returns: Json }
+      bench_pull_commands: {
+        Args: { _bancada_id: string; _device_token: string }
+        Returns: Json
+      }
+      bench_push_telemetry: {
+        Args: {
+          _bancada_id: string
+          _device_token: string
+          _firmware_version: string
+          _ip_local: string
+          _proximo_ciclo_segundos: number
+          _status: string
+          _valvulas: Json
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
