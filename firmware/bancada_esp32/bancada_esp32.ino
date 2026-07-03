@@ -115,10 +115,12 @@ void aplicarFase(FaseCiclo f) {
 
 // -------- Persistência --------
 void carregarCreds() {
+  // Credenciais são fixas no firmware (BANCADA_ID / DEVICE_TOKEN / SERVER_URL).
+  creds.bancada_id   = BANCADA_ID;
+  creds.device_token = DEVICE_TOKEN;
+  creds.server_url   = SERVER_URL;
+
   prefs.begin("genelab", true);
-  creds.bancada_id   = prefs.getString("bid",  "");
-  creds.device_token = prefs.getString("tok",  "");
-  creds.server_url   = prefs.getString("url",  "");
   cfg.tempo_injecao_segundos = prefs.getUInt("t_inj",  150);
   cfg.tempo_pausa_segundos   = prefs.getUInt("t_pau",  60);
   cfg.tempo_retorno_segundos = prefs.getUInt("t_ret",  150);
@@ -128,13 +130,6 @@ void carregarCreds() {
   prefs.end();
 }
 
-void salvarCreds() {
-  prefs.begin("genelab", false);
-  prefs.putString("bid",  creds.bancada_id);
-  prefs.putString("tok",  creds.device_token);
-  prefs.putString("url",  creds.server_url);
-  prefs.end();
-}
 
 void salvarConfig() {
   prefs.begin("genelab", false);
