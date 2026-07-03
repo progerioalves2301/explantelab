@@ -19,16 +19,25 @@ export type Database = {
           bancada_id: string
           created_at: string
           device_token: string
+          paired_at: string | null
+          pairing_code: string | null
+          pairing_expires_at: string | null
         }
         Insert: {
           bancada_id: string
           created_at?: string
           device_token: string
+          paired_at?: string | null
+          pairing_code?: string | null
+          pairing_expires_at?: string | null
         }
         Update: {
           bancada_id?: string
           created_at?: string
           device_token?: string
+          paired_at?: string | null
+          pairing_code?: string | null
+          pairing_expires_at?: string | null
         }
         Relationships: [
           {
