@@ -27,6 +27,9 @@
 #include <WiFiManager.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
 
 // -------- Config Supabase (fixa no binário) --------
 static const char* SUPABASE_URL = "https://ftfboqlapblxndizyaxy.supabase.co";
@@ -44,6 +47,12 @@ static const int PIN_V4 = 32;
 static const int PIN_V5 = 33;
 static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
+static const int PIN_DS18B20 = 4;
+
+// -------- Sensor DS18B20 (temperatura da planta) --------
+OneWire oneWire(PIN_DS18B20);
+DallasTemperature dsSensor(&oneWire);
+float g_temperatura_planta = NAN;
 
 // -------- Estado --------
 enum FaseCiclo { REPOUSO, INJETANDO, PAUSADO, RETORNANDO, ALIVIO, OFFLINE };
