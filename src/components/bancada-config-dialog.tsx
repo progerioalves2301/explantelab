@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Clock, Plus, Save, Trash2, X } from "lucide-react";
+import { AlertTriangle, Clock, Plus, Save, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,6 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import {
   enviarComando,
-  excluirBancada,
   salvarConfig,
 } from "@/lib/bancadas.functions";
 import type { Bancada, Configuracoes } from "@/lib/types";
@@ -31,7 +30,6 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
   const [config, setConfig] = useState<Configuracoes>(DEFAULT_CONFIG);
   const salvar = useServerFn(salvarConfig);
   const cmd = useServerFn(enviarComando);
-  const del = useServerFn(excluirBancada);
 
   useEffect(() => {
     if (bancada) setConfig({ ...DEFAULT_CONFIG, ...bancada.config });
@@ -84,17 +82,6 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(`Excluir ${bancada.nome}? Isso remove o pareamento do ESP32.`))
-      return;
-    try {
-      await del({ data: { id: bancada.id } });
-      toast.success("Bancada removida");
-      onOpenChange(false);
-    } catch (e) {
-      toast.error("Falha ao remover", { description: String(e) });
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -191,9 +178,6 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
             <Button variant="destructive" size="sm" onClick={handleForceCycle}>
               <AlertTriangle className="mr-1.5 h-4 w-4" />
               Forçar ciclo
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4" />
             </Button>
           </div>
           <Button onClick={handleSave}>
