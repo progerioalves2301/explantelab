@@ -6,6 +6,7 @@ export type BancadaStatus =
   | "Pausado"
   | "Retornando"
   | "Alivio"
+  | "Manual"
   | "Offline";
 
 export interface ValvulasEstado {
@@ -40,7 +41,12 @@ export interface Bancada {
   created_at: string;
 }
 
-export type ComandoTipo = "FORCE_CYCLE" | "UPDATE_CONFIG" | "PAUSE" | "RESUME";
+export type ComandoTipo =
+  | "FORCE_CYCLE"
+  | "UPDATE_CONFIG"
+  | "PAUSE"
+  | "RESUME"
+  | "SET_VALVE";
 
 export interface Comando {
   id: string;
