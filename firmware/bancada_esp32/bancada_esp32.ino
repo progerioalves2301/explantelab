@@ -483,12 +483,20 @@ void setup() {
   aplicarFase(REPOUSO);
 }
 
-unsigned long lastTelem = 0, lastCmd = 0, lastTick = 0;
+unsigned long lastTelem = 0, lastCmd = 0, lastTick = 0, lastTemp = 0;
+
+void lerTemperatura() {
+  float t = dsSensor.getTempCByIndex(0);
+  if (t > -50.0 && t < 125.0) g_temperatura_planta = t;
+  else g_temperatura_planta = NAN;
+  dsSensor.requestTemperatures(); // dispara próxima conversão (async)
+}
 
 void loop() {
   unsigned long now = millis();
 
   if (now - lastTick > 1000)  { lastTick  = now; tickCiclo(); }
+  if (now - lastTemp > 2000)  { lastTemp  = now; lerTemperatura(); }
   if (now - lastCmd  > 2000)  { lastCmd   = now; puxarComandos(); }
   if (now - lastTelem > 5000) { lastTelem = now; enviarTelemetria(); }
 
