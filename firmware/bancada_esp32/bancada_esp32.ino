@@ -153,20 +153,13 @@ void apagarTudo() {
   prefs.end();
 }
 
-// -------- Portal AP (provisioning) --------
-void abrirPortalConfig(bool forcar) {
+// -------- Portal AP (apenas Wi-Fi) --------
+void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
   wm.setConfigPortalTimeout(300); // 5 min
 
-  WiFiManagerParameter p_bid ("bid",  "Bancada ID (UUID)",   creds.bancada_id.c_str(),   40);
-  WiFiManagerParameter p_tok ("tok",  "Device Token",        creds.device_token.c_str(), 96);
-  WiFiManagerParameter p_url ("url",  "Server URL (https)",  creds.server_url.c_str(),   96);
-  wm.addParameter(&p_bid);
-  wm.addParameter(&p_tok);
-  wm.addParameter(&p_url);
-
   const char* apName = "BancadaSetup";
-  const char* apPass = "12345657890";
+  const char* apPass = "1234567890";
 
   bool ok;
   if (forcar) {
@@ -181,12 +174,7 @@ void abrirPortalConfig(bool forcar) {
     delay(3000);
     ESP.restart();
   }
-
-  creds.bancada_id   = p_bid.getValue();
-  creds.device_token = p_tok.getValue();
-  creds.server_url   = p_url.getValue();
-  salvarCreds();
-  Serial.println("[WM] credenciais salvas");
+  Serial.println("[WM] Wi-Fi conectado");
 }
 
 // -------- HTTPS --------
