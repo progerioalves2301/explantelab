@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, Check, Copy, Wifi } from "lucide-react";
+import { ArrowLeft, Check, Copy, KeyRound } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_shell/bancadas/nova")({
       {
         name: "description",
         content:
-          "Cadastro e provisionamento de uma nova bancada ESP32 via portal AP.",
+          "Cadastro de uma nova bancada ESP32 — pareamento por código de 6 dígitos.",
       },
     ],
   }),
@@ -36,8 +36,7 @@ function NovaBancadaPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     bancada: Bancada;
-    device_token: string;
-    server_url: string;
+    pairing_code: string;
   } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,7 +45,7 @@ function NovaBancadaPage() {
     try {
       const r = await criar({ data: { nome } });
       setResult(r);
-      toast.success("Bancada criada. Copie o token agora — ele só aparece uma vez.");
+      toast.success("Bancada criada. Use o código de 6 dígitos no ESP32.");
     } catch (err) {
       toast.error("Falha ao criar", { description: String(err) });
     } finally {
@@ -65,7 +64,7 @@ function NovaBancadaPage() {
         </Button>
         <h1 className="mt-2 text-2xl font-bold tracking-tight">Nova bancada</h1>
         <p className="text-sm text-muted-foreground">
-          Cadastre a bancada aqui e depois configure o ESP32 pelo portal Wi-Fi.
+          Cadastre a bancada e digite o código de 6 dígitos no portal Wi-Fi do ESP32.
         </p>
       </div>
 
@@ -90,7 +89,7 @@ function NovaBancadaPage() {
                 />
               </div>
               <Button type="submit" disabled={loading}>
-                {loading ? "Criando…" : "Criar bancada e gerar token"}
+                {loading ? "Criando…" : "Criar bancada e gerar código"}
               </Button>
             </form>
           </CardContent>
@@ -105,16 +104,13 @@ function NovaBancadaPage() {
 function Provisioning({
   result,
 }: {
-  result: { bancada: Bancada; device_token: string; server_url: string };
+  result: { bancada: Bancada; pairing_code: string };
 }) {
-  const shortId = result.bancada.id.slice(0, 8).toUpperCase();
-  const apSSID = `BancadaSetup-${shortId}`;
-
-  const [copied, setCopied] = useState<string | null>(null);
-  const copy = async (label: string, text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(label);
-    setTimeout(() => setCopied(null), 1500);
+  const [copied, setCopied] = useState(false);
+  const copyCode = async () => {
+    await navigator.clipboard.writeText(result.pairing_code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   return (
@@ -122,46 +118,57 @@ function Provisioning({
       <Card className="card-elevated border-primary/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Wifi className="h-5 w-5 text-primary" />
-            Bancada criada
+            <KeyRound className="h-5 w-5 text-primary" />
+            Código de pareamento
           </CardTitle>
           <CardDescription>
-            Copie estas credenciais e cole no portal AP do ESP32. O token só é
-            exibido nesta tela.
+            Válido por 24h. Use uma única vez — depois de pareado, o ESP32
+            guarda o token e o código deixa de funcionar.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3">
-          <CredField label="Bancada ID" value={result.bancada.id} onCopy={copy} copied={copied} />
-          <CredField label="Device Token" value={result.device_token} onCopy={copy} copied={copied} secret />
-          <CredField label="Server URL" value={result.server_url} onCopy={copy} copied={copied} />
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between rounded-xl border bg-muted/30 p-6">
+            <span className="font-mono text-4xl font-bold tracking-[0.4em]">
+              {result.pairing_code}
+            </span>
+            <Button variant="outline" size="icon" onClick={copyCode} aria-label="Copiar código">
+              {copied ? <Check className="h-4 w-4 text-leaf" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+
+          <div>
+            <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Bancada
+            </Label>
+            <p className="mt-1 text-sm">{result.bancada.nome}</p>
+          </div>
         </CardContent>
       </Card>
 
       <Card className="card-elevated">
         <CardHeader>
-          <CardTitle>Como provisionar o ESP32</CardTitle>
+          <CardTitle>Como parear o ESP32</CardTitle>
         </CardHeader>
         <CardContent>
           <ol className="ml-4 list-decimal space-y-2 text-sm text-muted-foreground">
             <li>
-              Ligue a bancada. Se for a primeira vez (ou você segurou o botão de
-              reset por 5 s), o ESP32 sobe o Wi-Fi{" "}
-              <code className="rounded bg-muted px-1 font-mono">{apSSID}</code>{" "}
-              (senha padrão <code className="rounded bg-muted px-1 font-mono">genelab123</code>).
+              Ligue a bancada. Ela sobe a rede Wi-Fi{" "}
+              <code className="rounded bg-muted px-1 font-mono">BancadaSetup</code>{" "}
+              (senha <code className="rounded bg-muted px-1 font-mono">1234567890</code>).
             </li>
             <li>
-              No celular/notebook, conecte-se a essa rede. O portal captivo abre
-              sozinho — se não abrir, acesse{" "}
+              Conecte pelo celular/notebook. O portal captivo abre sozinho — se
+              não abrir, acesse{" "}
               <code className="rounded bg-muted px-1 font-mono">http://192.168.4.1</code>.
             </li>
             <li>Selecione o Wi-Fi do laboratório e informe a senha.</li>
             <li>
-              Nos campos extras do portal, cole o <strong>Bancada ID</strong>,{" "}
-              <strong>Device Token</strong> e <strong>Server URL</strong> acima.
+              No campo <strong>Código de pareamento</strong>, digite os 6 dígitos
+              acima.
             </li>
             <li>
-              Salve. O ESP32 reinicia, conecta na sua rede e aparece como{" "}
-              <strong>“{result.bancada.nome}”</strong> no dashboard em segundos.
+              Salve. O ESP32 conecta, troca o código pelas credenciais e aparece
+              como <strong>“{result.bancada.nome}”</strong> no dashboard em segundos.
             </li>
           </ol>
         </CardContent>
@@ -170,43 +177,6 @@ function Provisioning({
       <div className="flex gap-2">
         <Button asChild variant="outline">
           <Link to="/dashboard">Ir para o dashboard</Link>
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function CredField({
-  label, value, onCopy, copied, secret,
-}: {
-  label: string; value: string;
-  onCopy: (l: string, v: string) => void;
-  copied: string | null; secret?: boolean;
-}) {
-  return (
-    <div className="grid gap-1">
-      <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-        {label}
-      </Label>
-      <div className="flex items-center gap-2">
-        <Input
-          readOnly
-          value={value}
-          type={secret ? "text" : "text"}
-          className="font-mono text-xs"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={() => onCopy(label, value)}
-          aria-label={`Copiar ${label}`}
-        >
-          {copied === label ? (
-            <Check className="h-4 w-4 text-leaf" />
-          ) : (
-            <Copy className="h-4 w-4" />
-          )}
         </Button>
       </div>
     </div>

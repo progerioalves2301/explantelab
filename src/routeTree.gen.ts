@@ -17,6 +17,7 @@ import { Route as ShellDashboardRouteImport } from './routes/_shell.dashboard'
 import { Route as ShellConfiguracoesRouteImport } from './routes/_shell.configuracoes'
 import { Route as ShellBancadasNovaRouteImport } from './routes/_shell.bancadas.nova'
 import { Route as ApiPublicBenchTelemetryRouteImport } from './routes/api/public/bench.telemetry'
+import { Route as ApiPublicBenchPairRouteImport } from './routes/api/public/bench.pair'
 import { Route as ApiPublicBenchCommandsRouteImport } from './routes/api/public/bench.commands'
 
 const LoginRoute = LoginRouteImport.update({
@@ -58,6 +59,11 @@ const ApiPublicBenchTelemetryRoute = ApiPublicBenchTelemetryRouteImport.update({
   path: '/api/public/bench/telemetry',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBenchPairRoute = ApiPublicBenchPairRouteImport.update({
+  id: '/api/public/bench/pair',
+  path: '/api/public/bench/pair',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBenchCommandsRoute = ApiPublicBenchCommandsRouteImport.update({
   id: '/api/public/bench/commands',
   path: '/api/public/bench/commands',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/usuarios': typeof ShellUsuariosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
+  '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
 }
 export interface FileRoutesByTo {
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/usuarios': typeof ShellUsuariosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
+  '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
 }
 export interface FileRoutesById {
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/_shell/usuarios': typeof ShellUsuariosRoute
   '/_shell/bancadas/nova': typeof ShellBancadasNovaRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
+  '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
 }
 export interface FileRouteTypes {
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/bancadas/nova'
     | '/api/public/bench/commands'
+    | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/bancadas/nova'
     | '/api/public/bench/commands'
+    | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
   id:
     | '__root__'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/_shell/usuarios'
     | '/_shell/bancadas/nova'
     | '/api/public/bench/commands'
+    | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
   fileRoutesById: FileRoutesById
 }
@@ -135,6 +147,7 @@ export interface RootRouteChildren {
   ShellRoute: typeof ShellRouteWithChildren
   LoginRoute: typeof LoginRoute
   ApiPublicBenchCommandsRoute: typeof ApiPublicBenchCommandsRoute
+  ApiPublicBenchPairRoute: typeof ApiPublicBenchPairRoute
   ApiPublicBenchTelemetryRoute: typeof ApiPublicBenchTelemetryRoute
 }
 
@@ -196,6 +209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBenchTelemetryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bench/pair': {
+      id: '/api/public/bench/pair'
+      path: '/api/public/bench/pair'
+      fullPath: '/api/public/bench/pair'
+      preLoaderRoute: typeof ApiPublicBenchPairRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/bench/commands': {
       id: '/api/public/bench/commands'
       path: '/api/public/bench/commands'
@@ -227,6 +247,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShellRoute: ShellRouteWithChildren,
   LoginRoute: LoginRoute,
   ApiPublicBenchCommandsRoute: ApiPublicBenchCommandsRoute,
+  ApiPublicBenchPairRoute: ApiPublicBenchPairRoute,
   ApiPublicBenchTelemetryRoute: ApiPublicBenchTelemetryRoute,
 }
 export const routeTree = rootRouteImport
