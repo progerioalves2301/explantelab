@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShellUsuariosRouteImport } from './routes/_shell.usuarios'
 import { Route as ShellDashboardRouteImport } from './routes/_shell.dashboard'
 import { Route as ShellConfiguracoesRouteImport } from './routes/_shell.configuracoes'
+import { Route as ShellBancadasNovaRouteImport } from './routes/_shell.bancadas.nova'
 import { Route as ApiPublicBenchTelemetryRouteImport } from './routes/api/public/bench.telemetry'
 import { Route as ApiPublicBenchCommandsRouteImport } from './routes/api/public/bench.commands'
 
@@ -47,6 +48,11 @@ const ShellConfiguracoesRoute = ShellConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellBancadasNovaRoute = ShellBancadasNovaRouteImport.update({
+  id: '/bancadas/nova',
+  path: '/bancadas/nova',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ApiPublicBenchTelemetryRoute = ApiPublicBenchTelemetryRouteImport.update({
   id: '/api/public/bench/telemetry',
   path: '/api/public/bench/telemetry',
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/usuarios': typeof ShellUsuariosRoute
+  '/bancadas/nova': typeof ShellBancadasNovaRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
 }
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/usuarios': typeof ShellUsuariosRoute
+  '/bancadas/nova': typeof ShellBancadasNovaRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
 }
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/_shell/configuracoes': typeof ShellConfiguracoesRoute
   '/_shell/dashboard': typeof ShellDashboardRoute
   '/_shell/usuarios': typeof ShellUsuariosRoute
+  '/_shell/bancadas/nova': typeof ShellBancadasNovaRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
 }
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/dashboard'
     | '/usuarios'
+    | '/bancadas/nova'
     | '/api/public/bench/commands'
     | '/api/public/bench/telemetry'
   fileRoutesByTo: FileRoutesByTo
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/dashboard'
     | '/usuarios'
+    | '/bancadas/nova'
     | '/api/public/bench/commands'
     | '/api/public/bench/telemetry'
   id:
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/_shell/configuracoes'
     | '/_shell/dashboard'
     | '/_shell/usuarios'
+    | '/_shell/bancadas/nova'
     | '/api/public/bench/commands'
     | '/api/public/bench/telemetry'
   fileRoutesById: FileRoutesById
@@ -170,6 +182,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellConfiguracoesRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/bancadas/nova': {
+      id: '/_shell/bancadas/nova'
+      path: '/bancadas/nova'
+      fullPath: '/bancadas/nova'
+      preLoaderRoute: typeof ShellBancadasNovaRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/api/public/bench/telemetry': {
       id: '/api/public/bench/telemetry'
       path: '/api/public/bench/telemetry'
@@ -191,12 +210,14 @@ interface ShellRouteChildren {
   ShellConfiguracoesRoute: typeof ShellConfiguracoesRoute
   ShellDashboardRoute: typeof ShellDashboardRoute
   ShellUsuariosRoute: typeof ShellUsuariosRoute
+  ShellBancadasNovaRoute: typeof ShellBancadasNovaRoute
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
   ShellConfiguracoesRoute: ShellConfiguracoesRoute,
   ShellDashboardRoute: ShellDashboardRoute,
   ShellUsuariosRoute: ShellUsuariosRoute,
+  ShellBancadasNovaRoute: ShellBancadasNovaRoute,
 }
 
 const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)
