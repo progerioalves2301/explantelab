@@ -229,7 +229,7 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
 
             <div
               className={cn(
-                "flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-xs font-medium transition-colors",
+                "flex items-center gap-3 rounded-md border px-3 py-2 text-xs font-medium transition-colors",
                 isPlanta &&
                   "border-emerald-500/60 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
                 isMeio &&
@@ -239,30 +239,48 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
                   "border-dashed text-muted-foreground",
               )}
               aria-live="polite"
+              aria-label={
+                isPlanta
+                  ? "Fluxo do Meio para a Planta"
+                  : isMeio
+                    ? "Fluxo da Planta para o Meio"
+                    : "Sem fluxo ativo"
+              }
             >
-              {isMeio ? (
-                <>
-                  <Leaf className="h-3.5 w-3.5" />
-                  <span>Planta</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                  <FlaskConical className="h-3.5 w-3.5" />
-                  <span>Meio</span>
-                </>
-              ) : (
-                <>
-                  <FlaskConical className="h-3.5 w-3.5" />
-                  <span>Meio</span>
-                  <ArrowRight
-                    className={cn(
-                      "h-3.5 w-3.5",
-                      !isPlanta && "opacity-40",
-                    )}
-                  />
-                  <Leaf className="h-3.5 w-3.5" />
-                  <span>Planta</span>
-                </>
-              )}
+              <span className="flex shrink-0 items-center gap-1.5">
+                <FlaskConical className="h-3.5 w-3.5" />
+                Meio
+              </span>
+
+              <div className="flow-track">
+                {(isPlanta || isMeio) && (
+                  <>
+                    <span
+                      className={cn("flow-drop", isMeio && "flow-drop-reverse")}
+                      style={{ animationDelay: "0s" }}
+                    />
+                    <span
+                      className={cn("flow-drop", isMeio && "flow-drop-reverse")}
+                      style={{ animationDelay: "0.4s" }}
+                    />
+                    <span
+                      className={cn("flow-drop", isMeio && "flow-drop-reverse")}
+                      style={{ animationDelay: "0.8s" }}
+                    />
+                    <span
+                      className={cn("flow-drop", isMeio && "flow-drop-reverse")}
+                      style={{ animationDelay: "1.2s" }}
+                    />
+                  </>
+                )}
+              </div>
+
+              <span className="flex shrink-0 items-center gap-1.5">
+                <Leaf className="h-3.5 w-3.5" />
+                Planta
+              </span>
             </div>
+
 
             <div className="grid grid-cols-2 gap-2">
               <Button
