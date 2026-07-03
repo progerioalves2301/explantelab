@@ -330,7 +330,7 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
             <Button
               size="sm"
               onClick={() => setTab("status")}
-              variant="outline"
+              className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500"
               aria-label="Voltar para Status"
             >
               <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
