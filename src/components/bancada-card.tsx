@@ -345,9 +345,22 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
           {tab === "manual" ? (
             <Button
               size="sm"
-              onClick={() => setTab("status")}
+              onClick={async () => {
+                setTab("status");
+                try {
+                  await comandar({
+                    data: { bancada_id: bancada.id, tipo: "RESUME" },
+                  });
+                  setOptimistic(null);
+                  toast.success("Ciclo automático retomado");
+                } catch (e) {
+                  toast.error(
+                    e instanceof Error ? e.message : "Falha ao retomar ciclo",
+                  );
+                }
+              }}
               className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500"
-              aria-label="Voltar para Status"
+              aria-label="Sair do modo manual e retomar ciclo"
             >
               <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
               Sair
