@@ -37,6 +37,13 @@
 #include <ArduinoJson.h>
 #include <Preferences.h>
 
+// -------- Credenciais fixas da bancada --------
+// Estes valores vêm da tela "Nova bancada" do dashboard.
+// Cada ESP32 deve ser flasheado com os valores da SUA bancada.
+static const char* BANCADA_ID   = "e7a0b3e7-f36b-440a-9437-dc05268bf359";
+static const char* DEVICE_TOKEN = "S6a0B41jgZ9x7Q2eqEQ0sHwSsrnCPHQC8oYatgJdGJA";
+static const char* SERVER_URL   = "https://project--90989b19-e7c7-43b6-a4a1-5affc6bb05c8.lovable.app";
+
 // -------- Pinagem --------
 static const int PIN_V1 = 25;
 static const int PIN_V2 = 26;
@@ -108,10 +115,12 @@ void aplicarFase(FaseCiclo f) {
 
 // -------- Persistência --------
 void carregarCreds() {
+  // Credenciais são fixas no firmware (BANCADA_ID / DEVICE_TOKEN / SERVER_URL).
+  creds.bancada_id   = BANCADA_ID;
+  creds.device_token = DEVICE_TOKEN;
+  creds.server_url   = SERVER_URL;
+
   prefs.begin("genelab", true);
-  creds.bancada_id   = prefs.getString("bid",  "");
-  creds.device_token = prefs.getString("tok",  "");
-  creds.server_url   = prefs.getString("url",  "");
   cfg.tempo_injecao_segundos = prefs.getUInt("t_inj",  150);
   cfg.tempo_pausa_segundos   = prefs.getUInt("t_pau",  60);
   cfg.tempo_retorno_segundos = prefs.getUInt("t_ret",  150);
@@ -121,13 +130,6 @@ void carregarCreds() {
   prefs.end();
 }
 
-void salvarCreds() {
-  prefs.begin("genelab", false);
-  prefs.putString("bid",  creds.bancada_id);
-  prefs.putString("tok",  creds.device_token);
-  prefs.putString("url",  creds.server_url);
-  prefs.end();
-}
 
 void salvarConfig() {
   prefs.begin("genelab", false);
@@ -146,20 +148,13 @@ void apagarTudo() {
   prefs.end();
 }
 
-// -------- Portal AP (provisioning) --------
-void abrirPortalConfig(bool forcar) {
+// -------- Portal AP (apenas Wi-Fi) --------
+void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
   wm.setConfigPortalTimeout(300); // 5 min
 
-  WiFiManagerParameter p_bid ("bid",  "Bancada ID (UUID)",   creds.bancada_id.c_str(),   40);
-  WiFiManagerParameter p_tok ("tok",  "Device Token",        creds.device_token.c_str(), 96);
-  WiFiManagerParameter p_url ("url",  "Server URL (https)",  creds.server_url.c_str(),   96);
-  wm.addParameter(&p_bid);
-  wm.addParameter(&p_tok);
-  wm.addParameter(&p_url);
-
   const char* apName = "BancadaSetup";
-  const char* apPass = "12345657890";
+  const char* apPass = "1234567890";
 
   bool ok;
   if (forcar) {
@@ -174,12 +169,7 @@ void abrirPortalConfig(bool forcar) {
     delay(3000);
     ESP.restart();
   }
-
-  creds.bancada_id   = p_bid.getValue();
-  creds.device_token = p_tok.getValue();
-  creds.server_url   = p_url.getValue();
-  salvarCreds();
-  Serial.println("[WM] credenciais salvas");
+  Serial.println("[WM] Wi-Fi conectado");
 }
 
 // -------- HTTPS --------
@@ -327,10 +317,8 @@ void setup() {
     }
   }
 
-  bool precisaPortal = creds.bancada_id.isEmpty() ||
-                       creds.device_token.isEmpty() ||
-                       creds.server_url.isEmpty();
-  abrirPortalConfig(precisaPortal);
+  // Portal AP só para configurar Wi-Fi. Credenciais da bancada são fixas.
+  abrirPortalWifi(false);
 
   Serial.printf("Wi-Fi OK: %s\n", WiFi.localIP().toString().c_str());
   digitalWrite(PIN_LED, HIGH);
