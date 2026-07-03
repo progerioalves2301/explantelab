@@ -244,36 +244,6 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
           </TabsContent>
 
           <TabsContent value="manual" className="mt-3 space-y-4">
-            <div className="rounded-lg border bg-muted/40 p-3">
-              <div className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-                <Droplets className="h-3.5 w-3.5 text-primary" />
-                Válvulas
-              </div>
-              <div className="grid grid-cols-5 gap-2">
-                {VALVES.map((v) => {
-                  const on = valvulas[v.key];
-                  return (
-                    <label
-                      key={v.key}
-                      className="flex cursor-pointer flex-col items-center gap-1.5 rounded-md border bg-background/60 p-2 text-center transition hover:border-primary/50"
-                    >
-                      <span className="font-mono text-xs font-semibold">
-                        {v.label}
-                      </span>
-                      <span className="text-[9px] text-muted-foreground">
-                        GPIO {v.gpio}
-                      </span>
-                      <Switch
-                        checked={on}
-                        disabled={sending}
-                        onCheckedChange={(c) => toggleValve(v.key, c)}
-                        aria-label={`${v.label} ${on ? "aberta" : "fechada"}`}
-                      />
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
 
             <div
               className={cn(
