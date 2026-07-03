@@ -438,7 +438,7 @@ void tickCiclo() {
     case ALIVIO:
       if (decorrido >= cfg.tempo_alivio_segundos) aplicarFase(REPOUSO);
       break;
-    case MANUAL: break;   // v\u00e1lvulas fixas at\u00e9 novo comando
+    case MANUAL: break;   // valvulas fixas ate novo comando
     case OFFLINE: break;
   }
 }
