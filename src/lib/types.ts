@@ -26,6 +26,15 @@ export interface Configuracoes {
   horarios_disparo: string[];
 }
 
+export interface Laboratorio {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  cor: string;
+  ordem: number;
+  created_at: string;
+}
+
 export interface Bancada {
   id: string;
   nome: string;
