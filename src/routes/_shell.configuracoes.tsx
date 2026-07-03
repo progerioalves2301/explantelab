@@ -47,14 +47,10 @@ function ConfigPage() {
           <CardTitle>Ciclo pneumático padrão</CardTitle>
           <CardDescription>
             Repouso → Injeção (V1+V4) → Pausa → Retorno (V2+V3) → Alívio (V5).
+            Horários de disparo são definidos por bancada no dashboard.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="intervalo">Intervalo do Ciclo (horas)</Label>
-            <Input id="intervalo" type="number" min={1} value={config.intervalo_ciclo_horas}
-              onChange={(e) => update("intervalo_ciclo_horas", e.target.value)} />
-          </div>
           <div className="grid gap-3 sm:grid-cols-4">
             <Field id="inj" label="Injeção (s)" value={config.tempo_injecao_segundos}
               onChange={(v) => update("tempo_injecao_segundos", v)} />
