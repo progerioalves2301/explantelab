@@ -1,9 +1,24 @@
-import { Clock, Settings2, Timer } from "lucide-react";
+import { Clock, Settings2, Timer, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { StatusBadge } from "./status-badge";
 import { ValveIndicator } from "./valve-indicator";
 import { formatCountdown, timeAgo } from "@/lib/mock-data";
+import { excluirBancada } from "@/lib/bancadas.functions";
+import { toast } from "sonner";
 import type { Bancada } from "@/lib/types";
 
 interface Props {
@@ -12,6 +27,9 @@ interface Props {
 }
 
 export function BancadaCard({ bancada, onConfigure }: Props) {
+  const [deleting, setDeleting] = useState(false);
+  const excluir = useServerFn(excluirBancada);
+
   const mode =
     bancada.status === "Injetando"
       ? "injetando"
@@ -20,6 +38,18 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
         : bancada.status === "Alivio"
           ? "alivio"
           : "idle";
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await excluir({ data: { id: bancada.id } });
+      toast.success(`${bancada.nome} excluída`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao excluir");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <Card className="card-elevated overflow-hidden transition hover:border-primary/40">
@@ -65,16 +95,50 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={() => onConfigure(bancada)}
-        >
-          <Settings2 className="mr-1.5 h-3.5 w-3.5" />
-          Configurar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={() => onConfigure(bancada)}
+          >
+            <Settings2 className="mr-1.5 h-3.5 w-3.5" />
+            Configurar
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                disabled={deleting}
+                aria-label="Excluir bancada"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir {bancada.nome}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Isso remove a bancada, seu token e todos os comandos pendentes.
+                  O ESP32 deixará de conseguir enviar telemetria. Ação irreversível.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </CardContent>
     </Card>
   );
 }
+
