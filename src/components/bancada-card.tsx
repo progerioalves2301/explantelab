@@ -112,10 +112,6 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
     }
   };
 
-  const toggleValve = (k: keyof ValvulasEstado, on: boolean) => {
-    const next: ValvulasEstado = { ...valvulas, [k]: on };
-    sendValves(next, `${k.toUpperCase()} ${on ? "aberta" : "fechada"}`);
-  };
 
   const togglePlanta = () =>
     sendValves(
