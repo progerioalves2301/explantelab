@@ -54,13 +54,6 @@ const PRESET_MEIO: ValvulasEstado = {
   v4: false,
   v5: false,
 };
-const PRESET_OFF: ValvulasEstado = {
-  v1: false,
-  v2: false,
-  v3: false,
-  v4: false,
-  v5: false,
-};
 
 function eq(a: ValvulasEstado, b: ValvulasEstado) {
   return (
