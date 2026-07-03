@@ -37,6 +37,13 @@
 #include <ArduinoJson.h>
 #include <Preferences.h>
 
+// -------- Credenciais fixas da bancada --------
+// Estes valores vêm da tela "Nova bancada" do dashboard.
+// Cada ESP32 deve ser flasheado com os valores da SUA bancada.
+static const char* BANCADA_ID   = "e7a0b3e7-f36b-440a-9437-dc05268bf359";
+static const char* DEVICE_TOKEN = "S6a0B41jgZ9x7Q2eqEQ0sHwSsrnCPHQC8oYatgJdGJA";
+static const char* SERVER_URL   = "https://project--90989b19-e7c7-43b6-a4a1-5affc6bb05c8.lovable.app";
+
 // -------- Pinagem --------
 static const int PIN_V1 = 25;
 static const int PIN_V2 = 26;
