@@ -17,6 +17,7 @@ import {
 import { StatusBadge } from "./status-badge";
 import { ValveIndicator } from "./valve-indicator";
 import { formatCountdown, timeAgo } from "@/lib/mock-data";
+import { proximoDisparoSegundos } from "@/lib/schedule";
 import { enviarComando, excluirBancada } from "@/lib/bancadas.functions";
 import { toast } from "sonner";
 import type { Bancada } from "@/lib/types";
