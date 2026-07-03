@@ -2,30 +2,19 @@
  * GeneLab IoT — Bancada ESP32
  * =============================================================
  * Firmware Arduino para as bancadas físicas do laboratório.
- * - Portal AP (WiFiManager) para configurar Wi-Fi + credenciais no 1o boot.
+ * - SERVER_URL é fixo no firmware (mesmo binário para todas as bancadas).
+ * - No 1o boot, portal AP (WiFiManager) pede Wi-Fi + código de 6 dígitos.
+ * - Firmware chama /api/public/bench/pair para trocar o código pelas
+ *   credenciais reais (bancada_id + device_token) e salva em Preferences.
  * - Ciclo pneumático de 5 válvulas (V1..V5).
- * - Envia telemetria HTTPS a cada 5 s e faz polling de comandos a cada 2 s.
+ * - Telemetria HTTPS a cada 5s e polling de comandos a cada 2s.
  *
- * Bibliotecas necessárias (Library Manager):
- *   - WiFiManager        (tzapu)          >= 2.0.17
- *   - ArduinoJson        (Benoit Blanchon) >= 7.0
- *   - Preferences        (nativo ESP32)
+ * Bibliotecas:
+ *   - WiFiManager (tzapu) >= 2.0.17
+ *   - ArduinoJson (Benoit Blanchon) >= 7.0
+ *   - Preferences (nativo ESP32)
  *
  * Board: ESP32 Dev Module (esp32 by Espressif >= 3.0)
- *
- * Pinagem (ajuste conforme sua PCB):
- *   V1  → GPIO 25   (injeção lado A)
- *   V2  → GPIO 26   (retorno lado A)
- *   V3  → GPIO 27   (retorno lado B)
- *   V4  → GPIO 32   (injeção lado B)
- *   V5  → GPIO 33   (alívio de pressão)
- *   LED status → GPIO 2 (built-in)
- *   Botão RESET → GPIO 0 (BOOT). Segurar 5 s no boot apaga credenciais.
- *
- * Ciclo:
- *   Repouso  → Injetando (V1+V4)  → Pausa  → Retornando (V2+V3)
- *            → Alivio (V5)        → Repouso …
- *   Intervalo entre ciclos = config.intervalo_ciclo_horas
  * =============================================================
  */
 
@@ -37,12 +26,8 @@
 #include <ArduinoJson.h>
 #include <Preferences.h>
 
-// -------- Credenciais fixas da bancada --------
-// Estes valores vêm da tela "Nova bancada" do dashboard.
-// Cada ESP32 deve ser flasheado com os valores da SUA bancada.
-static const char* BANCADA_ID   = "e7a0b3e7-f36b-440a-9437-dc05268bf359";
-static const char* DEVICE_TOKEN = "S6a0B41jgZ9x7Q2eqEQ0sHwSsrnCPHQC8oYatgJdGJA";
-static const char* SERVER_URL   = "https://project--90989b19-e7c7-43b6-a4a1-5affc6bb05c8.lovable.app";
+// -------- Config fixa (mesma para toda bancada) --------
+static const char* SERVER_URL = "https://project--90989b19-e7c7-43b6-a4a1-5affc6bb05c8.lovable.app";
 
 // -------- Pinagem --------
 static const int PIN_V1 = 25;
@@ -68,7 +53,6 @@ struct Config {
 struct Creds {
   String bancada_id;
   String device_token;
-  String server_url;   // ex.: https://project--...lovable.app
 };
 
 Config      cfg;
@@ -77,8 +61,10 @@ Preferences prefs;
 
 FaseCiclo    fase = REPOUSO;
 uint32_t     fase_inicio_ms = 0;
-uint32_t     proximo_ciclo_epoch = 0; // millis() alvo p/ próximo INJETANDO
 bool         pausado_manual = false;
+
+// Buffer para código de pareamento capturado no portal AP.
+char pairing_code_buf[8] = {0};
 
 // -------- Utilidades --------
 static const char* faseNome(FaseCiclo f) {
@@ -114,13 +100,10 @@ void aplicarFase(FaseCiclo f) {
 }
 
 // -------- Persistência --------
-void carregarCreds() {
-  // Credenciais são fixas no firmware (BANCADA_ID / DEVICE_TOKEN / SERVER_URL).
-  creds.bancada_id   = BANCADA_ID;
-  creds.device_token = DEVICE_TOKEN;
-  creds.server_url   = SERVER_URL;
-
+void carregarPrefs() {
   prefs.begin("genelab", true);
+  creds.bancada_id   = prefs.getString("bid", "");
+  creds.device_token = prefs.getString("tok", "");
   cfg.tempo_injecao_segundos = prefs.getUInt("t_inj",  150);
   cfg.tempo_pausa_segundos   = prefs.getUInt("t_pau",  60);
   cfg.tempo_retorno_segundos = prefs.getUInt("t_ret",  150);
@@ -130,6 +113,12 @@ void carregarCreds() {
   prefs.end();
 }
 
+void salvarCreds() {
+  prefs.begin("genelab", false);
+  prefs.putString("bid", creds.bancada_id);
+  prefs.putString("tok", creds.device_token);
+  prefs.end();
+}
 
 void salvarConfig() {
   prefs.begin("genelab", false);
@@ -148,10 +137,14 @@ void apagarTudo() {
   prefs.end();
 }
 
-// -------- Portal AP (apenas Wi-Fi) --------
+// -------- Portal AP (Wi-Fi + código de pareamento) --------
 void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
   wm.setConfigPortalTimeout(300); // 5 min
+
+  WiFiManagerParameter param_pair(
+    "pair", "Código de pareamento (6 dígitos)", "", 7);
+  wm.addParameter(&param_pair);
 
   const char* apName = "BancadaSetup";
   const char* apPass = "1234567890";
@@ -169,20 +162,28 @@ void abrirPortalWifi(bool forcar) {
     delay(3000);
     ESP.restart();
   }
+
+  // Guarda o código digitado (pode estar vazio se já estava pareado).
+  strncpy(pairing_code_buf, param_pair.getValue(), sizeof(pairing_code_buf) - 1);
+  pairing_code_buf[sizeof(pairing_code_buf) - 1] = 0;
+
   Serial.println("[WM] Wi-Fi conectado");
 }
 
 // -------- HTTPS --------
 bool httpJson(const String& method, const String& path,
-              const String& body, String& outBody) {
+              const String& body, String& outBody,
+              bool sendToken = true) {
   if (WiFi.status() != WL_CONNECTED) return false;
   WiFiClientSecure client;
-  client.setInsecure(); // dev: aceita qualquer cert. Em produção use setCACert().
+  client.setInsecure(); // dev
   HTTPClient http;
-  String url = creds.server_url + path;
+  String url = String(SERVER_URL) + path;
   if (!http.begin(client, url)) return false;
   http.addHeader("Content-Type", "application/json");
-  http.addHeader("X-Device-Token", creds.device_token);
+  if (sendToken && creds.device_token.length() > 0) {
+    http.addHeader("X-Device-Token", creds.device_token);
+  }
   int code = (method == "POST") ? http.POST(body) : http.GET();
   outBody = http.getString();
   http.end();
@@ -190,6 +191,30 @@ bool httpJson(const String& method, const String& path,
     Serial.printf("[HTTP] %s %s => %d: %s\n", method.c_str(), path.c_str(), code, outBody.c_str());
     return false;
   }
+  return true;
+}
+
+// -------- Pareamento --------
+// Troca o código de 6 dígitos pelas credenciais reais e salva em Preferences.
+bool parear(const char* code) {
+  JsonDocument body;
+  body["pairing_code"] = code;
+  String bodyStr;
+  serializeJson(body, bodyStr);
+  String resp;
+  if (!httpJson("POST", "/api/public/bench/pair", bodyStr, resp, false)) {
+    Serial.println("[PAIR] falha na chamada");
+    return false;
+  }
+  JsonDocument r;
+  if (deserializeJson(r, resp) != DeserializationError::Ok) return false;
+  const char* bid = r["bancada_id"] | "";
+  const char* tok = r["device_token"] | "";
+  if (!*bid || !*tok) return false;
+  creds.bancada_id   = bid;
+  creds.device_token = tok;
+  salvarCreds();
+  Serial.printf("[PAIR] OK bancada=%s\n", bid);
   return true;
 }
 
@@ -203,6 +228,7 @@ uint32_t proxCicloSegRest() {
 }
 
 void enviarTelemetria() {
+  if (creds.device_token.length() == 0) return;
   JsonDocument doc;
   doc["status"] = faseNome(fase);
   JsonObject v = doc["valvulas"].to<JsonObject>();
@@ -212,7 +238,7 @@ void enviarTelemetria() {
   v["v4"] = digitalRead(PIN_V4);
   v["v5"] = digitalRead(PIN_V5);
   doc["proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["firmware_version"] = "1.0.0";
+  doc["firmware_version"] = "1.1.0";
   doc["ip_local"] = WiFi.localIP().toString();
 
   String body;
@@ -261,6 +287,7 @@ void tratarComando(JsonObject cmd) {
 }
 
 void puxarComandos() {
+  if (creds.device_token.length() == 0) return;
   String resp;
   if (!httpJson("GET", "/api/public/bench/commands", "", resp)) return;
   JsonDocument doc;
@@ -304,9 +331,9 @@ void setup() {
   }
   pinMode(PIN_RESET_BTN, INPUT_PULLUP);
 
-  carregarCreds();
+  carregarPrefs();
 
-  // Botão RESET segurado no boot → limpar tudo
+  // Botão RESET segurado no boot → limpar tudo (força novo pareamento)
   if (digitalRead(PIN_RESET_BTN) == LOW) {
     Serial.println("Botão RESET pressionado — apagando credenciais em 5s…");
     delay(5000);
@@ -317,11 +344,33 @@ void setup() {
     }
   }
 
-  // Portal AP só para configurar Wi-Fi. Credenciais da bancada são fixas.
-  abrirPortalWifi(false);
+  // Se ainda não temos credenciais, precisa parear → força portal AP.
+  bool precisaParear = (creds.device_token.length() == 0);
+  abrirPortalWifi(precisaParear);
 
   Serial.printf("Wi-Fi OK: %s\n", WiFi.localIP().toString().c_str());
   digitalWrite(PIN_LED, HIGH);
+
+  if (precisaParear) {
+    if (strlen(pairing_code_buf) != 6) {
+      Serial.println("[PAIR] código ausente/ inválido; reiniciando p/ novo portal");
+      delay(3000);
+      ESP.restart();
+    }
+    // Tenta parear algumas vezes.
+    bool ok = false;
+    for (int i = 0; i < 3 && !ok; i++) {
+      ok = parear(pairing_code_buf);
+      if (!ok) delay(2000);
+    }
+    if (!ok) {
+      Serial.println("[PAIR] falhou; apagando e reiniciando");
+      apagarTudo();
+      delay(2000);
+      ESP.restart();
+    }
+  }
+
   aplicarFase(REPOUSO);
 }
 
