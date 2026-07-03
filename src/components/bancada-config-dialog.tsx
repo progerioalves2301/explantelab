@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Clock, Play, Plus, Save, Square, X } from "lucide-react";
+import { Clock, Play, Plus, Save, Square, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -143,7 +143,7 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
                     disabled={horarios.length <= 1}
                     aria-label="Remover horário"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               ))}
