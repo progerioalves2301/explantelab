@@ -430,6 +430,7 @@ void tratarComando(JsonObject cmd) {
                   PIN_V3, digitalRead(PIN_V3),
                   PIN_V4, digitalRead(PIN_V4),
                   PIN_V5, digitalRead(PIN_V5));
+    lastTelem = 0; // publica novo estado das válvulas imediatamente
   }
 }
 
