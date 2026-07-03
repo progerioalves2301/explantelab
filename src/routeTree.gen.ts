@@ -15,6 +15,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShellUsuariosRouteImport } from './routes/_shell.usuarios'
 import { Route as ShellDashboardRouteImport } from './routes/_shell.dashboard'
 import { Route as ShellConfiguracoesRouteImport } from './routes/_shell.configuracoes'
+import { Route as ApiPublicBenchTelemetryRouteImport } from './routes/api/public/bench.telemetry'
+import { Route as ApiPublicBenchCommandsRouteImport } from './routes/api/public/bench.commands'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -45,6 +47,16 @@ const ShellConfiguracoesRoute = ShellConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => ShellRoute,
 } as any)
+const ApiPublicBenchTelemetryRoute = ApiPublicBenchTelemetryRouteImport.update({
+  id: '/api/public/bench/telemetry',
+  path: '/api/public/bench/telemetry',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBenchCommandsRoute = ApiPublicBenchCommandsRouteImport.update({
+  id: '/api/public/bench/commands',
+  path: '/api/public/bench/commands',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -52,6 +64,8 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/usuarios': typeof ShellUsuariosRoute
+  '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
+  '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -59,6 +73,8 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/usuarios': typeof ShellUsuariosRoute
+  '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
+  '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -68,12 +84,28 @@ export interface FileRoutesById {
   '/_shell/configuracoes': typeof ShellConfiguracoesRoute
   '/_shell/dashboard': typeof ShellDashboardRoute
   '/_shell/usuarios': typeof ShellUsuariosRoute
+  '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
+  '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/configuracoes' | '/dashboard' | '/usuarios'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/configuracoes'
+    | '/dashboard'
+    | '/usuarios'
+    | '/api/public/bench/commands'
+    | '/api/public/bench/telemetry'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/configuracoes' | '/dashboard' | '/usuarios'
+  to:
+    | '/'
+    | '/login'
+    | '/configuracoes'
+    | '/dashboard'
+    | '/usuarios'
+    | '/api/public/bench/commands'
+    | '/api/public/bench/telemetry'
   id:
     | '__root__'
     | '/'
@@ -82,12 +114,16 @@ export interface FileRouteTypes {
     | '/_shell/configuracoes'
     | '/_shell/dashboard'
     | '/_shell/usuarios'
+    | '/api/public/bench/commands'
+    | '/api/public/bench/telemetry'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ShellRoute: typeof ShellRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicBenchCommandsRoute: typeof ApiPublicBenchCommandsRoute
+  ApiPublicBenchTelemetryRoute: typeof ApiPublicBenchTelemetryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -134,6 +170,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellConfiguracoesRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/api/public/bench/telemetry': {
+      id: '/api/public/bench/telemetry'
+      path: '/api/public/bench/telemetry'
+      fullPath: '/api/public/bench/telemetry'
+      preLoaderRoute: typeof ApiPublicBenchTelemetryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bench/commands': {
+      id: '/api/public/bench/commands'
+      path: '/api/public/bench/commands'
+      fullPath: '/api/public/bench/commands'
+      preLoaderRoute: typeof ApiPublicBenchCommandsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -155,6 +205,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ShellRoute: ShellRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicBenchCommandsRoute: ApiPublicBenchCommandsRoute,
+  ApiPublicBenchTelemetryRoute: ApiPublicBenchTelemetryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

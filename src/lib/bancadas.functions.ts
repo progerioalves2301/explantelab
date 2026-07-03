@@ -106,7 +106,7 @@ export const enviarComando = createServerFn({ method: "POST" })
       .insert({
         bancada_id: data.bancada_id,
         tipo: data.tipo,
-        payload: data.payload ?? {},
+        payload: (data.payload ?? {}) as never,
       });
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -148,7 +148,7 @@ export const salvarConfig = createServerFn({ method: "POST" })
     await supabaseAdmin.from("comandos").insert({
       bancada_id: data.bancada_id,
       tipo: "UPDATE_CONFIG",
-      payload: data.config as unknown as Record<string, unknown>,
+      payload: data.config as never,
     });
     return { ok: true };
   });
