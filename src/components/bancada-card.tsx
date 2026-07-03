@@ -89,6 +89,7 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [sending, setSending] = useState(false);
+  const [tab, setTab] = useState<"status" | "manual">("status");
   const excluir = useServerFn(excluirBancada);
   const comandar = useServerFn(enviarComando);
 
