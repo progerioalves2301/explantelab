@@ -529,7 +529,7 @@ void setup() {
   aplicarFase(REPOUSO);
 }
 
-unsigned long lastTelem = 0, lastCmd = 0, lastTick = 0, lastTemp = 0;
+// (timers movidos para antes de tratarComando)
 
 void lerTemperatura() {
   float t = dsSensor.getTempCByIndex(0);
