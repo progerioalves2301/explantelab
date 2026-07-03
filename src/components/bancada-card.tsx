@@ -4,6 +4,7 @@ import {
   FlaskConical,
   Leaf,
   Settings2,
+  SlidersHorizontal,
   Sprout,
   Square,
   Timer,
