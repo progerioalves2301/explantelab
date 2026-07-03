@@ -1,4 +1,4 @@
-import { Clock, Play, Settings2, Sprout, Timer, Trash2 } from "lucide-react";
+import { Clock, Settings2, Sprout, Square, Timer, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +29,7 @@ interface Props {
 
 export function BancadaCard({ bancada, onConfigure }: Props) {
   const [deleting, setDeleting] = useState(false);
-  const [testing, setTesting] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const excluir = useServerFn(excluirBancada);
   const comandar = useServerFn(enviarComando);
 
@@ -54,17 +54,17 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
     }
   };
 
-  const handleTest = async () => {
-    setTesting(true);
+  const handleStop = async () => {
+    setStopping(true);
     try {
       await comandar({
-        data: { bancada_id: bancada.id, tipo: "FORCE_CYCLE" },
+        data: { bancada_id: bancada.id, tipo: "PAUSE" },
       });
-      toast.success(`Ciclo de teste enviado para ${bancada.nome}`);
+      toast.success(`Bancada ${bancada.nome} parada`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao enviar teste");
+      toast.error(e instanceof Error ? e.message : "Falha ao parar bancada");
     } finally {
-      setTesting(false);
+      setStopping(false);
     }
   };
 
@@ -142,14 +142,14 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
             Configurar
           </Button>
           <Button
-            variant="default"
             size="sm"
-            onClick={handleTest}
-            disabled={testing}
-            aria-label="Testar bancada (forçar ciclo)"
+            onClick={handleStop}
+            disabled={stopping}
+            className="bg-red-600 text-white hover:bg-red-700"
+            aria-label="Parar bancada"
           >
-            <Play className="mr-1.5 h-3.5 w-3.5" />
-            {testing ? "Enviando…" : "Testar"}
+            <Square className="mr-1.5 h-3.5 w-3.5 fill-current" />
+            {stopping ? "Enviando…" : "STOP"}
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
