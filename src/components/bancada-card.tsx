@@ -332,15 +332,15 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
           </TabsContent>
         </Tabs>
 
-        <div className="flex gap-2">
+        <div className="flex items-center gap-1.5">
           <Button
             variant="outline"
             size="sm"
-            className="flex-1"
+            className="h-8 flex-1 min-w-0 px-2 text-xs"
             onClick={() => onConfigure(bancada)}
           >
-            <Settings2 className="mr-1.5 h-3.5 w-3.5" />
-            Configurar
+            <Settings2 className="mr-1 h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">Configurar</span>
           </Button>
           {tab === "manual" ? (
             <Button
@@ -360,20 +360,20 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
                   );
                 }
               }}
-              className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500"
+              className="h-8 px-2 text-xs bg-yellow-400 text-yellow-950 hover:bg-yellow-500"
               aria-label="Sair do modo manual e entrar em repouso"
             >
-              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+              <ArrowLeft className="mr-1 h-3.5 w-3.5 shrink-0" />
               Sair
             </Button>
           ) : (
             <Button
               size="sm"
               onClick={() => setTab("manual")}
-              className="bg-blue-600 text-white hover:bg-blue-700"
+              className="h-8 px-2 text-xs bg-blue-600 text-white hover:bg-blue-700"
               aria-label="Abrir modo manual"
             >
-              <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
+              <SlidersHorizontal className="mr-1 h-3.5 w-3.5 shrink-0" />
               Manual
             </Button>
           )}
@@ -381,18 +381,18 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
             size="sm"
             onClick={handleStop}
             disabled={stopping}
-            className="bg-red-600 text-white hover:bg-red-700"
+            className="h-8 px-2 text-xs bg-red-600 text-white hover:bg-red-700"
             aria-label="Parar bancada"
           >
-            <Square className="mr-1.5 h-3.5 w-3.5 fill-current" />
-            {stopping ? "Enviando…" : "STOP"}
+            <Square className="mr-1 h-3 w-3 shrink-0 fill-current" />
+            {stopping ? "…" : "STOP"}
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
                 variant="outline"
-                size="sm"
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                size="icon"
+                className="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 disabled={deleting}
                 aria-label="Excluir bancada"
               >
