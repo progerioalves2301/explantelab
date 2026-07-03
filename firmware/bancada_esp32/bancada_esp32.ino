@@ -364,6 +364,9 @@ void enviarTelemetria() {
   }
 }
 
+// -------- Loop timers (declarados aqui p/ tratarComando poder forçar telemetria) --------
+unsigned long lastTelem = 0, lastCmd = 0, lastTick = 0, lastTemp = 0;
+
 // -------- Comandos --------
 void tratarComando(JsonObject cmd) {
   const char* tipo = cmd["tipo"] | "";
@@ -371,11 +374,14 @@ void tratarComando(JsonObject cmd) {
   if (strcmp(tipo, "FORCE_CYCLE") == 0) {
     pausado_manual = false;
     aplicarFase(INJETANDO);
+    lastTelem = 0; // força telemetria no próximo loop
   } else if (strcmp(tipo, "PAUSE") == 0) {
     pausado_manual = true;
     aplicarFase(REPOUSO);
+    lastTelem = 0;
   } else if (strcmp(tipo, "RESUME") == 0) {
     pausado_manual = false;
+    lastTelem = 0;
   } else if (strcmp(tipo, "UPDATE_CONFIG") == 0) {
     JsonObject p = cmd["payload"].as<JsonObject>();
     cfg.tempo_injecao_segundos = p["tempo_injecao_segundos"] | cfg.tempo_injecao_segundos;
@@ -424,6 +430,7 @@ void tratarComando(JsonObject cmd) {
                   PIN_V3, digitalRead(PIN_V3),
                   PIN_V4, digitalRead(PIN_V4),
                   PIN_V5, digitalRead(PIN_V5));
+    lastTelem = 0; // publica novo estado das válvulas imediatamente
   }
 }
 
@@ -526,7 +533,7 @@ void setup() {
   aplicarFase(REPOUSO);
 }
 
-unsigned long lastTelem = 0, lastCmd = 0, lastTick = 0, lastTemp = 0;
+// (timers movidos para antes de tratarComando)
 
 void lerTemperatura() {
   float t = dsSensor.getTempCByIndex(0);
