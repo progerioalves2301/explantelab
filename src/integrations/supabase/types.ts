@@ -165,6 +165,7 @@ export type Database = {
             }
             Returns: Json
           }
+      trigger_scheduled_cycles: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
