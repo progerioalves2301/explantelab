@@ -1,4 +1,4 @@
-import { Clock, Settings2, Timer, Trash2 } from "lucide-react";
+import { Clock, Play, Settings2, Timer, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,7 @@ import {
 import { StatusBadge } from "./status-badge";
 import { ValveIndicator } from "./valve-indicator";
 import { formatCountdown, timeAgo } from "@/lib/mock-data";
-import { excluirBancada } from "@/lib/bancadas.functions";
+import { enviarComando, excluirBancada } from "@/lib/bancadas.functions";
 import { toast } from "sonner";
 import type { Bancada } from "@/lib/types";
 
@@ -28,7 +28,9 @@ interface Props {
 
 export function BancadaCard({ bancada, onConfigure }: Props) {
   const [deleting, setDeleting] = useState(false);
+  const [testing, setTesting] = useState(false);
   const excluir = useServerFn(excluirBancada);
+  const comandar = useServerFn(enviarComando);
 
   const mode =
     bancada.status === "Injetando"
@@ -50,6 +52,21 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
       setDeleting(false);
     }
   };
+
+  const handleTest = async () => {
+    setTesting(true);
+    try {
+      await comandar({
+        data: { bancada_id: bancada.id, tipo: "FORCE_CYCLE" },
+      });
+      toast.success(`Ciclo de teste enviado para ${bancada.nome}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao enviar teste");
+    } finally {
+      setTesting(false);
+    }
+  };
+
 
   return (
     <Card className="card-elevated overflow-hidden transition hover:border-primary/40">
@@ -104,6 +121,16 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
           >
             <Settings2 className="mr-1.5 h-3.5 w-3.5" />
             Configurar
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleTest}
+            disabled={testing}
+            aria-label="Testar bancada (forçar ciclo)"
+          >
+            <Play className="mr-1.5 h-3.5 w-3.5" />
+            {testing ? "Enviando…" : "Testar"}
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
