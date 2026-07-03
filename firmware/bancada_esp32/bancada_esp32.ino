@@ -1,13 +1,15 @@
 /*
- * GeneLab IoT — Bancada ESP32
+ * GeneLab IoT — Bancada ESP32 (comunicação direta com Supabase)
  * =============================================================
- * Firmware Arduino para as bancadas físicas do laboratório.
- * - SERVER_URL é fixo no firmware (mesmo binário para todas as bancadas).
+ * - SUPABASE_URL e SUPABASE_ANON_KEY fixos no firmware (mesmo binário
+ *   p/ todas as bancadas).
  * - No 1o boot, portal AP (WiFiManager) pede Wi-Fi + código de 6 dígitos.
- * - Firmware chama /api/public/bench/pair para trocar o código pelas
+ * - Firmware chama RPC public.bench_pair para trocar o código pelas
  *   credenciais reais (bancada_id + device_token) e salva em Preferences.
- * - Ciclo pneumático de 5 válvulas (V1..V5).
- * - Telemetria HTTPS a cada 5s e polling de comandos a cada 2s.
+ * - Telemetria via RPC public.bench_push_telemetry (5s).
+ * - Comandos via RPC public.bench_pull_commands (2s).
+ * - WiFiClientSecure/HTTPClient globais + keep-alive p/ evitar
+ *   fragmentação de heap.
  *
  * Bibliotecas:
  *   - WiFiManager (tzapu) >= 2.0.17
@@ -26,8 +28,13 @@
 #include <ArduinoJson.h>
 #include <Preferences.h>
 
-// -------- Config fixa (mesma para toda bancada) --------
-static const char* SERVER_URL = "https://project--90989b19-e7c7-43b6-a4a1-5affc6bb05c8.lovable.app";
+// -------- Config Supabase (fixa no binário) --------
+static const char* SUPABASE_URL = "https://ftfboqlapblxndizyaxy.supabase.co";
+static const char* SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+  "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0ZmJvcWxhcGJseG5kaXp5YXh5Iiwicm9sZSI6ImFub24i"
+  "LCJpYXQiOjE3ODMwODg5NTksImV4cCI6MjA5ODY2NDk1OX0."
+  "ainxeRe7j4bfS5oHMJ3EbXihQ54N5jzfl_ySMa-2g_Y";
 
 // -------- Pinagem --------
 static const int PIN_V1 = 25;
@@ -63,8 +70,12 @@ FaseCiclo    fase = REPOUSO;
 uint32_t     fase_inicio_ms = 0;
 bool         pausado_manual = false;
 
-// Buffer para código de pareamento capturado no portal AP.
 char pairing_code_buf[8] = {0};
+
+// -------- HTTP global (keep-alive) --------
+WiFiClientSecure httpsClient;
+HTTPClient       http;
+bool             httpInit = false;
 
 // -------- Utilidades --------
 static const char* faseNome(FaseCiclo f) {
@@ -138,7 +149,6 @@ void apagarTudo() {
 }
 
 // -------- Portal AP (Wi-Fi + código de pareamento) --------
-// CSS + branding injetados no <head> de todas as páginas do WiFiManager.
 static const char PORTAL_HEAD[] PROGMEM =
   "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1\">"
   "<style>"
@@ -185,12 +195,12 @@ static const char PORTAL_HEAD[] PROGMEM =
   "</div><div class=\"card\">";
 
 static const char PORTAL_FOOT[] PROGMEM =
-  "</div><div class=\"footer\">ESP32 • Firmware 1.1.0</div></div>";
+  "</div><div class=\"footer\">ESP32 • Firmware 1.2.0</div></div>";
 
 void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
-  wm.setConfigPortalTimeout(300); // 5 min
-  wm.setClass("invert"); // tema base escuro
+  wm.setConfigPortalTimeout(300);
+  wm.setClass("invert");
   wm.setTitle("GeneLab IoT — Bancada");
   wm.setCustomHeadElement(PORTAL_HEAD);
   wm.setCustomMenuHTML(PORTAL_FOOT);
@@ -221,54 +231,69 @@ void abrirPortalWifi(bool forcar) {
     ESP.restart();
   }
 
-  // Guarda o código digitado (pode estar vazio se já estava pareado).
   strncpy(pairing_code_buf, param_pair.getValue(), sizeof(pairing_code_buf) - 1);
   pairing_code_buf[sizeof(pairing_code_buf) - 1] = 0;
 
   Serial.println("[WM] Wi-Fi conectado");
 }
 
-// -------- HTTPS --------
-bool httpJson(const String& method, const String& path,
-              const String& body, String& outBody,
-              bool sendToken = true) {
+// -------- HTTPS (keep-alive, cliente global) --------
+// Faz POST a /rest/v1/rpc/<fn> com o body JSON dado.
+bool supabaseRpc(const char* fn, const String& body, String& outBody) {
   if (WiFi.status() != WL_CONNECTED) return false;
-  WiFiClientSecure client;
-  client.setInsecure(); // dev
-  HTTPClient http;
-  String url = String(SERVER_URL) + path;
-  if (!http.begin(client, url)) return false;
-  http.addHeader("Content-Type", "application/json");
-  if (sendToken && creds.device_token.length() > 0) {
-    http.addHeader("X-Device-Token", creds.device_token);
+
+  if (!httpInit) {
+    httpsClient.setInsecure(); // dev
+    httpInit = true;
   }
-  int code = (method == "POST") ? http.POST(body) : http.GET();
+
+  String url = String(SUPABASE_URL) + "/rest/v1/rpc/" + fn;
+  if (!http.begin(httpsClient, url)) {
+    Serial.printf("[HTTP] begin falhou %s\n", url.c_str());
+    return false;
+  }
+  http.setReuse(true);
+  http.setTimeout(8000);
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("apikey", SUPABASE_ANON_KEY);
+  http.addHeader("Authorization", String("Bearer ") + SUPABASE_ANON_KEY);
+  http.addHeader("Connection", "keep-alive");
+
+  int code = http.POST(body);
   outBody = http.getString();
   http.end();
+
   if (code < 200 || code >= 300) {
-    Serial.printf("[HTTP] %s %s => %d: %s\n", method.c_str(), path.c_str(), code, outBody.c_str());
+    Serial.printf("[RPC] %s => %d: %s\n", fn, code, outBody.c_str());
     return false;
   }
   return true;
 }
 
 // -------- Pareamento --------
-// Troca o código de 6 dígitos pelas credenciais reais e salva em Preferences.
 bool parear(const char* code) {
   JsonDocument body;
-  body["pairing_code"] = code;
+  body["_pairing_code"] = code;
   String bodyStr;
   serializeJson(body, bodyStr);
+
   String resp;
-  if (!httpJson("POST", "/api/public/bench/pair", bodyStr, resp, false)) {
+  if (!supabaseRpc("bench_pair", bodyStr, resp)) {
     Serial.println("[PAIR] falha na chamada");
     return false;
   }
+
   JsonDocument r;
-  if (deserializeJson(r, resp) != DeserializationError::Ok) return false;
+  if (deserializeJson(r, resp) != DeserializationError::Ok) {
+    Serial.printf("[PAIR] json invalido: %s\n", resp.c_str());
+    return false;
+  }
   const char* bid = r["bancada_id"] | "";
   const char* tok = r["device_token"] | "";
-  if (!*bid || !*tok) return false;
+  if (!*bid || !*tok) {
+    Serial.printf("[PAIR] resposta sem creds: %s\n", resp.c_str());
+    return false;
+  }
   creds.bancada_id   = bid;
   creds.device_token = tok;
   salvarCreds();
@@ -287,22 +312,26 @@ uint32_t proxCicloSegRest() {
 
 void enviarTelemetria() {
   if (creds.device_token.length() == 0) return;
+
   JsonDocument doc;
-  doc["status"] = faseNome(fase);
-  JsonObject v = doc["valvulas"].to<JsonObject>();
-  v["v1"] = digitalRead(PIN_V1);
-  v["v2"] = digitalRead(PIN_V2);
-  v["v3"] = digitalRead(PIN_V3);
-  v["v4"] = digitalRead(PIN_V4);
-  v["v5"] = digitalRead(PIN_V5);
-  doc["proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["firmware_version"] = "1.1.0";
-  doc["ip_local"] = WiFi.localIP().toString();
+  doc["_bancada_id"]   = creds.bancada_id;
+  doc["_device_token"] = creds.device_token;
+  doc["_status"]       = faseNome(fase);
+  JsonObject v = doc["_valvulas"].to<JsonObject>();
+  v["v1"] = digitalRead(PIN_V1) == HIGH;
+  v["v2"] = digitalRead(PIN_V2) == HIGH;
+  v["v3"] = digitalRead(PIN_V3) == HIGH;
+  v["v4"] = digitalRead(PIN_V4) == HIGH;
+  v["v5"] = digitalRead(PIN_V5) == HIGH;
+  doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
+  doc["_firmware_version"]       = "1.2.0";
+  doc["_ip_local"]               = WiFi.localIP().toString();
 
   String body;
   serializeJson(doc, body);
+
   String resp;
-  if (!httpJson("POST", "/api/public/bench/telemetry", body, resp)) return;
+  if (!supabaseRpc("bench_push_telemetry", body, resp)) return;
 
   JsonDocument r;
   if (deserializeJson(r, resp) != DeserializationError::Ok) return;
@@ -346,8 +375,15 @@ void tratarComando(JsonObject cmd) {
 
 void puxarComandos() {
   if (creds.device_token.length() == 0) return;
+  JsonDocument body;
+  body["_bancada_id"]   = creds.bancada_id;
+  body["_device_token"] = creds.device_token;
+  String bodyStr;
+  serializeJson(body, bodyStr);
+
   String resp;
-  if (!httpJson("GET", "/api/public/bench/commands", "", resp)) return;
+  if (!supabaseRpc("bench_pull_commands", bodyStr, resp)) return;
+
   JsonDocument doc;
   if (deserializeJson(doc, resp) != DeserializationError::Ok) return;
   JsonArray arr = doc["comandos"].as<JsonArray>();
@@ -382,7 +418,7 @@ void tickCiclo() {
 void setup() {
   Serial.begin(115200);
   delay(200);
-  Serial.println("\n== GeneLab Bancada ESP32 ==");
+  Serial.println("\n== GeneLab Bancada ESP32 (direct-Supabase) ==");
 
   for (int p : {PIN_V1, PIN_V2, PIN_V3, PIN_V4, PIN_V5, PIN_LED}) {
     pinMode(p, OUTPUT); digitalWrite(p, LOW);
@@ -391,7 +427,6 @@ void setup() {
 
   carregarPrefs();
 
-  // Botão RESET segurado no boot → limpar tudo (força novo pareamento)
   if (digitalRead(PIN_RESET_BTN) == LOW) {
     Serial.println("Botão RESET pressionado — apagando credenciais em 5s…");
     delay(5000);
@@ -402,7 +437,6 @@ void setup() {
     }
   }
 
-  // Se ainda não temos credenciais, precisa parear → força portal AP.
   bool precisaParear = (creds.device_token.length() == 0);
   abrirPortalWifi(precisaParear);
 
@@ -415,7 +449,6 @@ void setup() {
       delay(3000);
       ESP.restart();
     }
-    // Tenta parear algumas vezes.
     bool ok = false;
     for (int i = 0; i < 3 && !ok; i++) {
       ok = parear(pairing_code_buf);
@@ -441,7 +474,6 @@ void loop() {
   if (now - lastCmd  > 2000)  { lastCmd   = now; puxarComandos(); }
   if (now - lastTelem > 5000) { lastTelem = now; enviarTelemetria(); }
 
-  // Reset em runtime: botão segurado por 5 s
   static unsigned long btn_pressed_since = 0;
   if (digitalRead(PIN_RESET_BTN) == LOW) {
     if (btn_pressed_since == 0) btn_pressed_since = now;
