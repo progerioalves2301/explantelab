@@ -15,6 +15,21 @@ export function AppHeader() {
   const [dark, setDark] = useState(false);
   const [connected] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
+  const [alertasAbertos, setAlertasAbertos] = useState(0);
+
+  useEffect(() => {
+    if (!email) return;
+    const carregar = async () => {
+      const { count } = await supabase
+        .from("alertas")
+        .select("id", { count: "exact", head: true })
+        .is("resolvido_em", null);
+      setAlertasAbertos(count ?? 0);
+    };
+    carregar();
+    const t = setInterval(carregar, 15000);
+    return () => clearInterval(t);
+  }, [email]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
