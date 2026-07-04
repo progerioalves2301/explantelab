@@ -100,6 +100,21 @@ export function AppHeader() {
             <User className="h-3.5 w-3.5" /> não autenticado
           </div>
         )}
+        {email && (
+          <Button asChild variant="ghost" size="icon" aria-label="Alertas" className="relative">
+            <Link to="/alertas">
+              <Bell className="h-4 w-4" />
+              {alertasAbertos > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -right-1 -top-1 h-4 min-w-4 justify-center px-1 text-[9px]"
+                >
+                  {alertasAbertos > 99 ? "99+" : alertasAbertos}
+                </Badge>
+              )}
+            </Link>
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon"
