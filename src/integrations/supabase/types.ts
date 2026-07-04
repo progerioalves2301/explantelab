@@ -14,6 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
+      alerta_destinos: {
+        Row: {
+          ativo: boolean
+          chat_id: string
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          chat_id: string
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          chat_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      alertas: {
+        Row: {
+          bancada_id: string
+          created_at: string
+          id: string
+          mensagem: string
+          notificado_em: string | null
+          resolvido_em: string | null
+          severidade: string
+          tipo: string
+          valor: Json
+        }
+        Insert: {
+          bancada_id: string
+          created_at?: string
+          id?: string
+          mensagem: string
+          notificado_em?: string | null
+          resolvido_em?: string | null
+          severidade?: string
+          tipo: string
+          valor?: Json
+        }
+        Update: {
+          bancada_id?: string
+          created_at?: string
+          id?: string
+          mensagem?: string
+          notificado_em?: string | null
+          resolvido_em?: string | null
+          severidade?: string
+          tipo?: string
+          valor?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertas_bancada_id_fkey"
+            columns: ["bancada_id"]
+            isOneToOne: false
+            referencedRelation: "bancadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bancada_secrets: {
         Row: {
           bancada_id: string
@@ -59,9 +127,12 @@ export type Database = {
           ip_local: string | null
           laboratorio_id: string | null
           nome: string
+          offline_threshold_segundos: number
           posicao: number | null
           proximo_ciclo_segundos: number
           status: string
+          temp_max: number | null
+          temp_min: number | null
           temperatura_planta: number | null
           ultima_sync: string | null
           valvulas: Json
@@ -75,9 +146,12 @@ export type Database = {
           ip_local?: string | null
           laboratorio_id?: string | null
           nome: string
+          offline_threshold_segundos?: number
           posicao?: number | null
           proximo_ciclo_segundos?: number
           status?: string
+          temp_max?: number | null
+          temp_min?: number | null
           temperatura_planta?: number | null
           ultima_sync?: string | null
           valvulas?: Json
@@ -91,9 +165,12 @@ export type Database = {
           ip_local?: string | null
           laboratorio_id?: string | null
           nome?: string
+          offline_threshold_segundos?: number
           posicao?: number | null
           proximo_ciclo_segundos?: number
           status?: string
+          temp_max?: number | null
+          temp_min?: number | null
           temperatura_planta?: number | null
           ultima_sync?: string | null
           valvulas?: Json
@@ -227,6 +304,7 @@ export type Database = {
             }
             Returns: Json
           }
+      detectar_alertas: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
