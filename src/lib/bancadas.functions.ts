@@ -34,8 +34,19 @@ export const listBancadas = createServerFn({ method: "GET" }).handler(
 // O usuário digita esses 6 dígitos no portal AP do ESP32; o dispositivo
 // então troca o código pelas credenciais reais via /api/public/bench/pair.
 export const criarBancada = createServerFn({ method: "POST" })
-  .inputValidator((data: { nome: string }) =>
-    z.object({ nome: z.string().min(2).max(60) }).parse(data),
+  .inputValidator(
+    (data: {
+      nome: string;
+      laboratorio_id?: string | null;
+      posicao?: number | null;
+    }) =>
+      z
+        .object({
+          nome: z.string().min(2).max(60),
+          laboratorio_id: z.string().uuid().nullable().optional(),
+          posicao: z.number().int().min(1).max(999).nullable().optional(),
+        })
+        .parse(data),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import(
@@ -44,7 +55,12 @@ export const criarBancada = createServerFn({ method: "POST" })
 
     const { data: bancada, error } = await supabaseAdmin
       .from("bancadas")
-      .insert({ nome: data.nome, status: "Offline" })
+      .insert({
+        nome: data.nome,
+        status: "Offline",
+        laboratorio_id: data.laboratorio_id ?? null,
+        posicao: data.posicao ?? null,
+      })
       .select("*")
       .single();
     if (error || !bancada) throw new Error(error?.message ?? "Falha ao criar");

@@ -26,6 +26,15 @@ export interface Configuracoes {
   horarios_disparo: string[];
 }
 
+export interface Laboratorio {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  cor: string;
+  ordem: number;
+  created_at: string;
+}
+
 export interface Bancada {
   id: string;
   nome: string;
@@ -38,6 +47,8 @@ export interface Bancada {
   firmware_version: string | null;
   ip_local: string | null;
   temperatura_planta: number | null;
+  laboratorio_id: string | null;
+  posicao: number | null;
   created_at: string;
 }
 

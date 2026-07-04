@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { BancadaCard } from "@/components/bancada-card";
 import { BancadaConfigDialog } from "@/components/bancada-config-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import type { Bancada } from "@/lib/types";
+import type { Bancada, Laboratorio } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_shell/dashboard")({
   head: () => ({
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/_shell/dashboard")({
 
 function DashboardPage() {
   const [bancadas, setBancadas] = useState<Bancada[]>([]);
+  const [labs, setLabs] = useState<Laboratorio[]>([]);
+  const [labFiltro, setLabFiltro] = useState<string | "todos" | "sem">("todos");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Bancada | null>(null);
   const [open, setOpen] = useState(false);
@@ -31,14 +34,20 @@ function DashboardPage() {
   useEffect(() => {
     let alive = true;
     (async () => {
-      const { data } = await supabase
-        .from("bancadas")
-        .select("*")
-        .order("created_at", { ascending: true });
-      if (alive) {
-        setBancadas((data ?? []) as unknown as Bancada[]);
-        setLoading(false);
-      }
+      const [bRes, lRes] = await Promise.all([
+        supabase
+          .from("bancadas")
+          .select("*")
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("laboratorios")
+          .select("*")
+          .order("ordem", { ascending: true }),
+      ]);
+      if (!alive) return;
+      setBancadas((bRes.data ?? []) as unknown as Bancada[]);
+      setLabs((lRes.data ?? []) as unknown as Laboratorio[]);
+      setLoading(false);
     })();
 
     const channel = supabase
@@ -60,6 +69,26 @@ function DashboardPage() {
           });
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "laboratorios" },
+        (payload) => {
+          setLabs((prev) => {
+            if (payload.eventType === "DELETE") {
+              return prev.filter(
+                (l) => l.id !== (payload.old as Laboratorio).id,
+              );
+            }
+            const row = payload.new as unknown as Laboratorio;
+            const idx = prev.findIndex((l) => l.id === row.id);
+            if (idx === -1)
+              return [...prev, row].sort((a, b) => a.ordem - b.ordem);
+            const copy = prev.slice();
+            copy[idx] = row;
+            return copy;
+          });
+        },
+      )
       .subscribe();
     return () => {
       alive = false;
@@ -67,14 +96,21 @@ function DashboardPage() {
     };
   }, []);
 
+  const filtradas = useMemo(() => {
+    if (labFiltro === "todos") return bancadas;
+    if (labFiltro === "sem")
+      return bancadas.filter((b) => !b.laboratorio_id);
+    return bancadas.filter((b) => b.laboratorio_id === labFiltro);
+  }, [bancadas, labFiltro]);
+
   const stats = useMemo(() => {
-    const active = bancadas.filter(
+    const active = filtradas.filter(
       (b) => b.status === "Injetando" || b.status === "Retornando",
     ).length;
-    const offline = bancadas.filter((b) => b.status === "Offline").length;
-    const idle = bancadas.filter((b) => b.status === "Repouso").length;
-    return { total: bancadas.length, active, offline, idle };
-  }, [bancadas]);
+    const offline = filtradas.filter((b) => b.status === "Offline").length;
+    const idle = filtradas.filter((b) => b.status === "Repouso").length;
+    return { total: filtradas.length, active, offline, idle };
+  }, [filtradas]);
 
   const handleConfigure = (b: Bancada) => {
     setSelected(b);
@@ -105,16 +141,53 @@ function DashboardPage() {
         <StatCard icon={<Activity className="h-4 w-4" />} label="Offline" value={stats.offline} tone="destructive" />
       </div>
 
+      {labs.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          <FiltroChip
+            active={labFiltro === "todos"}
+            onClick={() => setLabFiltro("todos")}
+            label={`Todos (${bancadas.length})`}
+          />
+          {labs.map((lab) => {
+            const count = bancadas.filter(
+              (b) => b.laboratorio_id === lab.id,
+            ).length;
+            return (
+              <FiltroChip
+                key={lab.id}
+                active={labFiltro === lab.id}
+                onClick={() => setLabFiltro(lab.id)}
+                label={`${lab.nome} (${count})`}
+                color={lab.cor}
+              />
+            );
+          })}
+          {bancadas.some((b) => !b.laboratorio_id) && (
+            <FiltroChip
+              active={labFiltro === "sem"}
+              onClick={() => setLabFiltro("sem")}
+              label={`Sem laboratório (${bancadas.filter((b) => !b.laboratorio_id).length})`}
+            />
+          )}
+        </div>
+      )}
+
       {loading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
-      ) : bancadas.length === 0 ? (
+      ) : filtradas.length === 0 ? (
         <Card className="card-elevated">
           <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
             <Cpu className="h-8 w-8 text-muted-foreground" />
             <div>
-              <div className="font-semibold">Nenhuma bancada cadastrada</div>
+              <div className="font-semibold">
+                {bancadas.length === 0
+                  ? "Nenhuma bancada cadastrada"
+                  : "Nenhuma bancada neste filtro"}
+              </div>
               <p className="text-sm text-muted-foreground">
-                Crie a primeira e receba o token para colar no portal AP do ESP32.
+                {bancadas.length === 0
+                  ? "Crie a primeira e receba o token para colar no portal AP do ESP32."
+                  : "Selecione outro laboratório ou cadastre uma bancada aqui."}
               </p>
             </div>
             <Button asChild size="sm">
@@ -127,7 +200,7 @@ function DashboardPage() {
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {bancadas.map((b) => (
+          {filtradas.map((b) => (
             <BancadaCard key={b.id} bancada={b} onConfigure={handleConfigure} />
           ))}
         </div>
@@ -164,5 +237,38 @@ function StatCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function FiltroChip({
+  active,
+  onClick,
+  label,
+  color,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  color?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition",
+        active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-background text-foreground hover:bg-muted",
+      )}
+    >
+      {color && (
+        <span
+          className="h-2 w-2 rounded-full"
+          style={{ background: color }}
+        />
+      )}
+      {label}
+    </button>
   );
 }

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Check, Copy, KeyRound } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -13,8 +13,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { criarBancada } from "@/lib/bancadas.functions";
-import type { Bancada } from "@/lib/types";
+import { supabase } from "@/integrations/supabase/client";
+import type { Bancada, Laboratorio } from "@/lib/types";
 
 export const Route = createFileRoute("/_shell/bancadas/nova")({
   head: () => ({
@@ -33,17 +41,34 @@ export const Route = createFileRoute("/_shell/bancadas/nova")({
 function NovaBancadaPage() {
   const criar = useServerFn(criarBancada);
   const [nome, setNome] = useState("");
+  const [labId, setLabId] = useState<string>("nenhum");
+  const [posicao, setPosicao] = useState<string>("");
+  const [labs, setLabs] = useState<Laboratorio[]>([]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     bancada: Bancada;
     pairing_code: string;
   } | null>(null);
 
+  useEffect(() => {
+    supabase
+      .from("laboratorios")
+      .select("*")
+      .order("ordem", { ascending: true })
+      .then(({ data }) => setLabs((data ?? []) as unknown as Laboratorio[]));
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const r = await criar({ data: { nome } });
+      const r = await criar({
+        data: {
+          nome,
+          laboratorio_id: labId === "nenhum" ? null : labId,
+          posicao: posicao ? Number(posicao) : null,
+        },
+      });
       setResult(r);
       toast.success("Bancada criada. Use o código de 6 dígitos no ESP32.");
     } catch (err) {
@@ -72,7 +97,9 @@ function NovaBancadaPage() {
         <Card className="card-elevated">
           <CardHeader>
             <CardTitle>Identificação</CardTitle>
-            <CardDescription>Dê um nome para localizar no dashboard.</CardDescription>
+            <CardDescription>
+              Dê um nome e escolha o laboratório onde ela ficará.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="grid gap-4">
@@ -88,6 +115,47 @@ function NovaBancadaPage() {
                   required
                 />
               </div>
+
+              <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
+                <div className="grid gap-2">
+                  <Label htmlFor="lab">Laboratório</Label>
+                  <Select value={labId} onValueChange={setLabId}>
+                    <SelectTrigger id="lab">
+                      <SelectValue placeholder="Selecione…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nenhum">Sem laboratório</SelectItem>
+                      {labs.map((l) => (
+                        <SelectItem key={l.id} value={l.id}>
+                          {l.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {labs.length === 0 && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Nenhum laboratório cadastrado.{" "}
+                      <Link to="/laboratorios" className="underline">
+                        Criar agora
+                      </Link>
+                      .
+                    </p>
+                  )}
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="posicao">Posição</Label>
+                  <Input
+                    id="posicao"
+                    type="number"
+                    min={1}
+                    max={99}
+                    placeholder="1–8"
+                    value={posicao}
+                    onChange={(e) => setPosicao(e.target.value)}
+                  />
+                </div>
+              </div>
+
               <Button type="submit" disabled={loading}>
                 {loading ? "Criando…" : "Criar bancada e gerar código"}
               </Button>
