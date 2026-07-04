@@ -29,11 +29,20 @@ interface Props {
 
 export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
   const [config, setConfig] = useState<Configuracoes>(DEFAULT_CONFIG);
+  const [tempMin, setTempMin] = useState<string>("");
+  const [tempMax, setTempMax] = useState<string>("");
+  const [offlineThr, setOfflineThr] = useState<string>("300");
   const salvar = useServerFn(salvarConfig);
+  const salvarLimites = useServerFn(salvarLimitesAlerta);
   const cmd = useServerFn(enviarComando);
 
   useEffect(() => {
-    if (bancada) setConfig({ ...DEFAULT_CONFIG, ...bancada.config });
+    if (bancada) {
+      setConfig({ ...DEFAULT_CONFIG, ...bancada.config });
+      setTempMin(bancada.temp_min?.toString() ?? "");
+      setTempMax(bancada.temp_max?.toString() ?? "");
+      setOfflineThr((bancada.offline_threshold_segundos ?? 300).toString());
+    }
   }, [bancada]);
 
   if (!bancada) return null;
