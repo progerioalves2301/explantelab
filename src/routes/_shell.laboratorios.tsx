@@ -121,11 +121,16 @@ function LaboratoriosPage() {
 
   const handleCriar = async (e: React.FormEvent) => {
     e.preventDefault();
+    const nomeTrim = nome.trim();
+    if (nomeTrim.length < 2) {
+      toast.error("Nome deve ter pelo menos 2 caracteres");
+      return;
+    }
     setSaving(true);
     try {
       const created = await criar({
         data: {
-          nome,
+          nome: nomeTrim,
           descricao: descricao || undefined,
           cor,
           ordem: labs.length,
