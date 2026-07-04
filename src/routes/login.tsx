@@ -53,12 +53,14 @@ function LoginPage() {
     <div className="grid min-h-screen place-items-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
-          <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg">
-            <Leaf className="h-6 w-6" />
+          <div className="grid h-14 w-14 place-items-center rounded-xl bg-white shadow-lg ring-1 ring-border">
+            <img src={logoLeaf} alt="Explante Lab" className="h-10 w-10 object-contain" width={40} height={40} />
           </div>
-          <h1 className="text-xl font-bold">GeneLab IoT</h1>
+          <h1 className="font-display text-2xl font-bold text-primary">
+            Explante <span className="italic">Lab</span>
+          </h1>
           <p className="text-xs text-muted-foreground">
-            Automação de bancadas — acesso restrito
+            Monitoramento de Bio Reatores — acesso restrito
           </p>
         </div>
 
