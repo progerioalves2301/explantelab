@@ -120,6 +120,35 @@ export type Database = {
           },
         ]
       }
+      bancada_status_log: {
+        Row: {
+          bancada_id: string
+          changed_at: string
+          id: number
+          status: string
+        }
+        Insert: {
+          bancada_id: string
+          changed_at?: string
+          id?: number
+          status: string
+        }
+        Update: {
+          bancada_id?: string
+          changed_at?: string
+          id?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bancada_status_log_bancada_id_fkey"
+            columns: ["bancada_id"]
+            isOneToOne: false
+            referencedRelation: "bancadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bancadas: {
         Row: {
           config: Json
@@ -134,6 +163,7 @@ export type Database = {
           posicao: number | null
           proximo_ciclo_segundos: number
           status: string
+          status_desde: string | null
           temp_max: number | null
           temp_min: number | null
           temperatura_planta: number | null
@@ -153,6 +183,7 @@ export type Database = {
           posicao?: number | null
           proximo_ciclo_segundos?: number
           status?: string
+          status_desde?: string | null
           temp_max?: number | null
           temp_min?: number | null
           temperatura_planta?: number | null
@@ -172,6 +203,7 @@ export type Database = {
           posicao?: number | null
           proximo_ciclo_segundos?: number
           status?: string
+          status_desde?: string | null
           temp_max?: number | null
           temp_min?: number | null
           temperatura_planta?: number | null

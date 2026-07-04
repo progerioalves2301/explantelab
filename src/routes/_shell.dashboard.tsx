@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Activity, Cpu, Droplets, Leaf, Plus } from "lucide-react";
+import { Activity, Cpu, Droplets, Leaf, Monitor, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BancadaCard } from "@/components/bancada-card";
@@ -8,6 +8,7 @@ import { BancadaConfigDialog } from "@/components/bancada-config-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import type { Bancada, Laboratorio } from "@/lib/types";
 import { withComputedBancadasStatus } from "@/lib/bancada-status";
+import { buildSegments, type StatusSegment } from "@/components/status-timeline";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_shell/dashboard")({
@@ -32,11 +33,15 @@ function DashboardPage() {
   const [selected, setSelected] = useState<Bancada | null>(null);
   const [open, setOpen] = useState(false);
   const [clock, setClock] = useState(() => Date.now());
+  const [logs, setLogs] = useState<
+    { bancada_id: string; status: string; changed_at: string }[]
+  >([]);
 
   useEffect(() => {
     let alive = true;
     (async () => {
-      const [bRes, lRes] = await Promise.all([
+      const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      const [bRes, lRes, logRes] = await Promise.all([
         supabase
           .from("bancadas")
           .select("*")
@@ -45,10 +50,16 @@ function DashboardPage() {
           .from("laboratorios")
           .select("*")
           .order("ordem", { ascending: true }),
+        supabase
+          .from("bancada_status_log")
+          .select("bancada_id,status,changed_at")
+          .gte("changed_at", since)
+          .order("changed_at", { ascending: true }),
       ]);
       if (!alive) return;
       setBancadas((bRes.data ?? []) as unknown as Bancada[]);
       setLabs((lRes.data ?? []) as unknown as Laboratorio[]);
+      setLogs((logRes.data ?? []) as never);
       setLoading(false);
     })();
 
@@ -91,6 +102,18 @@ function DashboardPage() {
           });
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "bancada_status_log" },
+        (payload) => {
+          const row = payload.new as {
+            bancada_id: string;
+            status: string;
+            changed_at: string;
+          };
+          setLogs((prev) => [...prev, row]);
+        },
+      )
       .subscribe();
     return () => {
       alive = false;
@@ -107,6 +130,15 @@ function DashboardPage() {
     () => withComputedBancadasStatus(bancadas, clock),
     [bancadas, clock],
   );
+
+  const segmentsByBancada = useMemo(() => {
+    const map = new Map<string, StatusSegment[]>();
+    for (const b of bancadasComStatus) {
+      const bLogs = logs.filter((l) => l.bancada_id === b.id);
+      map.set(b.id, buildSegments(bLogs, b.status, clock));
+    }
+    return map;
+  }, [bancadasComStatus, logs, clock]);
 
   const filtradas = useMemo(() => {
     if (labFiltro === "todos") return bancadasComStatus;
@@ -138,12 +170,20 @@ function DashboardPage() {
             Monitoramento em tempo real das bancadas ESP32.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/bancadas/nova">
-            <Plus className="mr-1.5 h-4 w-4" />
-            Nova bancada
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link to="/tv">
+              <Monitor className="mr-1.5 h-4 w-4" />
+              Modo TV
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to="/bancadas/nova">
+              <Plus className="mr-1.5 h-4 w-4" />
+              Nova bancada
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -152,6 +192,7 @@ function DashboardPage() {
         <StatCard icon={<Leaf className="h-4 w-4" />} label="Repouso" value={stats.idle} tone="idle" />
         <StatCard icon={<Activity className="h-4 w-4" />} label="Offline" value={stats.offline} tone="destructive" />
       </div>
+
 
       {labs.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -213,7 +254,13 @@ function DashboardPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtradas.map((b) => (
-            <BancadaCard key={b.id} bancada={b} onConfigure={handleConfigure} />
+            <BancadaCard
+              key={b.id}
+              bancada={b}
+              onConfigure={handleConfigure}
+              segments={segmentsByBancada.get(b.id)}
+              clock={clock}
+            />
           ))}
         </div>
       )}
