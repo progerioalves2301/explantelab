@@ -151,7 +151,14 @@ function UsersPage() {
               <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
             </div>
           ) : erro ? (
-            <div className="py-6 text-sm text-destructive">{erro}</div>
+            <div className="space-y-2 py-6 text-sm">
+              <div className="text-destructive">{erro}</div>
+              {erro.toLowerCase().includes("unauthorized") || erro.toLowerCase().includes("authorization") ? (
+                <a href="/login" className="inline-block text-primary underline">
+                  Entrar para gerenciar usuários
+                </a>
+              ) : null}
+            </div>
           ) : usuarios.length === 0 ? (
             <div className="py-6 text-sm text-muted-foreground">
               Nenhum usuário cadastrado ainda.
