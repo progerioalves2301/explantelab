@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Activity, Cpu, Droplets, Leaf, Plus } from "lucide-react";
+import { Activity, Cpu, Droplets, Leaf, Monitor, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BancadaCard } from "@/components/bancada-card";
 import { BancadaConfigDialog } from "@/components/bancada-config-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import type { Bancada, Laboratorio } from "@/lib/types";
+import type { Bancada, BancadaStatus, Laboratorio } from "@/lib/types";
 import { withComputedBancadasStatus } from "@/lib/bancada-status";
+import { buildSegments, type StatusSegment } from "@/components/status-timeline";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_shell/dashboard")({
