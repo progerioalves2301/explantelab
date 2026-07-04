@@ -239,3 +239,36 @@ function StatCard({
     </Card>
   );
 }
+
+function FiltroChip({
+  active,
+  onClick,
+  label,
+  color,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  color?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition",
+        active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-background text-foreground hover:bg-muted",
+      )}
+    >
+      {color && (
+        <span
+          className="h-2 w-2 rounded-full"
+          style={{ background: color }}
+        />
+      )}
+      {label}
+    </button>
+  );
+}
