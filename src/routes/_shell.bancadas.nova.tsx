@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Check, Copy, KeyRound } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -13,8 +13,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { criarBancada } from "@/lib/bancadas.functions";
-import type { Bancada } from "@/lib/types";
+import { supabase } from "@/integrations/supabase/client";
+import type { Bancada, Laboratorio } from "@/lib/types";
 
 export const Route = createFileRoute("/_shell/bancadas/nova")({
   head: () => ({
