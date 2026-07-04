@@ -5,9 +5,11 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Genetics Lab IoT — Design System
- * Palette: leaf green, fluid blue, lead gray.
- * All tokens in oklch. Do NOT hardcode colors in components.
+ * Explante Lab — Design System
+ * Inspirado na identidade Explante Biotecnologia:
+ *  - verde folha vibrante (marca)
+ *  - verde floresta profundo (texto/hierarquia)
+ *  - serif italic para display, sans-serif humanista para corpo
  */
 
 @theme inline {
@@ -56,44 +58,47 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   --shadow-card: 0 1px 2px 0 oklch(0.2 0.02 240 / 0.06), 0 8px 24px -12px oklch(0.2 0.02 240 / 0.12);
-  --shadow-glow-leaf: 0 0 0 3px oklch(0.72 0.17 148 / 0.15), 0 0 18px 0 oklch(0.72 0.17 148 / 0.35);
+  --shadow-glow-leaf: 0 0 0 3px oklch(0.72 0.19 145 / 0.15), 0 0 18px 0 oklch(0.72 0.19 145 / 0.35);
   --shadow-glow-fluid: 0 0 0 3px oklch(0.68 0.15 232 / 0.15), 0 0 18px 0 oklch(0.68 0.15 232 / 0.35);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Merriweather", "Georgia", serif;
 }
 
 :root {
   --radius: 0.75rem;
 
-  --background: oklch(0.985 0.004 210);
-  --foreground: oklch(0.22 0.02 240);
+  --background: oklch(0.99 0.005 145);
+  --foreground: oklch(0.22 0.05 148);            /* verde floresta profundo (texto) */
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.02 240);
+  --card-foreground: oklch(0.22 0.05 148);
 
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.02 240);
+  --popover-foreground: oklch(0.22 0.05 148);
 
-  --primary: oklch(0.52 0.14 148);           /* leaf green deep */
-  --primary-foreground: oklch(0.99 0.005 148);
+  --primary: oklch(0.62 0.2 145);                /* verde Explante vibrante */
+  --primary-foreground: oklch(0.99 0.005 145);
 
-  --secondary: oklch(0.96 0.01 220);
-  --secondary-foreground: oklch(0.28 0.03 240);
+  --secondary: oklch(0.95 0.02 145);
+  --secondary-foreground: oklch(0.28 0.06 148);
 
-  --muted: oklch(0.955 0.008 220);
-  --muted-foreground: oklch(0.5 0.02 240);
+  --muted: oklch(0.955 0.012 145);
+  --muted-foreground: oklch(0.48 0.03 148);
 
-  --accent: oklch(0.94 0.03 220);
-  --accent-foreground: oklch(0.28 0.03 240);
+  --accent: oklch(0.93 0.05 145);
+  --accent-foreground: oklch(0.28 0.06 148);
 
   --destructive: oklch(0.58 0.22 25);
   --destructive-foreground: oklch(0.99 0.005 25);
 
-  --border: oklch(0.9 0.01 230);
-  --input: oklch(0.92 0.01 230);
-  --ring: oklch(0.52 0.14 148);
+  --border: oklch(0.9 0.02 145);
+  --input: oklch(0.92 0.015 145);
+  --ring: oklch(0.62 0.2 145);
 
   /* Domain tokens */
-  --leaf: oklch(0.68 0.17 148);
-  --leaf-foreground: oklch(0.99 0.005 148);
+  --leaf: oklch(0.68 0.19 145);
+  --leaf-foreground: oklch(0.99 0.005 145);
   --fluid: oklch(0.65 0.15 232);
   --fluid-foreground: oklch(0.99 0.005 232);
   --warn: oklch(0.78 0.15 85);
@@ -101,14 +106,14 @@
   --idle: oklch(0.65 0.02 240);
   --idle-foreground: oklch(0.99 0 0);
 
-  --sidebar: oklch(0.99 0.005 220);
-  --sidebar-foreground: oklch(0.28 0.02 240);
-  --sidebar-primary: oklch(0.52 0.14 148);
-  --sidebar-primary-foreground: oklch(0.99 0.005 148);
-  --sidebar-accent: oklch(0.955 0.01 220);
-  --sidebar-accent-foreground: oklch(0.28 0.03 240);
-  --sidebar-border: oklch(0.9 0.01 230);
-  --sidebar-ring: oklch(0.52 0.14 148);
+  --sidebar: oklch(0.985 0.01 145);
+  --sidebar-foreground: oklch(0.26 0.05 148);
+  --sidebar-primary: oklch(0.62 0.2 145);
+  --sidebar-primary-foreground: oklch(0.99 0.005 145);
+  --sidebar-accent: oklch(0.94 0.03 145);
+  --sidebar-accent-foreground: oklch(0.28 0.06 148);
+  --sidebar-border: oklch(0.9 0.02 145);
+  --sidebar-ring: oklch(0.62 0.2 145);
 }
 
 .dark {
