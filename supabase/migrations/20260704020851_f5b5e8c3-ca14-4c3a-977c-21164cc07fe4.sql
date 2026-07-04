@@ -1,0 +1,1 @@
+ALTER TABLE public.alertas ADD COLUMN IF NOT EXISTS notificado_resolucao_em timestamptz;

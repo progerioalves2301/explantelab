@@ -83,7 +83,61 @@ export const Route = createFileRoute("/api/public/hooks/check-alerts")({
           .update({ notificado_em: new Date().toISOString() })
           .in("id", ids);
 
-        return Response.json({ ok: true, novos: pendentes.length, enviados });
+        // 5. alertas RESOLVIDOS que ainda não notificaram recuperação
+        const { data: resolvidos } = await supabaseAdmin
+          .from("alertas")
+          .select("id, tipo, mensagem, bancada_id, bancadas(nome)")
+          .not("resolvido_em", "is", null)
+          .not("notificado_em", "is", null)
+          .is("notificado_resolucao_em", null)
+          .limit(50);
+
+        let recuperados = 0;
+        const resolvidosIds: string[] = [];
+
+        if (resolvidos && resolvidos.length > 0) {
+          for (const alerta of resolvidos as any[]) {
+            resolvidosIds.push(alerta.id);
+            if (!canSend) continue;
+
+            const tipoLabel =
+              alerta.tipo === "offline" ? "voltou ONLINE" :
+              alerta.tipo === "temperatura" ? "TEMPERATURA normalizada" :
+              "CICLO recuperado";
+            const nome = alerta.bancadas?.nome ?? "Bancada";
+            const text = `✅ <b>Explante Lab — Recuperado</b>\nBancada "${nome}" ${tipoLabel}.`;
+
+            for (const d of destinos!) {
+              try {
+                const res = await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${lovableKey}`,
+                    "X-Connection-Api-Key": tgKey!,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ chat_id: d.chat_id, text, parse_mode: "HTML" }),
+                });
+                if (res.ok) recuperados++;
+                else console.error("Telegram recuperação falhou", res.status, await res.text());
+              } catch (e) {
+                console.error("Erro enviando recuperação Telegram", e);
+              }
+            }
+          }
+
+          await supabaseAdmin
+            .from("alertas")
+            .update({ notificado_resolucao_em: new Date().toISOString() })
+            .in("id", resolvidosIds);
+        }
+
+        return Response.json({
+          ok: true,
+          novos: pendentes.length,
+          enviados,
+          recuperados,
+        });
       },
     },
   },
