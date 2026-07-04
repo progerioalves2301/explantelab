@@ -141,16 +141,53 @@ function DashboardPage() {
         <StatCard icon={<Activity className="h-4 w-4" />} label="Offline" value={stats.offline} tone="destructive" />
       </div>
 
+      {labs.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          <FiltroChip
+            active={labFiltro === "todos"}
+            onClick={() => setLabFiltro("todos")}
+            label={`Todos (${bancadas.length})`}
+          />
+          {labs.map((lab) => {
+            const count = bancadas.filter(
+              (b) => b.laboratorio_id === lab.id,
+            ).length;
+            return (
+              <FiltroChip
+                key={lab.id}
+                active={labFiltro === lab.id}
+                onClick={() => setLabFiltro(lab.id)}
+                label={`${lab.nome} (${count})`}
+                color={lab.cor}
+              />
+            );
+          })}
+          {bancadas.some((b) => !b.laboratorio_id) && (
+            <FiltroChip
+              active={labFiltro === "sem"}
+              onClick={() => setLabFiltro("sem")}
+              label={`Sem laboratório (${bancadas.filter((b) => !b.laboratorio_id).length})`}
+            />
+          )}
+        </div>
+      )}
+
       {loading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
-      ) : bancadas.length === 0 ? (
+      ) : filtradas.length === 0 ? (
         <Card className="card-elevated">
           <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
             <Cpu className="h-8 w-8 text-muted-foreground" />
             <div>
-              <div className="font-semibold">Nenhuma bancada cadastrada</div>
+              <div className="font-semibold">
+                {bancadas.length === 0
+                  ? "Nenhuma bancada cadastrada"
+                  : "Nenhuma bancada neste filtro"}
+              </div>
               <p className="text-sm text-muted-foreground">
-                Crie a primeira e receba o token para colar no portal AP do ESP32.
+                {bancadas.length === 0
+                  ? "Crie a primeira e receba o token para colar no portal AP do ESP32."
+                  : "Selecione outro laboratório ou cadastre uma bancada aqui."}
               </p>
             </div>
             <Button asChild size="sm">
@@ -163,7 +200,7 @@ function DashboardPage() {
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {bancadas.map((b) => (
+          {filtradas.map((b) => (
             <BancadaCard key={b.id} bancada={b} onConfigure={handleConfigure} />
           ))}
         </div>
