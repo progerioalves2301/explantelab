@@ -1,18 +1,35 @@
-import { useNavigate } from "@tanstack/react-router";
-import { LogOut, Server, Moon, Sun, User } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Bell, LogOut, Server, Moon, Sun, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
 
 export function AppHeader() {
   const navigate = useNavigate();
   const [dark, setDark] = useState(false);
   const [connected] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
+  const [alertasAbertos, setAlertasAbertos] = useState(0);
+
+  useEffect(() => {
+    if (!email) return;
+    const carregar = async () => {
+      const { count } = await supabase
+        .from("alertas")
+        .select("id", { count: "exact", head: true })
+        .is("resolvido_em", null);
+      setAlertasAbertos(count ?? 0);
+    };
+    carregar();
+    const t = setInterval(carregar, 15000);
+    return () => clearInterval(t);
+  }, [email]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -82,6 +99,21 @@ export function AppHeader() {
           <div className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
             <User className="h-3.5 w-3.5" /> não autenticado
           </div>
+        )}
+        {email && (
+          <Button asChild variant="ghost" size="icon" aria-label="Alertas" className="relative">
+            <Link to="/alertas">
+              <Bell className="h-4 w-4" />
+              {alertasAbertos > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -right-1 -top-1 h-4 min-w-4 justify-center px-1 text-[9px]"
+                >
+                  {alertasAbertos > 99 ? "99+" : alertasAbertos}
+                </Badge>
+              )}
+            </Link>
+          </Button>
         )}
         <Button
           variant="ghost"
