@@ -26,6 +26,24 @@ import {
 } from "@/lib/laboratorios.functions";
 import type { Bancada, Laboratorio } from "@/lib/types";
 
+function sortLaboratorios(items: Laboratorio[]) {
+  return items
+    .slice()
+    .sort(
+      (a, b) =>
+        a.ordem - b.ordem ||
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+}
+
+function upsertLaboratorio(items: Laboratorio[], row: Laboratorio) {
+  const idx = items.findIndex((l) => l.id === row.id);
+  if (idx === -1) return sortLaboratorios([...items, row]);
+  const copy = items.slice();
+  copy[idx] = row;
+  return sortLaboratorios(copy);
+}
+
 export const Route = createFileRoute("/_shell/laboratorios")({
   head: () => ({
     meta: [
@@ -52,7 +70,7 @@ function LaboratoriosPage() {
 
   useEffect(() => {
     let alive = true;
-    (async () => {
+    const refetch = async () => {
       const [labsRes, bancadasRes] = await Promise.all([
         supabase
           .from("laboratorios")
@@ -64,7 +82,9 @@ function LaboratoriosPage() {
       setLabs((labsRes.data ?? []) as unknown as Laboratorio[]);
       setBancadas((bancadasRes.data ?? []) as unknown as Bancada[]);
       setLoading(false);
-    })();
+    };
+
+    void refetch();
 
     const ch = supabase
       .channel("laboratorios-live")
@@ -74,24 +94,27 @@ function LaboratoriosPage() {
         (payload) => {
           setLabs((prev) => {
             if (payload.eventType === "DELETE") {
+              const deletedId = (payload.old as Partial<Laboratorio>).id;
+              if (!deletedId) {
+                void refetch();
+                return prev;
+              }
               return prev.filter(
-                (l) => l.id !== (payload.old as Laboratorio).id,
+                (l) => l.id !== deletedId,
               );
             }
             const row = payload.new as unknown as Laboratorio;
-            const idx = prev.findIndex((l) => l.id === row.id);
-            if (idx === -1)
-              return [...prev, row].sort((a, b) => a.ordem - b.ordem);
-            const copy = prev.slice();
-            copy[idx] = row;
-            return copy;
+            return upsertLaboratorio(prev, row);
           });
         },
       )
       .subscribe();
 
+    const timer = window.setInterval(refetch, 5_000);
+
     return () => {
       alive = false;
+      window.clearInterval(timer);
       supabase.removeChannel(ch);
     };
   }, []);
@@ -100,7 +123,7 @@ function LaboratoriosPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await criar({
+      const created = await criar({
         data: {
           nome,
           descricao: descricao || undefined,
@@ -108,6 +131,7 @@ function LaboratoriosPage() {
           ordem: labs.length,
         },
       });
+      setLabs((prev) => upsertLaboratorio(prev, created as Laboratorio));
       setNome("");
       setDescricao("");
       setCor("#22c55e");
@@ -207,6 +231,9 @@ function LaboratoriosPage() {
               onDeleted={(id) =>
                 setLabs((prev) => prev.filter((l) => l.id !== id))
               }
+              onRestore={(removedLab) =>
+                setLabs((prev) => upsertLaboratorio(prev, removedLab))
+              }
             />
           ))}
         </div>
@@ -219,10 +246,12 @@ function LabRow({
   lab,
   count,
   onDeleted,
+  onRestore,
 }: {
   lab: Laboratorio;
   count: number;
   onDeleted: (id: string) => void;
+  onRestore: (lab: Laboratorio) => void;
 }) {
   const atualizar = useServerFn(atualizarLaboratorio);
   const excluir = useServerFn(excluirLaboratorio);
@@ -244,17 +273,18 @@ function LabRow({
   };
 
   const remove = async () => {
+    onDeleted(lab.id);
     try {
       await excluir({ data: { id: lab.id } });
-      onDeleted(lab.id);
       toast.success(`${lab.nome} removido`);
     } catch (e) {
+      onRestore(lab);
       toast.error(e instanceof Error ? e.message : "Falha ao remover");
     }
   };
 
   return (
-    <Card className="card-elevated overflow-hidden">
+    <Card className="card-elevated overflow-hidden" data-lab-id={lab.id}>
       <div className="h-1.5 w-full" style={{ background: lab.cor }} />
       <CardContent className="space-y-3 p-4">
         {editing ? (
