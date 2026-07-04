@@ -76,6 +76,14 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
   const handleSave = async () => {
     try {
       await salvar({ data: { bancada_id: bancada.id, config } });
+      await salvarLimites({
+        data: {
+          bancada_id: bancada.id,
+          temp_min: tempMin === "" ? null : Number(tempMin),
+          temp_max: tempMax === "" ? null : Number(tempMax),
+          offline_threshold_segundos: Math.max(30, Number(offlineThr) || 300),
+        },
+      });
       toast.success(`Configuração salva para ${bancada.nome}`);
       onOpenChange(false);
     } catch (e) {
