@@ -45,6 +45,7 @@ export type Database = {
           id: string
           mensagem: string
           notificado_em: string | null
+          notificado_resolucao_em: string | null
           resolvido_em: string | null
           severidade: string
           tipo: string
@@ -56,6 +57,7 @@ export type Database = {
           id?: string
           mensagem: string
           notificado_em?: string | null
+          notificado_resolucao_em?: string | null
           resolvido_em?: string | null
           severidade?: string
           tipo: string
@@ -67,6 +69,7 @@ export type Database = {
           id?: string
           mensagem?: string
           notificado_em?: string | null
+          notificado_resolucao_em?: string | null
           resolvido_em?: string | null
           severidade?: string
           tipo?: string
