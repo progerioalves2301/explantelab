@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Login — GeneLab IoT" },
+      { title: "Login — Explante" },
       { name: "description", content: "Acesso restrito aos técnicos do laboratório." },
     ],
   }),
@@ -22,17 +23,29 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // TODO(Supabase Auth):
-    //   const { error } = await supabase.auth.signInWithPassword({ email, password })
-    //   if (error) { toast.error(error.message); return }
-    await new Promise((r) => setTimeout(r, 600));
-    setLoading(false);
-    toast.success("Bem-vindo(a) ao GeneLab IoT");
-    navigate({ to: "/dashboard" });
+    try {
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+        });
+        if (error) throw error;
+      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success("Bem-vindo(a)");
+      navigate({ to: "/dashboard" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao autenticar");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
