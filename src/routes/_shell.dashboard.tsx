@@ -102,6 +102,18 @@ function DashboardPage() {
           });
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "bancada_status_log" },
+        (payload) => {
+          const row = payload.new as {
+            bancada_id: string;
+            status: string;
+            changed_at: string;
+          };
+          setLogs((prev) => [...prev, row]);
+        },
+      )
       .subscribe();
     return () => {
       alive = false;
@@ -118,6 +130,15 @@ function DashboardPage() {
     () => withComputedBancadasStatus(bancadas, clock),
     [bancadas, clock],
   );
+
+  const segmentsByBancada = useMemo(() => {
+    const map = new Map<string, StatusSegment[]>();
+    for (const b of bancadasComStatus) {
+      const bLogs = logs.filter((l) => l.bancada_id === b.id);
+      map.set(b.id, buildSegments(bLogs, b.status, clock));
+    }
+    return map;
+  }, [bancadasComStatus, logs, clock]);
 
   const filtradas = useMemo(() => {
     if (labFiltro === "todos") return bancadasComStatus;
