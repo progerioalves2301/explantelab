@@ -1,9 +1,9 @@
 import type { Bancada } from "./types";
 
-export function withComputedBancadaStatus<T extends Pick<Bancada, "status" | "ultima_sync" | "offline_threshold_segundos">>(
-  bancada: T,
+export function withComputedBancadaStatus(
+  bancada: Bancada,
   now = Date.now(),
-): T {
+): Bancada {
   const limite = (bancada.offline_threshold_segundos ?? 300) * 1000;
   const ultimaSync = bancada.ultima_sync
     ? new Date(bancada.ultima_sync).getTime()
@@ -18,9 +18,9 @@ export function withComputedBancadaStatus<T extends Pick<Bancada, "status" | "ul
   return bancada;
 }
 
-export function withComputedBancadasStatus<T extends Pick<Bancada, "status" | "ultima_sync" | "offline_threshold_segundos">>(
-  bancadas: T[],
+export function withComputedBancadasStatus(
+  bancadas: Bancada[],
   now = Date.now(),
-): T[] {
+): Bancada[] {
   return bancadas.map((bancada) => withComputedBancadaStatus(bancada, now));
 }
