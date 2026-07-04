@@ -191,6 +191,33 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
             </div>
           </div>
 
+          <div className="grid gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
+            <Label className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+              Limites de alerta (Telegram)
+            </Label>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="grid gap-1">
+                <Label htmlFor="tmin" className="text-[11px] text-muted-foreground">Temp mín (°C)</Label>
+                <Input id="tmin" type="number" step="0.1" placeholder="—"
+                  value={tempMin} onChange={(e) => setTempMin(e.target.value)} />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="tmax" className="text-[11px] text-muted-foreground">Temp máx (°C)</Label>
+                <Input id="tmax" type="number" step="0.1" placeholder="—"
+                  value={tempMax} onChange={(e) => setTempMax(e.target.value)} />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="offthr" className="text-[11px] text-muted-foreground">Offline após (s)</Label>
+                <Input id="offthr" type="number" min={30} value={offlineThr}
+                  onChange={(e) => setOfflineThr(e.target.value)} />
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Deixe temp em branco para desativar. Offline padrão: 300s (5 min).
+            </p>
+          </div>
+
+
           <div className="rounded-md border bg-muted/40 p-2 text-[11px] text-muted-foreground">
             <div>ID: <span className="font-mono">{bancada.id}</span></div>
             {bancada.firmware_version && (
