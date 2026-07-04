@@ -25,6 +25,8 @@ export const Route = createFileRoute("/_shell/dashboard")({
 
 function DashboardPage() {
   const [bancadas, setBancadas] = useState<Bancada[]>([]);
+  const [labs, setLabs] = useState<Laboratorio[]>([]);
+  const [labFiltro, setLabFiltro] = useState<string | "todos" | "sem">("todos");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Bancada | null>(null);
   const [open, setOpen] = useState(false);
@@ -32,14 +34,20 @@ function DashboardPage() {
   useEffect(() => {
     let alive = true;
     (async () => {
-      const { data } = await supabase
-        .from("bancadas")
-        .select("*")
-        .order("created_at", { ascending: true });
-      if (alive) {
-        setBancadas((data ?? []) as unknown as Bancada[]);
-        setLoading(false);
-      }
+      const [bRes, lRes] = await Promise.all([
+        supabase
+          .from("bancadas")
+          .select("*")
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("laboratorios")
+          .select("*")
+          .order("ordem", { ascending: true }),
+      ]);
+      if (!alive) return;
+      setBancadas((bRes.data ?? []) as unknown as Bancada[]);
+      setLabs((lRes.data ?? []) as unknown as Laboratorio[]);
+      setLoading(false);
     })();
 
     const channel = supabase
@@ -61,6 +69,26 @@ function DashboardPage() {
           });
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "laboratorios" },
+        (payload) => {
+          setLabs((prev) => {
+            if (payload.eventType === "DELETE") {
+              return prev.filter(
+                (l) => l.id !== (payload.old as Laboratorio).id,
+              );
+            }
+            const row = payload.new as unknown as Laboratorio;
+            const idx = prev.findIndex((l) => l.id === row.id);
+            if (idx === -1)
+              return [...prev, row].sort((a, b) => a.ordem - b.ordem);
+            const copy = prev.slice();
+            copy[idx] = row;
+            return copy;
+          });
+        },
+      )
       .subscribe();
     return () => {
       alive = false;
@@ -68,14 +96,21 @@ function DashboardPage() {
     };
   }, []);
 
+  const filtradas = useMemo(() => {
+    if (labFiltro === "todos") return bancadas;
+    if (labFiltro === "sem")
+      return bancadas.filter((b) => !b.laboratorio_id);
+    return bancadas.filter((b) => b.laboratorio_id === labFiltro);
+  }, [bancadas, labFiltro]);
+
   const stats = useMemo(() => {
-    const active = bancadas.filter(
+    const active = filtradas.filter(
       (b) => b.status === "Injetando" || b.status === "Retornando",
     ).length;
-    const offline = bancadas.filter((b) => b.status === "Offline").length;
-    const idle = bancadas.filter((b) => b.status === "Repouso").length;
-    return { total: bancadas.length, active, offline, idle };
-  }, [bancadas]);
+    const offline = filtradas.filter((b) => b.status === "Offline").length;
+    const idle = filtradas.filter((b) => b.status === "Repouso").length;
+    return { total: filtradas.length, active, offline, idle };
+  }, [filtradas]);
 
   const handleConfigure = (b: Bancada) => {
     setSelected(b);
