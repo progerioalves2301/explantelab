@@ -16,7 +16,10 @@ import { Route as ShellUsuariosRouteImport } from './routes/_shell.usuarios'
 import { Route as ShellLaboratoriosRouteImport } from './routes/_shell.laboratorios'
 import { Route as ShellDashboardRouteImport } from './routes/_shell.dashboard'
 import { Route as ShellConfiguracoesRouteImport } from './routes/_shell.configuracoes'
+import { Route as ShellAlertasRouteImport } from './routes/_shell.alertas'
 import { Route as ShellBancadasNovaRouteImport } from './routes/_shell.bancadas.nova'
+import { Route as ShellAlertasDestinosRouteImport } from './routes/_shell.alertas.destinos'
+import { Route as ApiPublicHooksCheckAlertsRouteImport } from './routes/api/public/hooks/check-alerts'
 import { Route as ApiPublicBenchTelemetryRouteImport } from './routes/api/public/bench.telemetry'
 import { Route as ApiPublicBenchPairRouteImport } from './routes/api/public/bench.pair'
 import { Route as ApiPublicBenchCommandsRouteImport } from './routes/api/public/bench.commands'
@@ -55,11 +58,27 @@ const ShellConfiguracoesRoute = ShellConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellAlertasRoute = ShellAlertasRouteImport.update({
+  id: '/alertas',
+  path: '/alertas',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellBancadasNovaRoute = ShellBancadasNovaRouteImport.update({
   id: '/bancadas/nova',
   path: '/bancadas/nova',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellAlertasDestinosRoute = ShellAlertasDestinosRouteImport.update({
+  id: '/destinos',
+  path: '/destinos',
+  getParentRoute: () => ShellAlertasRoute,
+} as any)
+const ApiPublicHooksCheckAlertsRoute =
+  ApiPublicHooksCheckAlertsRouteImport.update({
+    id: '/api/public/hooks/check-alerts',
+    path: '/api/public/hooks/check-alerts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicBenchTelemetryRoute = ApiPublicBenchTelemetryRouteImport.update({
   id: '/api/public/bench/telemetry',
   path: '/api/public/bench/telemetry',
@@ -79,79 +98,97 @@ const ApiPublicBenchCommandsRoute = ApiPublicBenchCommandsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/alertas': typeof ShellAlertasRouteWithChildren
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
   '/usuarios': typeof ShellUsuariosRoute
+  '/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
+  '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/alertas': typeof ShellAlertasRouteWithChildren
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
   '/usuarios': typeof ShellUsuariosRoute
+  '/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
+  '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_shell': typeof ShellRouteWithChildren
   '/login': typeof LoginRoute
+  '/_shell/alertas': typeof ShellAlertasRouteWithChildren
   '/_shell/configuracoes': typeof ShellConfiguracoesRoute
   '/_shell/dashboard': typeof ShellDashboardRoute
   '/_shell/laboratorios': typeof ShellLaboratoriosRoute
   '/_shell/usuarios': typeof ShellUsuariosRoute
+  '/_shell/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/_shell/bancadas/nova': typeof ShellBancadasNovaRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
+  '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/login'
+    | '/alertas'
     | '/configuracoes'
     | '/dashboard'
     | '/laboratorios'
     | '/usuarios'
+    | '/alertas/destinos'
     | '/bancadas/nova'
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
+    | '/api/public/hooks/check-alerts'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/alertas'
     | '/configuracoes'
     | '/dashboard'
     | '/laboratorios'
     | '/usuarios'
+    | '/alertas/destinos'
     | '/bancadas/nova'
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
+    | '/api/public/hooks/check-alerts'
   id:
     | '__root__'
     | '/'
     | '/_shell'
     | '/login'
+    | '/_shell/alertas'
     | '/_shell/configuracoes'
     | '/_shell/dashboard'
     | '/_shell/laboratorios'
     | '/_shell/usuarios'
+    | '/_shell/alertas/destinos'
     | '/_shell/bancadas/nova'
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
+    | '/api/public/hooks/check-alerts'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -161,6 +198,7 @@ export interface RootRouteChildren {
   ApiPublicBenchCommandsRoute: typeof ApiPublicBenchCommandsRoute
   ApiPublicBenchPairRoute: typeof ApiPublicBenchPairRoute
   ApiPublicBenchTelemetryRoute: typeof ApiPublicBenchTelemetryRoute
+  ApiPublicHooksCheckAlertsRoute: typeof ApiPublicHooksCheckAlertsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -214,12 +252,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellConfiguracoesRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/alertas': {
+      id: '/_shell/alertas'
+      path: '/alertas'
+      fullPath: '/alertas'
+      preLoaderRoute: typeof ShellAlertasRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/bancadas/nova': {
       id: '/_shell/bancadas/nova'
       path: '/bancadas/nova'
       fullPath: '/bancadas/nova'
       preLoaderRoute: typeof ShellBancadasNovaRouteImport
       parentRoute: typeof ShellRoute
+    }
+    '/_shell/alertas/destinos': {
+      id: '/_shell/alertas/destinos'
+      path: '/destinos'
+      fullPath: '/alertas/destinos'
+      preLoaderRoute: typeof ShellAlertasDestinosRouteImport
+      parentRoute: typeof ShellAlertasRoute
+    }
+    '/api/public/hooks/check-alerts': {
+      id: '/api/public/hooks/check-alerts'
+      path: '/api/public/hooks/check-alerts'
+      fullPath: '/api/public/hooks/check-alerts'
+      preLoaderRoute: typeof ApiPublicHooksCheckAlertsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/bench/telemetry': {
       id: '/api/public/bench/telemetry'
@@ -245,7 +304,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ShellAlertasRouteChildren {
+  ShellAlertasDestinosRoute: typeof ShellAlertasDestinosRoute
+}
+
+const ShellAlertasRouteChildren: ShellAlertasRouteChildren = {
+  ShellAlertasDestinosRoute: ShellAlertasDestinosRoute,
+}
+
+const ShellAlertasRouteWithChildren = ShellAlertasRoute._addFileChildren(
+  ShellAlertasRouteChildren,
+)
+
 interface ShellRouteChildren {
+  ShellAlertasRoute: typeof ShellAlertasRouteWithChildren
   ShellConfiguracoesRoute: typeof ShellConfiguracoesRoute
   ShellDashboardRoute: typeof ShellDashboardRoute
   ShellLaboratoriosRoute: typeof ShellLaboratoriosRoute
@@ -254,6 +326,7 @@ interface ShellRouteChildren {
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
+  ShellAlertasRoute: ShellAlertasRouteWithChildren,
   ShellConfiguracoesRoute: ShellConfiguracoesRoute,
   ShellDashboardRoute: ShellDashboardRoute,
   ShellLaboratoriosRoute: ShellLaboratoriosRoute,
@@ -270,6 +343,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBenchCommandsRoute: ApiPublicBenchCommandsRoute,
   ApiPublicBenchPairRoute: ApiPublicBenchPairRoute,
   ApiPublicBenchTelemetryRoute: ApiPublicBenchTelemetryRoute,
+  ApiPublicHooksCheckAlertsRoute: ApiPublicHooksCheckAlertsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

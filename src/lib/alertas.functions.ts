@@ -11,7 +11,8 @@ export interface Alerta {
   tipo: AlertaTipo;
   severidade: AlertaSeveridade;
   mensagem: string;
-  valor: Record<string, unknown>;
+  valor: Record<string, string | number | boolean | null>;
+
   notificado_em: string | null;
   resolvido_em: string | null;
   created_at: string;
