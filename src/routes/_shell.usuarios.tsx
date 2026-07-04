@@ -21,6 +21,8 @@ import {
   type AppRole,
   type UsuarioComPapeis,
 } from "@/lib/roles.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_shell/usuarios")({
   head: () => ({
@@ -55,10 +57,19 @@ function UsersPage() {
   const [usuarios, setUsuarios] = useState<UsuarioComPapeis[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [semSessao, setSemSessao] = useState(false);
 
   const carregar = async () => {
     try {
       setLoading(true);
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) {
+        setSemSessao(true);
+        setUsuarios([]);
+        setErro(null);
+        return;
+      }
+      setSemSessao(false);
       const dados = await listar();
       setUsuarios(dados);
       setErro(null);
@@ -71,6 +82,10 @@ function UsersPage() {
 
   useEffect(() => {
     void carregar();
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      void carregar();
+    });
+    return () => sub.subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -150,15 +165,15 @@ function UsersPage() {
             <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
             </div>
-          ) : erro ? (
+          ) : semSessao ? (
             <div className="space-y-2 py-6 text-sm">
-              <div className="text-destructive">{erro}</div>
-              {erro.toLowerCase().includes("unauthorized") || erro.toLowerCase().includes("authorization") ? (
-                <a href="/login" className="inline-block text-primary underline">
-                  Entrar para gerenciar usuários
-                </a>
-              ) : null}
+              <div>Você precisa entrar para gerenciar usuários.</div>
+              <Link to="/login" className="inline-block text-primary underline">
+                Ir para o login
+              </Link>
             </div>
+          ) : erro ? (
+            <div className="py-6 text-sm text-destructive">{erro}</div>
           ) : usuarios.length === 0 ? (
             <div className="py-6 text-sm text-muted-foreground">
               Nenhum usuário cadastrado ainda.
