@@ -11,6 +11,24 @@ import { withComputedBancadasStatus } from "@/lib/bancada-status";
 import { buildSegments, type StatusSegment } from "@/components/status-timeline";
 import { cn } from "@/lib/utils";
 
+function sortLaboratorios(items: Laboratorio[]) {
+  return items
+    .slice()
+    .sort(
+      (a, b) =>
+        a.ordem - b.ordem ||
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+}
+
+function upsertLaboratorio(items: Laboratorio[], row: Laboratorio) {
+  const idx = items.findIndex((l) => l.id === row.id);
+  if (idx === -1) return sortLaboratorios([...items, row]);
+  const copy = items.slice();
+  copy[idx] = row;
+  return sortLaboratorios(copy);
+}
+
 export const Route = createFileRoute("/_shell/dashboard")({
   head: () => ({
     meta: [
@@ -39,7 +57,7 @@ function DashboardPage() {
 
   useEffect(() => {
     let alive = true;
-    (async () => {
+    const refetch = async () => {
       const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
       const [bRes, lRes, logRes] = await Promise.all([
         supabase
@@ -61,7 +79,9 @@ function DashboardPage() {
       setLabs((lRes.data ?? []) as unknown as Laboratorio[]);
       setLogs((logRes.data ?? []) as never);
       setLoading(false);
-    })();
+    };
+
+    void refetch();
 
     const channel = supabase
       .channel("bancadas-live")
@@ -88,17 +108,20 @@ function DashboardPage() {
         (payload) => {
           setLabs((prev) => {
             if (payload.eventType === "DELETE") {
+              const deletedId = (payload.old as Partial<Laboratorio>).id;
+              if (!deletedId) {
+                void refetch();
+                return prev;
+              }
+              setLabFiltro((current) =>
+                current === deletedId ? "todos" : current,
+              );
               return prev.filter(
-                (l) => l.id !== (payload.old as Laboratorio).id,
+                (l) => l.id !== deletedId,
               );
             }
             const row = payload.new as unknown as Laboratorio;
-            const idx = prev.findIndex((l) => l.id === row.id);
-            if (idx === -1)
-              return [...prev, row].sort((a, b) => a.ordem - b.ordem);
-            const copy = prev.slice();
-            copy[idx] = row;
-            return copy;
+            return upsertLaboratorio(prev, row);
           });
         },
       )
@@ -115,8 +138,10 @@ function DashboardPage() {
         },
       )
       .subscribe();
+    const timer = window.setInterval(refetch, 10_000);
     return () => {
       alive = false;
+      window.clearInterval(timer);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -126,8 +151,7 @@ function DashboardPage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  // Polling de segurança: caso o canal realtime caia (Wi-Fi, sleep de aba,
-  // reconexão), refazemos um SELECT leve a cada 10s para não deixar a UI parada.
+  // Polling de segurança para temperatura/status entre reconexões realtime.
   useEffect(() => {
     let alive = true;
     const timer = window.setInterval(async () => {
@@ -143,6 +167,11 @@ function DashboardPage() {
       window.clearInterval(timer);
     };
   }, []);
+
+  useEffect(() => {
+    if (labFiltro === "todos" || labFiltro === "sem") return;
+    if (!labs.some((lab) => lab.id === labFiltro)) setLabFiltro("todos");
+  }, [labFiltro, labs]);
 
   const bancadasComStatus = useMemo(
     () => withComputedBancadasStatus(bancadas, clock),
