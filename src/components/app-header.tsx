@@ -1,12 +1,14 @@
-import { useNavigate } from "@tanstack/react-router";
-import { LogOut, Server, Moon, Sun, User } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Bell, LogOut, Server, Moon, Sun, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
 
 export function AppHeader() {
   const navigate = useNavigate();
