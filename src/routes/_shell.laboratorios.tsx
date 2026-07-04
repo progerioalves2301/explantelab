@@ -278,7 +278,12 @@ function LabRow({
       await excluir({ data: { id: lab.id } });
       toast.success(`${lab.nome} removido`);
     } catch (e) {
-      onRestore(lab);
+      const { data } = await supabase
+        .from("laboratorios")
+        .select("id")
+        .eq("id", lab.id)
+        .maybeSingle();
+      if (data) onRestore(lab);
       toast.error(e instanceof Error ? e.message : "Falha ao remover");
     }
   };
