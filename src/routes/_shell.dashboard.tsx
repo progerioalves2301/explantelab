@@ -33,11 +33,15 @@ function DashboardPage() {
   const [selected, setSelected] = useState<Bancada | null>(null);
   const [open, setOpen] = useState(false);
   const [clock, setClock] = useState(() => Date.now());
+  const [logs, setLogs] = useState<
+    { bancada_id: string; status: string; changed_at: string }[]
+  >([]);
 
   useEffect(() => {
     let alive = true;
     (async () => {
-      const [bRes, lRes] = await Promise.all([
+      const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      const [bRes, lRes, logRes] = await Promise.all([
         supabase
           .from("bancadas")
           .select("*")
@@ -46,10 +50,16 @@ function DashboardPage() {
           .from("laboratorios")
           .select("*")
           .order("ordem", { ascending: true }),
+        supabase
+          .from("bancada_status_log")
+          .select("bancada_id,status,changed_at")
+          .gte("changed_at", since)
+          .order("changed_at", { ascending: true }),
       ]);
       if (!alive) return;
       setBancadas((bRes.data ?? []) as unknown as Bancada[]);
       setLabs((lRes.data ?? []) as unknown as Laboratorio[]);
+      setLogs((logRes.data ?? []) as never);
       setLoading(false);
     })();
 
