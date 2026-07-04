@@ -204,6 +204,9 @@ function LaboratoriosPage() {
               key={lab.id}
               lab={lab}
               count={bancadas.filter((b) => b.laboratorio_id === lab.id).length}
+              onDeleted={(id) =>
+                setLabs((prev) => prev.filter((l) => l.id !== id))
+              }
             />
           ))}
         </div>
