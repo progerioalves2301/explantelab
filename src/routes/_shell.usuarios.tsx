@@ -57,10 +57,19 @@ function UsersPage() {
   const [usuarios, setUsuarios] = useState<UsuarioComPapeis[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [semSessao, setSemSessao] = useState(false);
 
   const carregar = async () => {
     try {
       setLoading(true);
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) {
+        setSemSessao(true);
+        setUsuarios([]);
+        setErro(null);
+        return;
+      }
+      setSemSessao(false);
       const dados = await listar();
       setUsuarios(dados);
       setErro(null);
@@ -73,6 +82,10 @@ function UsersPage() {
 
   useEffect(() => {
     void carregar();
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      void carregar();
+    });
+    return () => sub.subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
