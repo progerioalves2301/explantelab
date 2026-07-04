@@ -185,7 +185,14 @@ function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard icon={<Cpu className="h-4 w-4" />} label="Bancadas" value={stats.total} tone="fluid" />
+        <StatCard icon={<Droplets className="h-4 w-4" />} label="Em ciclo" value={stats.active} tone="leaf" />
+        <StatCard icon={<Leaf className="h-4 w-4" />} label="Repouso" value={stats.idle} tone="idle" />
+        <StatCard icon={<Activity className="h-4 w-4" />} label="Offline" value={stats.offline} tone="destructive" />
       </div>
+
 
       {labs.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
