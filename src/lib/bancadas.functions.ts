@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Bancada, ComandoTipo, Configuracoes } from "./types";
+import { withComputedBancadasStatus } from "./bancada-status";
 
 const HORARIO_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -26,15 +27,7 @@ export const listBancadas = createServerFn({ method: "GET" }).handler(
       .select("*")
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
-    const now = Date.now();
-    return (data ?? []).map((b: any) => {
-      const limite = (b.offline_threshold_segundos ?? 300) * 1000;
-      const idade = b.ultima_sync ? now - new Date(b.ultima_sync).getTime() : Infinity;
-      if (!b.ultima_sync || idade > limite) {
-        return { ...b, status: "Offline" };
-      }
-      return b;
-    }) as unknown as Bancada[];
+    return withComputedBancadasStatus((data ?? []) as unknown as Bancada[]);
   },
 );
 

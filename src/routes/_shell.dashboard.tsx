@@ -7,6 +7,7 @@ import { BancadaCard } from "@/components/bancada-card";
 import { BancadaConfigDialog } from "@/components/bancada-config-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import type { Bancada, Laboratorio } from "@/lib/types";
+import { withComputedBancadasStatus } from "@/lib/bancada-status";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_shell/dashboard")({
@@ -30,6 +31,7 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Bancada | null>(null);
   const [open, setOpen] = useState(false);
+  const [clock, setClock] = useState(() => Date.now());
 
   useEffect(() => {
     let alive = true;
@@ -96,12 +98,22 @@ function DashboardPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const bancadasComStatus = useMemo(
+    () => withComputedBancadasStatus(bancadas, clock),
+    [bancadas, clock],
+  );
+
   const filtradas = useMemo(() => {
-    if (labFiltro === "todos") return bancadas;
+    if (labFiltro === "todos") return bancadasComStatus;
     if (labFiltro === "sem")
-      return bancadas.filter((b) => !b.laboratorio_id);
-    return bancadas.filter((b) => b.laboratorio_id === labFiltro);
-  }, [bancadas, labFiltro]);
+      return bancadasComStatus.filter((b) => !b.laboratorio_id);
+    return bancadasComStatus.filter((b) => b.laboratorio_id === labFiltro);
+  }, [bancadasComStatus, labFiltro]);
 
   const stats = useMemo(() => {
     const active = filtradas.filter(
@@ -146,10 +158,10 @@ function DashboardPage() {
           <FiltroChip
             active={labFiltro === "todos"}
             onClick={() => setLabFiltro("todos")}
-            label={`Todos (${bancadas.length})`}
+            label={`Todos (${bancadasComStatus.length})`}
           />
           {labs.map((lab) => {
-            const count = bancadas.filter(
+            const count = bancadasComStatus.filter(
               (b) => b.laboratorio_id === lab.id,
             ).length;
             return (
@@ -162,11 +174,11 @@ function DashboardPage() {
               />
             );
           })}
-          {bancadas.some((b) => !b.laboratorio_id) && (
+          {bancadasComStatus.some((b) => !b.laboratorio_id) && (
             <FiltroChip
               active={labFiltro === "sem"}
               onClick={() => setLabFiltro("sem")}
-              label={`Sem laboratório (${bancadas.filter((b) => !b.laboratorio_id).length})`}
+              label={`Sem laboratório (${bancadasComStatus.filter((b) => !b.laboratorio_id).length})`}
             />
           )}
         </div>
@@ -180,12 +192,12 @@ function DashboardPage() {
             <Cpu className="h-8 w-8 text-muted-foreground" />
             <div>
               <div className="font-semibold">
-                {bancadas.length === 0
+                {bancadasComStatus.length === 0
                   ? "Nenhuma bancada cadastrada"
                   : "Nenhuma bancada neste filtro"}
               </div>
               <p className="text-sm text-muted-foreground">
-                {bancadas.length === 0
+                {bancadasComStatus.length === 0
                   ? "Crie a primeira e receba o token para colar no portal AP do ESP32."
                   : "Selecione outro laboratório ou cadastre uma bancada aqui."}
               </p>
