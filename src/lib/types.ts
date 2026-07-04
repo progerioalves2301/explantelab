@@ -40,6 +40,7 @@ export interface Bancada {
   nome: string;
   status: BancadaStatus;
   ultima_sync: string | null;
+  status_desde: string | null;
   proximo_ciclo_segundos: number;
   valvulas: ValvulasEstado;
   config: Configuracoes;
