@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BancadaCard } from "@/components/bancada-card";
 import { BancadaConfigDialog } from "@/components/bancada-config-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import type { Bancada, BancadaStatus, Laboratorio } from "@/lib/types";
+import type { Bancada, Laboratorio } from "@/lib/types";
 import { withComputedBancadasStatus } from "@/lib/bancada-status";
 import { buildSegments, type StatusSegment } from "@/components/status-timeline";
 import { cn } from "@/lib/utils";
