@@ -74,8 +74,26 @@ function TvPage() {
   }, []);
 
   useEffect(() => {
-    const t = window.setInterval(() => setClock(Date.now()), 10_000);
+    const t = window.setInterval(() => setClock(Date.now()), 3_000);
     return () => window.clearInterval(t);
+  }, []);
+
+  // Polling de segurança para o modo TV (caso realtime caia).
+  useEffect(() => {
+    let alive = true;
+    const t = window.setInterval(async () => {
+      const { data } = await supabase
+        .from("bancadas")
+        .select("*")
+        .order("posicao", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: true });
+      if (!alive || !data) return;
+      setBancadas(data as unknown as Bancada[]);
+    }, 8_000);
+    return () => {
+      alive = false;
+      window.clearInterval(t);
+    };
   }, []);
 
   const items = useMemo(
