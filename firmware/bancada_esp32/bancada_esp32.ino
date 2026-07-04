@@ -6,7 +6,7 @@
  * - No 1o boot, portal AP (WiFiManager) pede Wi-Fi + código de 6 dígitos.
  * - Firmware chama RPC public.bench_pair para trocar o código pelas
  *   credenciais reais (bancada_id + device_token) e salva em Preferences.
- * - Telemetria via RPC public.bench_push_telemetry (5s).
+ * - Telemetria via RPC public.bench_push_telemetry (2s).
  * - Comandos via RPC public.bench_pull_commands (2s).
  * - WiFiClientSecure/HTTPClient globais + keep-alive p/ evitar
  *   fragmentação de heap.
@@ -546,9 +546,9 @@ void loop() {
   unsigned long now = millis();
 
   if (now - lastTick > 1000)  { lastTick  = now; tickCiclo(); }
-  if (now - lastTemp > 2000)  { lastTemp  = now; lerTemperatura(); }
-  if (now - lastCmd  > 2000)  { lastCmd   = now; puxarComandos(); }
-  if (now - lastTelem > 5000) { lastTelem = now; enviarTelemetria(); }
+  if (now - lastTemp > 1000)  { lastTemp  = now; lerTemperatura(); }
+  if (now - lastCmd  > 1500)  { lastCmd   = now; puxarComandos(); }
+  if (now - lastTelem > 2000) { lastTelem = now; enviarTelemetria(); }
 
   static unsigned long btn_pressed_since = 0;
   if (digitalRead(PIN_RESET_BTN) == LOW) {

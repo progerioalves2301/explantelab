@@ -122,8 +122,26 @@ function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setClock(Date.now()), 30_000);
+    const timer = window.setInterval(() => setClock(Date.now()), 5_000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  // Polling de segurança: caso o canal realtime caia (Wi-Fi, sleep de aba,
+  // reconexão), refazemos um SELECT leve a cada 10s para não deixar a UI parada.
+  useEffect(() => {
+    let alive = true;
+    const timer = window.setInterval(async () => {
+      const { data } = await supabase
+        .from("bancadas")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (!alive || !data) return;
+      setBancadas(data as unknown as Bancada[]);
+    }, 10_000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   const bancadasComStatus = useMemo(
