@@ -16,6 +16,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   enviarComando,
   salvarConfig,
+  salvarLimitesAlerta,
 } from "@/lib/bancadas.functions";
 import type { Bancada, Configuracoes } from "@/lib/types";
 import { DEFAULT_CONFIG } from "@/lib/types";
