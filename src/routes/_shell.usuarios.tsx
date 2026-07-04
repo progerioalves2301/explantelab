@@ -21,6 +21,8 @@ import {
   type AppRole,
   type UsuarioComPapeis,
 } from "@/lib/roles.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_shell/usuarios")({
   head: () => ({
