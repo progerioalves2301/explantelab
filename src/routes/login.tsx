@@ -93,10 +93,24 @@ function LoginPage() {
               </div>
               <Button type="submit" disabled={loading}>
                 {loading && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-                Entrar
+                {mode === "signup" ? "Criar conta e entrar" : "Entrar"}
               </Button>
+              <button
+                type="button"
+                onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+                className="text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
+              >
+                {mode === "signin"
+                  ? "Primeiro acesso? Criar conta"
+                  : "Já tenho conta — entrar"}
+              </button>
             </form>
           </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
         </Card>
       </div>
     </div>
