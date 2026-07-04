@@ -254,7 +254,13 @@ function DashboardPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtradas.map((b) => (
-            <BancadaCard key={b.id} bancada={b} onConfigure={handleConfigure} />
+            <BancadaCard
+              key={b.id}
+              bancada={b}
+              onConfigure={handleConfigure}
+              segments={segmentsByBancada.get(b.id)}
+              clock={clock}
+            />
           ))}
         </div>
       )}
