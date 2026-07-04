@@ -215,7 +215,15 @@ function LaboratoriosPage() {
   );
 }
 
-function LabRow({ lab, count }: { lab: Laboratorio; count: number }) {
+function LabRow({
+  lab,
+  count,
+  onDeleted,
+}: {
+  lab: Laboratorio;
+  count: number;
+  onDeleted: (id: string) => void;
+}) {
   const atualizar = useServerFn(atualizarLaboratorio);
   const excluir = useServerFn(excluirLaboratorio);
   const [editing, setEditing] = useState(false);
@@ -238,6 +246,7 @@ function LabRow({ lab, count }: { lab: Laboratorio; count: number }) {
   const remove = async () => {
     try {
       await excluir({ data: { id: lab.id } });
+      onDeleted(lab.id);
       toast.success(`${lab.nome} removido`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao remover");
