@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShellUsuariosRouteImport } from './routes/_shell.usuarios'
+import { Route as ShellLaboratoriosRouteImport } from './routes/_shell.laboratorios'
 import { Route as ShellDashboardRouteImport } from './routes/_shell.dashboard'
 import { Route as ShellConfiguracoesRouteImport } from './routes/_shell.configuracoes'
 import { Route as ShellBancadasNovaRouteImport } from './routes/_shell.bancadas.nova'
@@ -37,6 +38,11 @@ const IndexRoute = IndexRouteImport.update({
 const ShellUsuariosRoute = ShellUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellLaboratoriosRoute = ShellLaboratoriosRouteImport.update({
+  id: '/laboratorios',
+  path: '/laboratorios',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellDashboardRoute = ShellDashboardRouteImport.update({
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
+  '/laboratorios': typeof ShellLaboratoriosRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
+  '/laboratorios': typeof ShellLaboratoriosRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_shell/configuracoes': typeof ShellConfiguracoesRoute
   '/_shell/dashboard': typeof ShellDashboardRoute
+  '/_shell/laboratorios': typeof ShellLaboratoriosRoute
   '/_shell/usuarios': typeof ShellUsuariosRoute
   '/_shell/bancadas/nova': typeof ShellBancadasNovaRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/configuracoes'
     | '/dashboard'
+    | '/laboratorios'
     | '/usuarios'
     | '/bancadas/nova'
     | '/api/public/bench/commands'
@@ -123,6 +133,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/configuracoes'
     | '/dashboard'
+    | '/laboratorios'
     | '/usuarios'
     | '/bancadas/nova'
     | '/api/public/bench/commands'
@@ -135,6 +146,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_shell/configuracoes'
     | '/_shell/dashboard'
+    | '/_shell/laboratorios'
     | '/_shell/usuarios'
     | '/_shell/bancadas/nova'
     | '/api/public/bench/commands'
@@ -179,6 +191,13 @@ declare module '@tanstack/react-router' {
       path: '/usuarios'
       fullPath: '/usuarios'
       preLoaderRoute: typeof ShellUsuariosRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/laboratorios': {
+      id: '/_shell/laboratorios'
+      path: '/laboratorios'
+      fullPath: '/laboratorios'
+      preLoaderRoute: typeof ShellLaboratoriosRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/dashboard': {
@@ -229,6 +248,7 @@ declare module '@tanstack/react-router' {
 interface ShellRouteChildren {
   ShellConfiguracoesRoute: typeof ShellConfiguracoesRoute
   ShellDashboardRoute: typeof ShellDashboardRoute
+  ShellLaboratoriosRoute: typeof ShellLaboratoriosRoute
   ShellUsuariosRoute: typeof ShellUsuariosRoute
   ShellBancadasNovaRoute: typeof ShellBancadasNovaRoute
 }
@@ -236,6 +256,7 @@ interface ShellRouteChildren {
 const ShellRouteChildren: ShellRouteChildren = {
   ShellConfiguracoesRoute: ShellConfiguracoesRoute,
   ShellDashboardRoute: ShellDashboardRoute,
+  ShellLaboratoriosRoute: ShellLaboratoriosRoute,
   ShellUsuariosRoute: ShellUsuariosRoute,
   ShellBancadasNovaRoute: ShellBancadasNovaRoute,
 }
