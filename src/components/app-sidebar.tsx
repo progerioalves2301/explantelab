@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Settings, Users, Leaf, PlusCircle } from "lucide-react";
+import { LayoutDashboard, Settings, Users, Leaf, PlusCircle, FlaskConical } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,7 @@ import {
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Laboratórios", url: "/laboratorios", icon: FlaskConical },
   { title: "Nova bancada", url: "/bancadas/nova", icon: PlusCircle },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
   { title: "Usuários", url: "/usuarios", icon: Users },
