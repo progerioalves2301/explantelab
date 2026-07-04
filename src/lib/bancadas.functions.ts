@@ -197,3 +197,37 @@ export const salvarConfig = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+// Salvar limites de alerta (temperatura + offline threshold).
+export const salvarLimitesAlerta = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: {
+      bancada_id: string;
+      temp_min: number | null;
+      temp_max: number | null;
+      offline_threshold_segundos: number;
+    }) =>
+      z
+        .object({
+          bancada_id: z.string().uuid(),
+          temp_min: z.number().min(-50).max(200).nullable(),
+          temp_max: z.number().min(-50).max(200).nullable(),
+          offline_threshold_segundos: z.number().int().min(30).max(86400),
+        })
+        .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { error } = await supabaseAdmin
+      .from("bancadas")
+      .update({
+        temp_min: data.temp_min,
+        temp_max: data.temp_max,
+        offline_threshold_segundos: data.offline_threshold_segundos,
+      })
+      .eq("id", data.bancada_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
