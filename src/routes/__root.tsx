@@ -78,30 +78,37 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "GeneLab IoT — Automação de Bancadas" },
+      { title: "Explante Lab — Monitoramento de Bio Reatores" },
       {
         name: "description",
         content:
-          "Dashboard IoT para monitoramento e controle de bancadas ESP32 em laboratório de genética de plantas.",
+          "Painel Explante Lab: monitoramento em tempo real de bio reatores e bancadas de micropropagação in vitro.",
       },
-      { property: "og:title", content: "GeneLab IoT — Automação de Bancadas" },
+      { property: "og:title", content: "Explante Lab — Monitoramento de Bio Reatores" },
       {
         property: "og:description",
         content:
-          "Monitore válvulas pneumáticas, ciclos de injeção e status dos nós ESP32 em tempo real.",
+          "Automação e telemetria das bancadas ESP32 dos laboratórios Explante Biotecnologia.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Explante Lab" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "GeneLab IoT — Automação de Bancadas" },
-      { name: "description", content: "Dashboard IoT para monitoramento e controle de bancadas ESP32 em laboratório de genética de plantas." },
-      { property: "og:description", content: "Dashboard IoT para monitoramento e controle de bancadas ESP32 em laboratório de genética de plantas." },
-      { name: "twitter:description", content: "Dashboard IoT para monitoramento e controle de bancadas ESP32 em laboratório de genética de plantas." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/adb776dc-988f-40c2-8adf-6c6936237bc6/id-preview-8af56b9d--90989b19-e7c7-43b6-a4a1-5affc6bb05c8.lovable.app-1783122461008.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/adb776dc-988f-40c2-8adf-6c6936237bc6/id-preview-8af56b9d--90989b19-e7c7-43b6-a4a1-5affc6bb05c8.lovable.app-1783122461008.png" },
+      { name: "twitter:title", content: "Explante Lab — Monitoramento de Bio Reatores" },
+      {
+        name: "twitter:description",
+        content:
+          "Automação e telemetria das bancadas ESP32 dos laboratórios Explante Biotecnologia.",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,

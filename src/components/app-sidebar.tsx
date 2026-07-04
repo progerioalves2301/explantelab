@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Settings, Users, Leaf, PlusCircle, FlaskConical } from "lucide-react";
+import { LayoutDashboard, Settings, Users, PlusCircle, FlaskConical } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,6 +12,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import logoLeaf from "@/assets/explante-leaf.png";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -30,14 +31,16 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-2 py-1.5">
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground">
-            <Leaf className="h-4 w-4" />
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white ring-1 ring-border">
+            <img src={logoLeaf} alt="Explante Lab" className="h-7 w-7 object-contain" width={28} height={28} />
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <div className="truncate text-sm font-semibold">GeneLab IoT</div>
+              <div className="truncate font-display text-sm font-bold text-primary">
+                Explante <span className="italic">Lab</span>
+              </div>
               <div className="truncate text-[10px] text-muted-foreground">
-                Automação de Bancadas
+                Monitoramento de Bio Reatores
               </div>
             </div>
           )}
