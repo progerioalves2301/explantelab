@@ -34,10 +34,14 @@ import { enviarComando, excluirBancada } from "@/lib/bancadas.functions";
 import { toast } from "sonner";
 import type { Bancada, ValvulasEstado } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { formatShortDuration, tempoNoEstado } from "@/lib/duration";
+import { StatusTimeline, type StatusSegment } from "./status-timeline";
 
 interface Props {
   bancada: Bancada;
   onConfigure: (b: Bancada) => void;
+  segments?: StatusSegment[];
+  clock?: number;
 }
 
 // Presets dos botões Bio Reator (V1..V5)
@@ -66,7 +70,7 @@ function eq(a: ValvulasEstado, b: ValvulasEstado) {
   );
 }
 
-export function BancadaCard({ bancada, onConfigure }: Props) {
+export function BancadaCard({ bancada, onConfigure, segments, clock }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [sending, setSending] = useState(false);
@@ -174,7 +178,7 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
 
   return (
     <Card className="card-elevated overflow-hidden transition hover:border-primary/40">
-      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-3">
+      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 p-4 pb-3 sm:p-6 sm:pb-3">
         <div className="min-w-0">
           <CardTitle className="truncate text-base font-semibold">
             {bancada.nome}
@@ -183,10 +187,19 @@ export function BancadaCard({ bancada, onConfigure }: Props) {
             NODE-ESP32-{String(bancada.id).padStart(3, "0")}
           </p>
         </div>
-        <StatusBadge status={bancada.status} />
+        <div className="flex flex-col items-end gap-1">
+          <StatusBadge status={bancada.status} />
+          <span className="text-[10px] tabular-nums text-muted-foreground">
+            há {formatShortDuration(tempoNoEstado(bancada, clock))}
+          </span>
+        </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
+        {segments && segments.length > 0 && (
+          <StatusTimeline segments={segments} now={clock} />
+        )}
+
         <Tabs
           value={tab}
           onValueChange={(v) => setTab(v as "status" | "manual")}
