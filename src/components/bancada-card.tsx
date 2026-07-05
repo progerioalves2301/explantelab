@@ -32,7 +32,7 @@ import { formatCountdown, timeAgo } from "@/lib/mock-data";
 import { proximoDisparoSegundos } from "@/lib/schedule";
 import { enviarComando, excluirBancada } from "@/lib/bancadas.functions";
 import { toast } from "sonner";
-import type { Bancada, ValvulasEstado } from "@/lib/types";
+import type { Bancada, Laboratorio, ValvulasEstado } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { formatShortDuration, tempoNoEstado } from "@/lib/duration";
 import { StatusTimeline, type StatusSegment } from "./status-timeline";
@@ -42,7 +42,9 @@ interface Props {
   onConfigure: (b: Bancada) => void;
   segments?: StatusSegment[];
   clock?: number;
+  laboratorio?: Laboratorio | null;
 }
+
 
 // Presets dos botões Bio Reator (V1..V5)
 const PRESET_PLANTA: ValvulasEstado = {
@@ -70,7 +72,7 @@ function eq(a: ValvulasEstado, b: ValvulasEstado) {
   );
 }
 
-export function BancadaCard({ bancada, onConfigure, segments, clock }: Props) {
+export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [sending, setSending] = useState(false);
@@ -178,14 +180,41 @@ export function BancadaCard({ bancada, onConfigure, segments, clock }: Props) {
 
   return (
     <Card className="card-elevated overflow-hidden transition hover:border-primary/40">
+      {laboratorio && (
+        <div
+          className="h-1.5 w-full"
+          style={{ background: laboratorio.cor }}
+          aria-hidden
+        />
+      )}
       <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 p-4 pb-3 sm:p-6 sm:pb-3">
         <div className="min-w-0">
           <CardTitle className="truncate text-base font-semibold">
             {bancada.nome}
           </CardTitle>
-          <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-            NODE-ESP32-{String(bancada.id).padStart(3, "0")}
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {laboratorio ? (
+              <span
+                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium"
+                style={{ borderColor: laboratorio.cor, color: laboratorio.cor }}
+                title={`Laboratório: ${laboratorio.nome}`}
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ background: laboratorio.cor }}
+                />
+                {laboratorio.nome}
+                {bancada.posicao != null && ` · #${bancada.posicao}`}
+              </span>
+            ) : (
+              <span className="rounded-full border border-dashed px-2 py-0.5 text-[10px] text-muted-foreground">
+                Sem laboratório
+              </span>
+            )}
+            <p className="font-mono text-[10px] text-muted-foreground">
+              NODE-ESP32-{String(bancada.id).slice(0, 6)}
+            </p>
+          </div>
         </div>
         <div className="flex flex-col items-end gap-1">
           <StatusBadge status={bancada.status} />
@@ -194,6 +223,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock }: Props) {
           </span>
         </div>
       </CardHeader>
+
 
       <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
         {segments && segments.length > 0 && (
