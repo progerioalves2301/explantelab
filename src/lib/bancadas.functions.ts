@@ -130,6 +130,44 @@ export const excluirBancada = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Atualizar propriedades básicas da bancada (nome, laboratório, posição).
+export const atualizarBancada = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: {
+      id: string;
+      nome?: string;
+      laboratorio_id?: string | null;
+      posicao?: number | null;
+    }) =>
+      z
+        .object({
+          id: z.string().uuid(),
+          nome: z.string().min(2).max(60).optional(),
+          laboratorio_id: z.string().uuid().nullable().optional(),
+          posicao: z.number().int().min(1).max(999).nullable().optional(),
+        })
+        .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { id, ...rest } = data;
+    const patch: Record<string, unknown> = {};
+    if (rest.nome !== undefined) patch.nome = rest.nome;
+    if (rest.laboratorio_id !== undefined)
+      patch.laboratorio_id = rest.laboratorio_id;
+    if (rest.posicao !== undefined) patch.posicao = rest.posicao;
+    if (Object.keys(patch).length === 0) return { ok: true };
+    const { error } = await supabaseAdmin
+      .from("bancadas")
+      .update(patch)
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 // Enviar comando (força ciclo, pausa, retoma).
 export const enviarComando = createServerFn({ method: "POST" })
   .inputValidator(
