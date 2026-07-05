@@ -54,17 +54,29 @@ export const criarBancada = createServerFn({ method: "POST" })
       "@/integrations/supabase/client.server"
     );
 
+    // Se existir ciclo padrão salvo em app_settings, usa como config inicial.
+    const { data: preset } = await supabaseAdmin
+      .from("app_settings")
+      .select("value")
+      .eq("key", "default_ciclo")
+      .maybeSingle();
+    const initialConfig = preset?.value ?? null;
+
+    const insertRow: Record<string, unknown> = {
+      nome: data.nome,
+      status: "Offline",
+      laboratorio_id: data.laboratorio_id ?? null,
+      posicao: data.posicao ?? null,
+    };
+    if (initialConfig) insertRow.config = initialConfig;
+
     const { data: bancada, error } = await supabaseAdmin
       .from("bancadas")
-      .insert({
-        nome: data.nome,
-        status: "Offline",
-        laboratorio_id: data.laboratorio_id ?? null,
-        posicao: data.posicao ?? null,
-      })
+      .insert(insertRow as never)
       .select("*")
       .single();
     if (error || !bancada) throw new Error(error?.message ?? "Falha ao criar");
+
 
     // Token 32 bytes → base64url (guardado no ESP32 após o pareamento).
     const raw = new Uint8Array(32);
