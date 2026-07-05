@@ -282,3 +282,59 @@ export const salvarLimitesAlerta = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// Aplica um mesmo ciclo (config) a todas as bancadas — de um laboratório
+// específico ou de TODA a instalação. Também enfileira UPDATE_CONFIG para
+// cada uma, para o ESP32 receber no próximo poll.
+export const aplicarConfigEmMassa = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: {
+      escopo: "todas" | "laboratorio";
+      laboratorio_id?: string | null;
+      config: Configuracoes;
+    }) =>
+      z
+        .object({
+          escopo: z.enum(["todas", "laboratorio"]),
+          laboratorio_id: z.string().uuid().nullable().optional(),
+          config: configSchema,
+        })
+        .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+
+    let query = supabaseAdmin.from("bancadas").select("id, config_version");
+    if (data.escopo === "laboratorio") {
+      if (!data.laboratorio_id) throw new Error("laboratorio_id obrigatório");
+      query = query.eq("laboratorio_id", data.laboratorio_id);
+    }
+    const { data: rows, error: selErr } = await query;
+    if (selErr) throw new Error(selErr.message);
+    const alvos = rows ?? [];
+    if (alvos.length === 0) return { ok: true, atualizadas: 0 };
+
+    for (const b of alvos) {
+      const nextVersion = ((b.config_version as number | null) ?? 0) + 1;
+      const { error: upErr } = await supabaseAdmin
+        .from("bancadas")
+        .update({
+          config: data.config as never,
+          config_version: nextVersion,
+        })
+        .eq("id", b.id as string);
+      if (upErr) throw new Error(upErr.message);
+
+      const { error: cmdErr } = await supabaseAdmin.from("comandos").insert({
+        bancada_id: b.id as string,
+        tipo: "UPDATE_CONFIG",
+        payload: data.config as never,
+      });
+      if (cmdErr) throw new Error(cmdErr.message);
+    }
+
+    return { ok: true, atualizadas: alvos.length };
+  });
+
