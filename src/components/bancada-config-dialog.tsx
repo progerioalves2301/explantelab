@@ -98,7 +98,22 @@ export function BancadaConfigDialog({
     }));
 
   const handleSave = async () => {
+    const nomeTrim = nome.trim();
+    if (nomeTrim.length < 2) {
+      toast.error("Nome deve ter pelo menos 2 caracteres");
+      return;
+    }
     try {
+      const posNum = posicao.trim() === "" ? null : Number(posicao);
+      await atualizar({
+        data: {
+          id: bancada.id,
+          nome: nomeTrim,
+          laboratorio_id: laboratorioId === SEM_LAB ? null : laboratorioId,
+          posicao:
+            posNum == null || Number.isNaN(posNum) ? null : Math.trunc(posNum),
+        },
+      });
       await salvar({ data: { bancada_id: bancada.id, config } });
       await salvarLimites({
         data: {
@@ -108,12 +123,13 @@ export function BancadaConfigDialog({
           offline_threshold_segundos: Math.max(30, Number(offlineThr) || 300),
         },
       });
-      toast.success(`Configuração salva para ${bancada.nome}`);
+      toast.success(`Configuração salva para ${nomeTrim}`);
       onOpenChange(false);
     } catch (e) {
       toast.error("Falha ao salvar", { description: String(e) });
     }
   };
+
 
   const handleForceCycle = async () => {
     try {
