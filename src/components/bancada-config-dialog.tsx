@@ -11,33 +11,56 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  atualizarBancada,
   enviarComando,
   salvarConfig,
   salvarLimitesAlerta,
 } from "@/lib/bancadas.functions";
-import type { Bancada, Configuracoes } from "@/lib/types";
+import type { Bancada, Configuracoes, Laboratorio } from "@/lib/types";
 import { DEFAULT_CONFIG } from "@/lib/types";
 
 interface Props {
   bancada: Bancada | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  laboratorios?: Laboratorio[];
 }
 
-export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
+const SEM_LAB = "__sem__";
+
+export function BancadaConfigDialog({
+  bancada,
+  open,
+  onOpenChange,
+  laboratorios = [],
+}: Props) {
+  const [nome, setNome] = useState("");
+  const [laboratorioId, setLaboratorioId] = useState<string>(SEM_LAB);
+  const [posicao, setPosicao] = useState<string>("");
   const [config, setConfig] = useState<Configuracoes>(DEFAULT_CONFIG);
   const [tempMin, setTempMin] = useState<string>("");
   const [tempMax, setTempMax] = useState<string>("");
   const [offlineThr, setOfflineThr] = useState<string>("300");
   const salvar = useServerFn(salvarConfig);
   const salvarLimites = useServerFn(salvarLimitesAlerta);
+  const atualizar = useServerFn(atualizarBancada);
   const cmd = useServerFn(enviarComando);
 
   useEffect(() => {
     if (bancada) {
+      setNome(bancada.nome);
+      setLaboratorioId(bancada.laboratorio_id ?? SEM_LAB);
+      setPosicao(bancada.posicao?.toString() ?? "");
       setConfig({ ...DEFAULT_CONFIG, ...bancada.config });
       setTempMin(bancada.temp_min?.toString() ?? "");
       setTempMax(bancada.temp_max?.toString() ?? "");
@@ -46,6 +69,7 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
   }, [bancada]);
 
   if (!bancada) return null;
+
 
   const update = (k: keyof Configuracoes, v: string) =>
     setConfig((prev) => ({ ...prev, [k]: Number(v) || 0 }));
