@@ -313,7 +313,7 @@ export function BancadaConfigDialog({
           </div>
         </div>
 
-        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+        <DialogFooter className="flex-col-reverse gap-2 border-t bg-background px-6 py-4 sm:flex-row sm:justify-between">
           <div className="flex gap-2">
             <Button
               size="sm"
