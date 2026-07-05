@@ -307,9 +307,11 @@ function DashboardPage() {
               onConfigure={handleConfigure}
               segments={segmentsByBancada.get(b.id)}
               clock={clock}
+              laboratorio={labs.find((l) => l.id === b.laboratorio_id) ?? null}
             />
           ))}
         </div>
+
       )}
 
       <BancadaConfigDialog bancada={selected} open={open} onOpenChange={setOpen} laboratorios={labs} />
