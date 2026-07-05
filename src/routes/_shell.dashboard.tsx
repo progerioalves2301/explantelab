@@ -312,7 +312,7 @@ function DashboardPage() {
         </div>
       )}
 
-      <BancadaConfigDialog bancada={selected} open={open} onOpenChange={setOpen} />
+      <BancadaConfigDialog bancada={selected} open={open} onOpenChange={setOpen} laboratorios={labs} />
     </div>
   );
 }
