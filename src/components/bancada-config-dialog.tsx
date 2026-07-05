@@ -162,7 +162,52 @@ export function BancadaConfigDialog({
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
+          <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="b-nome" className="text-xs">Nome</Label>
+              <Input
+                id="b-nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                minLength={2}
+                maxLength={60}
+                placeholder="Bancada 01"
+              />
+            </div>
+            <div className="grid grid-cols-[1fr_100px] gap-2">
+              <div className="grid gap-1.5">
+                <Label className="text-xs">Laboratório</Label>
+                <Select value={laboratorioId} onValueChange={setLaboratorioId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sem laboratório" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={SEM_LAB}>Sem laboratório</SelectItem>
+                    {laboratorios.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="b-pos" className="text-xs">Posição</Label>
+                <Input
+                  id="b-pos"
+                  type="number"
+                  min={1}
+                  max={999}
+                  value={posicao}
+                  onChange={(e) => setPosicao(e.target.value)}
+                  placeholder="—"
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="grid gap-2">
+
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-primary" />
