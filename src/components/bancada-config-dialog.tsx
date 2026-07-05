@@ -11,33 +11,56 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  atualizarBancada,
   enviarComando,
   salvarConfig,
   salvarLimitesAlerta,
 } from "@/lib/bancadas.functions";
-import type { Bancada, Configuracoes } from "@/lib/types";
+import type { Bancada, Configuracoes, Laboratorio } from "@/lib/types";
 import { DEFAULT_CONFIG } from "@/lib/types";
 
 interface Props {
   bancada: Bancada | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  laboratorios?: Laboratorio[];
 }
 
-export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
+const SEM_LAB = "__sem__";
+
+export function BancadaConfigDialog({
+  bancada,
+  open,
+  onOpenChange,
+  laboratorios = [],
+}: Props) {
+  const [nome, setNome] = useState("");
+  const [laboratorioId, setLaboratorioId] = useState<string>(SEM_LAB);
+  const [posicao, setPosicao] = useState<string>("");
   const [config, setConfig] = useState<Configuracoes>(DEFAULT_CONFIG);
   const [tempMin, setTempMin] = useState<string>("");
   const [tempMax, setTempMax] = useState<string>("");
   const [offlineThr, setOfflineThr] = useState<string>("300");
   const salvar = useServerFn(salvarConfig);
   const salvarLimites = useServerFn(salvarLimitesAlerta);
+  const atualizar = useServerFn(atualizarBancada);
   const cmd = useServerFn(enviarComando);
 
   useEffect(() => {
     if (bancada) {
+      setNome(bancada.nome);
+      setLaboratorioId(bancada.laboratorio_id ?? SEM_LAB);
+      setPosicao(bancada.posicao?.toString() ?? "");
       setConfig({ ...DEFAULT_CONFIG, ...bancada.config });
       setTempMin(bancada.temp_min?.toString() ?? "");
       setTempMax(bancada.temp_max?.toString() ?? "");
@@ -46,6 +69,7 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
   }, [bancada]);
 
   if (!bancada) return null;
+
 
   const update = (k: keyof Configuracoes, v: string) =>
     setConfig((prev) => ({ ...prev, [k]: Number(v) || 0 }));
@@ -74,7 +98,22 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
     }));
 
   const handleSave = async () => {
+    const nomeTrim = nome.trim();
+    if (nomeTrim.length < 2) {
+      toast.error("Nome deve ter pelo menos 2 caracteres");
+      return;
+    }
     try {
+      const posNum = posicao.trim() === "" ? null : Number(posicao);
+      await atualizar({
+        data: {
+          id: bancada.id,
+          nome: nomeTrim,
+          laboratorio_id: laboratorioId === SEM_LAB ? null : laboratorioId,
+          posicao:
+            posNum == null || Number.isNaN(posNum) ? null : Math.trunc(posNum),
+        },
+      });
       await salvar({ data: { bancada_id: bancada.id, config } });
       await salvarLimites({
         data: {
@@ -84,12 +123,13 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
           offline_threshold_segundos: Math.max(30, Number(offlineThr) || 300),
         },
       });
-      toast.success(`Configuração salva para ${bancada.nome}`);
+      toast.success(`Configuração salva para ${nomeTrim}`);
       onOpenChange(false);
     } catch (e) {
       toast.error("Falha ao salvar", { description: String(e) });
     }
   };
+
 
   const handleForceCycle = async () => {
     try {
@@ -122,7 +162,52 @@ export function BancadaConfigDialog({ bancada, open, onOpenChange }: Props) {
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
+          <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="b-nome" className="text-xs">Nome</Label>
+              <Input
+                id="b-nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                minLength={2}
+                maxLength={60}
+                placeholder="Bancada 01"
+              />
+            </div>
+            <div className="grid grid-cols-[1fr_100px] gap-2">
+              <div className="grid gap-1.5">
+                <Label className="text-xs">Laboratório</Label>
+                <Select value={laboratorioId} onValueChange={setLaboratorioId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sem laboratório" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={SEM_LAB}>Sem laboratório</SelectItem>
+                    {laboratorios.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="b-pos" className="text-xs">Posição</Label>
+                <Input
+                  id="b-pos"
+                  type="number"
+                  min={1}
+                  max={999}
+                  value={posicao}
+                  onChange={(e) => setPosicao(e.target.value)}
+                  placeholder="—"
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="grid gap-2">
+
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-primary" />
