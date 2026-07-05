@@ -152,7 +152,7 @@ export function BancadaConfigDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Configurar {bancada.nome}</DialogTitle>
           <DialogDescription>
