@@ -32,7 +32,7 @@ import { formatCountdown, timeAgo } from "@/lib/mock-data";
 import { proximoDisparoSegundos } from "@/lib/schedule";
 import { enviarComando, excluirBancada } from "@/lib/bancadas.functions";
 import { toast } from "sonner";
-import type { Bancada, ValvulasEstado } from "@/lib/types";
+import type { Bancada, Laboratorio, ValvulasEstado } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { formatShortDuration, tempoNoEstado } from "@/lib/duration";
 import { StatusTimeline, type StatusSegment } from "./status-timeline";
@@ -42,7 +42,9 @@ interface Props {
   onConfigure: (b: Bancada) => void;
   segments?: StatusSegment[];
   clock?: number;
+  laboratorio?: Laboratorio | null;
 }
+
 
 // Presets dos botões Bio Reator (V1..V5)
 const PRESET_PLANTA: ValvulasEstado = {
