@@ -154,12 +154,37 @@ export function BancadaConfigDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-md">
         <DialogHeader className="border-b px-6 pt-6 pb-4">
-          <DialogTitle>Configurar {bancada.nome}</DialogTitle>
+          <DialogTitle className="flex flex-wrap items-center gap-2">
+            <span>Configurar {bancada.nome}</span>
+            {(() => {
+              const lab = laboratorios.find(
+                (l) => l.id === (laboratorioId === SEM_LAB ? null : laboratorioId),
+              );
+              return lab ? (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium"
+                  style={{ borderColor: lab.cor, color: lab.cor }}
+                >
+                  <span
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{ background: lab.cor }}
+                  />
+                  {lab.nome}
+                  {posicao && ` · #${posicao}`}
+                </span>
+              ) : (
+                <span className="rounded-full border border-dashed px-2 py-0.5 text-[11px] text-muted-foreground">
+                  Sem laboratório
+                </span>
+              );
+            })()}
+          </DialogTitle>
           <DialogDescription>
             Ajuste os parâmetros do ciclo pneumático. O ESP32 recebe a nova
             config no próximo poll.
           </DialogDescription>
         </DialogHeader>
+
 
         <div className="grid gap-4 overflow-y-auto px-6 py-4">
 
