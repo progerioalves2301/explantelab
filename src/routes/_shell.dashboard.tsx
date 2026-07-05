@@ -362,18 +362,19 @@ function FiltroChip({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition",
+        "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition sm:px-5 sm:py-2.5 sm:text-base",
         active
-          ? "border-primary bg-primary text-primary-foreground"
+          ? "border-primary bg-primary text-primary-foreground shadow-sm"
           : "border-border bg-background text-foreground hover:bg-muted",
       )}
     >
       {color && (
         <span
-          className="h-2 w-2 rounded-full"
+          className="h-2.5 w-2.5 rounded-full"
           style={{ background: color }}
         />
       )}
+
       {label}
     </button>
   );
