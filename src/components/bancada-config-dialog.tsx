@@ -152,8 +152,8 @@ export function BancadaConfigDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-md">
+        <DialogHeader className="border-b px-6 pt-6 pb-4">
           <DialogTitle>Configurar {bancada.nome}</DialogTitle>
           <DialogDescription>
             Ajuste os parâmetros do ciclo pneumático. O ESP32 recebe a nova
@@ -161,7 +161,8 @@ export function BancadaConfigDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-2">
+        <div className="grid gap-4 overflow-y-auto px-6 py-4">
+
           <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
             <div className="grid gap-1.5">
               <Label htmlFor="b-nome" className="text-xs">Nome</Label>
@@ -312,7 +313,7 @@ export function BancadaConfigDialog({
           </div>
         </div>
 
-        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+        <DialogFooter className="flex-col-reverse gap-2 border-t bg-background px-6 py-4 sm:flex-row sm:justify-between">
           <div className="flex gap-2">
             <Button
               size="sm"
