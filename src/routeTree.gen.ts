@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShellUsuariosRouteImport } from './routes/_shell.usuarios'
+import { Route as ShellRelatoriosRouteImport } from './routes/_shell.relatorios'
 import { Route as ShellLaboratoriosRouteImport } from './routes/_shell.laboratorios'
 import { Route as ShellDashboardRouteImport } from './routes/_shell.dashboard'
 import { Route as ShellConfiguracoesRouteImport } from './routes/_shell.configuracoes'
@@ -47,6 +48,11 @@ const IndexRoute = IndexRouteImport.update({
 const ShellUsuariosRoute = ShellUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellRelatoriosRoute = ShellRelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellLaboratoriosRoute = ShellLaboratoriosRouteImport.update({
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
+  '/relatorios': typeof ShellRelatoriosRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
+  '/relatorios': typeof ShellRelatoriosRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/_shell/configuracoes': typeof ShellConfiguracoesRoute
   '/_shell/dashboard': typeof ShellDashboardRoute
   '/_shell/laboratorios': typeof ShellLaboratoriosRoute
+  '/_shell/relatorios': typeof ShellRelatoriosRoute
   '/_shell/usuarios': typeof ShellUsuariosRoute
   '/_shell/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/_shell/bancadas/nova': typeof ShellBancadasNovaRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/dashboard'
     | '/laboratorios'
+    | '/relatorios'
     | '/usuarios'
     | '/alertas/destinos'
     | '/bancadas/nova'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/dashboard'
     | '/laboratorios'
+    | '/relatorios'
     | '/usuarios'
     | '/alertas/destinos'
     | '/bancadas/nova'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/_shell/configuracoes'
     | '/_shell/dashboard'
     | '/_shell/laboratorios'
+    | '/_shell/relatorios'
     | '/_shell/usuarios'
     | '/_shell/alertas/destinos'
     | '/_shell/bancadas/nova'
@@ -249,6 +261,13 @@ declare module '@tanstack/react-router' {
       path: '/usuarios'
       fullPath: '/usuarios'
       preLoaderRoute: typeof ShellUsuariosRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/relatorios': {
+      id: '/_shell/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof ShellRelatoriosRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/laboratorios': {
@@ -328,6 +347,7 @@ interface ShellRouteChildren {
   ShellConfiguracoesRoute: typeof ShellConfiguracoesRoute
   ShellDashboardRoute: typeof ShellDashboardRoute
   ShellLaboratoriosRoute: typeof ShellLaboratoriosRoute
+  ShellRelatoriosRoute: typeof ShellRelatoriosRoute
   ShellUsuariosRoute: typeof ShellUsuariosRoute
   ShellAlertasDestinosRoute: typeof ShellAlertasDestinosRoute
   ShellBancadasNovaRoute: typeof ShellBancadasNovaRoute
@@ -338,6 +358,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellConfiguracoesRoute: ShellConfiguracoesRoute,
   ShellDashboardRoute: ShellDashboardRoute,
   ShellLaboratoriosRoute: ShellLaboratoriosRoute,
+  ShellRelatoriosRoute: ShellRelatoriosRoute,
   ShellUsuariosRoute: ShellUsuariosRoute,
   ShellAlertasDestinosRoute: ShellAlertasDestinosRoute,
   ShellBancadasNovaRoute: ShellBancadasNovaRoute,

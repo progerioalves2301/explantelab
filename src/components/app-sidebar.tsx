@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Settings, Users, PlusCircle, FlaskConical, Bell } from "lucide-react";
+import { LayoutDashboard, Settings, Users, PlusCircle, FlaskConical, Bell, FileText } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
