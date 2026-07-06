@@ -154,7 +154,23 @@ function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[], mode: "save" | "
     });
   });
 
-  doc.save(PDF_FILENAME);
+  if (mode === "print") {
+    doc.setProperties({ title: "Relatorio de Ciclos" });
+    const blobUrl = doc.output("bloburl");
+    const win = window.open(blobUrl, "_blank");
+    if (win) {
+      win.addEventListener("load", () => {
+        try {
+          win.focus();
+          win.print();
+        } catch {
+          /* noop */
+        }
+      });
+    }
+  } else {
+    doc.save(PDF_FILENAME);
+  }
 }
 
 function RelatoriosPage() {
