@@ -65,7 +65,7 @@ function hexToRgb(hex: string) {
   };
 }
 
-function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
+function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[], mode: "save" | "print" = "save") {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -154,7 +154,23 @@ function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
     });
   });
 
-  doc.save(PDF_FILENAME);
+  if (mode === "print") {
+    doc.setProperties({ title: "Relatorio de Ciclos" });
+    const blobUrl = doc.output("bloburl");
+    const win = window.open(blobUrl, "_blank");
+    if (win) {
+      win.addEventListener("load", () => {
+        try {
+          win.focus();
+          win.print();
+        } catch {
+          /* noop */
+        }
+      });
+    }
+  } else {
+    doc.save(PDF_FILENAME);
+  }
 }
 
 function RelatoriosPage() {
@@ -261,14 +277,24 @@ function RelatoriosPage() {
             Programação atual das bancadas de cada sala bioreator.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => gerarRelatorioPdf(salasComBancadas)}
-          className="print-hide print:hidden"
-        >
-          <Printer className="mr-1.5 h-4 w-4" /> Salvar PDF
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => gerarRelatorioPdf(salasComBancadas, "print")}
+            className="print-hide print:hidden"
+          >
+            <Printer className="mr-1.5 h-4 w-4" /> Imprimir
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => gerarRelatorioPdf(salasComBancadas, "save")}
+            className="print-hide print:hidden"
+          >
+            <FileText className="mr-1.5 h-4 w-4" /> Salvar PDF
+          </Button>
+        </div>
       </div>
 
 
