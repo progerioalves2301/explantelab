@@ -142,7 +142,7 @@ function RelatoriosPage() {
             Programação atual das bancadas de cada sala bioreator.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => window.print()}>
+        <Button variant="outline" size="sm" onClick={() => window.print()} className="print:hidden">
           <Printer className="mr-1.5 h-4 w-4" /> Imprimir
         </Button>
       </div>
