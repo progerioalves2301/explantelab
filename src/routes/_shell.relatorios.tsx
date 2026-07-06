@@ -277,14 +277,24 @@ function RelatoriosPage() {
             Programação atual das bancadas de cada sala bioreator.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => gerarRelatorioPdf(salasComBancadas)}
-          className="print-hide print:hidden"
-        >
-          <Printer className="mr-1.5 h-4 w-4" /> Salvar PDF
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => gerarRelatorioPdf(salasComBancadas, "print")}
+            className="print-hide print:hidden"
+          >
+            <Printer className="mr-1.5 h-4 w-4" /> Imprimir
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => gerarRelatorioPdf(salasComBancadas, "save")}
+            className="print-hide print:hidden"
+          >
+            <FileText className="mr-1.5 h-4 w-4" /> Salvar PDF
+          </Button>
+        </div>
       </div>
 
 
