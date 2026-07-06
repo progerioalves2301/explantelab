@@ -143,7 +143,22 @@ function RelatoriosPage() {
             Programação atual das bancadas de cada sala bioreator.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => window.print()} className="print-hide print:hidden">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const original = document.title;
+            document.title = "Relatorio de Ciclos";
+            const restore = () => {
+              document.title = original;
+              window.removeEventListener("afterprint", restore);
+            };
+            window.addEventListener("afterprint", restore);
+            window.print();
+            setTimeout(restore, 2000);
+          }}
+          className="print-hide print:hidden"
+        >
           <Printer className="mr-1.5 h-4 w-4" /> Imprimir
         </Button>
       </div>
