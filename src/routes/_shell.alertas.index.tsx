@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { listarAlertas, resolverAlerta, type Alerta } from "@/lib/alertas.functions";
 
 export const Route = createFileRoute("/_shell/alertas/")({
+  ssr: false,
   head: () => ({
     meta: [{ title: "Alertas — Explante Lab" }],
   }),
