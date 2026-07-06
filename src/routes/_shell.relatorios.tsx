@@ -156,18 +156,30 @@ function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[], mode: "save" | "
 
   if (mode === "print") {
     doc.setProperties({ title: "Relatorio de Ciclos" });
-    const blobUrl = doc.output("bloburl");
-    const win = window.open(blobUrl, "_blank");
-    if (win) {
-      win.addEventListener("load", () => {
+    const blobUrl = doc.output("bloburl") as unknown as string;
+    // Usa iframe oculto para evitar bloqueio de pop-up do navegador
+    const existing = document.getElementById("print-frame-relatorio");
+    if (existing) existing.remove();
+    const iframe = document.createElement("iframe");
+    iframe.id = "print-frame-relatorio";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.src = blobUrl;
+    iframe.onload = () => {
+      setTimeout(() => {
         try {
-          win.focus();
-          win.print();
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
         } catch {
           /* noop */
         }
-      });
-    }
+      }, 300);
+    };
+    document.body.appendChild(iframe);
   } else {
     doc.save(PDF_FILENAME);
   }
