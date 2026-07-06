@@ -7,17 +7,17 @@ interface Props {
   mode: "injetando" | "retornando" | "alivio" | "idle";
 }
 
-// V1+V4 → injeção (leaf). V2+V3 → retorno (fluid). V5 → alívio de pressão (warn).
-export function ValveIndicator({ valvulas, mode }: Props) {
+// V1+V4 → Meio (azul). V2+V3 → Planta (verde). V5 → alívio de pressão (warn).
+export function ValveIndicator({ valvulas, mode: _mode }: Props) {
   const items: Array<{
     key: keyof ValvulasEstado;
     label: string;
-    role: "inject" | "return" | "relief";
+    role: "meio" | "planta" | "relief";
   }> = [
-    { key: "v1", label: "V1", role: "inject" },
-    { key: "v2", label: "V2", role: "return" },
-    { key: "v3", label: "V3", role: "return" },
-    { key: "v4", label: "V4", role: "inject" },
+    { key: "v1", label: "Meio", role: "meio" },
+    { key: "v2", label: "Planta", role: "planta" },
+    { key: "v3", label: "Planta", role: "planta" },
+    { key: "v4", label: "Meio", role: "meio" },
     { key: "v5", label: "V5", role: "relief" },
   ];
 
@@ -28,12 +28,11 @@ export function ValveIndicator({ valvulas, mode }: Props) {
         const activeClass =
           role === "relief"
             ? "valve-active-warn"
-            : mode === "injetando"
-              ? "valve-active-leaf"
-              : mode === "retornando"
-                ? "valve-active-fluid"
-                : "";
+            : role === "meio"
+              ? "valve-active-fluid"
+              : "valve-active-leaf";
         const Icon = role === "relief" ? Wind : Droplet;
+
         return (
           <div key={key} className="flex flex-col items-center gap-1">
             <div
