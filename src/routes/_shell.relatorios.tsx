@@ -120,7 +120,19 @@ function RelatoriosPage() {
   const firstTab = "__todas__";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 print-report">
+      <style>{`
+        @media print {
+          @page { size: A4; margin: 12mm; }
+          html, body { background: white !important; }
+          aside, header, nav, [data-sidebar], [role="tablist"] { display: none !important; }
+          main { padding: 0 !important; }
+          .print-report [role="tabpanel"] { display: block !important; }
+          .print-report [role="tabpanel"][hidden] { display: none !important; }
+          .print-report .card-elevated { box-shadow: none !important; break-inside: avoid; page-break-inside: avoid; }
+        }
+      `}</style>
+
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-primary">
@@ -188,8 +200,8 @@ function SalaRelatorio({
     (b.config?.tempo_alivio_segundos ?? 0);
 
   return (
-    <div className="space-y-3">
-      <Card className="card-elevated overflow-hidden">
+    <div className="space-y-3 print:break-before-page first:print:break-before-auto">
+      <Card className="card-elevated overflow-hidden print:break-inside-avoid print:shadow-none print:border">
         <div className="h-1.5 w-full" style={{ background: lab.cor }} />
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -205,7 +217,8 @@ function SalaRelatorio({
         </CardHeader>
       </Card>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2 print:grid-cols-2">
+
         {bancadas.map((b) => {
           const c = b.config ?? {
             tempo_injecao_segundos: 0,
@@ -218,7 +231,7 @@ function SalaRelatorio({
             ? c.horarios_disparo
             : [];
           return (
-            <Card key={b.id} className="card-elevated">
+            <Card key={b.id} className="card-elevated print:break-inside-avoid print:shadow-none print:border">
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-sm font-semibold">
