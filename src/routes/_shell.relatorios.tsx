@@ -188,8 +188,8 @@ function SalaRelatorio({
     (b.config?.tempo_alivio_segundos ?? 0);
 
   return (
-    <div className="space-y-3">
-      <Card className="card-elevated overflow-hidden">
+    <div className="space-y-3 print:break-before-page first:print:break-before-auto">
+      <Card className="card-elevated overflow-hidden print:break-inside-avoid print:shadow-none print:border">
         <div className="h-1.5 w-full" style={{ background: lab.cor }} />
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -205,7 +205,8 @@ function SalaRelatorio({
         </CardHeader>
       </Card>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2 print:grid-cols-2">
+
         {bancadas.map((b) => {
           const c = b.config ?? {
             tempo_injecao_segundos: 0,
