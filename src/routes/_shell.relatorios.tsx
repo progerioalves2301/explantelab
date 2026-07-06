@@ -148,32 +148,40 @@ function RelatoriosPage() {
           size="sm"
           onClick={() => {
             const printTitle = "Relatorio de Ciclos";
-            const titlesToRestore: Array<{ doc: Document; title: string }> = [];
+            const report = document.querySelector(".print-report")?.cloneNode(true) as HTMLElement | null;
+            const printWindow = window.open("", "_blank", "width=900,height=700");
 
-            const applyPrintTitle = (targetWindow: Window | null) => {
-              try {
-                const targetDocument = targetWindow?.document;
-                if (!targetDocument) return;
-                titlesToRestore.push({ doc: targetDocument, title: targetDocument.title });
-                targetDocument.title = printTitle;
-              } catch {
-                // Ignora janelas externas/cross-origin do preview.
-              }
-            };
+            if (!report || !printWindow) {
+              document.title = printTitle;
+              window.print();
+              return;
+            }
 
-            applyPrintTitle(window);
-            applyPrintTitle(window.parent !== window ? window.parent : null);
-            applyPrintTitle(window.top !== window && window.top !== window.parent ? window.top : null);
+            report.querySelectorAll(".print-hide").forEach((el) => el.remove());
 
-            const restore = () => {
-              titlesToRestore.forEach(({ doc, title }) => {
-                doc.title = title;
-              });
-              window.removeEventListener("afterprint", restore);
-            };
+            const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+              .map((node) => node.outerHTML)
+              .join("\n");
 
-            window.addEventListener("afterprint", restore);
-            window.print();
+            printWindow.document.open();
+            printWindow.document.write(`<!doctype html>
+              <html lang="pt-BR">
+                <head>
+                  <meta charset="utf-8" />
+                  <meta name="viewport" content="width=device-width, initial-scale=1" />
+                  <title>${printTitle}</title>
+                  ${styles}
+                </head>
+                <body>${report.outerHTML}</body>
+              </html>`);
+            printWindow.document.close();
+            printWindow.document.title = printTitle;
+            printWindow.addEventListener("afterprint", () => printWindow.close(), { once: true });
+            printWindow.setTimeout(() => {
+              printWindow.document.title = printTitle;
+              printWindow.focus();
+              printWindow.print();
+            }, 300);
           }}
           className="print-hide print:hidden"
         >
