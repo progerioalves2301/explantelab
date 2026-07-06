@@ -147,15 +147,41 @@ function RelatoriosPage() {
           variant="outline"
           size="sm"
           onClick={() => {
-            const original = document.title;
-            document.title = "Relatorio de Ciclos";
-            const restore = () => {
-              document.title = original;
-              window.removeEventListener("afterprint", restore);
-            };
-            window.addEventListener("afterprint", restore);
-            window.print();
-            setTimeout(restore, 2000);
+            const printTitle = "Relatorio de Ciclos";
+            const report = document.querySelector(".print-report")?.cloneNode(true) as HTMLElement | null;
+            const printWindow = window.open("", "_blank", "width=900,height=700");
+
+            if (!report || !printWindow) {
+              document.title = printTitle;
+              window.print();
+              return;
+            }
+
+            report.querySelectorAll(".print-hide").forEach((el) => el.remove());
+
+            const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+              .map((node) => node.outerHTML)
+              .join("\n");
+
+            printWindow.document.open();
+            printWindow.document.write(`<!doctype html>
+              <html lang="pt-BR">
+                <head>
+                  <meta charset="utf-8" />
+                  <meta name="viewport" content="width=device-width, initial-scale=1" />
+                  <title>${printTitle}</title>
+                  ${styles}
+                </head>
+                <body>${report.outerHTML}</body>
+              </html>`);
+            printWindow.document.close();
+            printWindow.document.title = printTitle;
+            printWindow.addEventListener("afterprint", () => printWindow.close(), { once: true });
+            printWindow.setTimeout(() => {
+              printWindow.document.title = printTitle;
+              printWindow.focus();
+              printWindow.print();
+            }, 300);
           }}
           className="print-hide print:hidden"
         >
