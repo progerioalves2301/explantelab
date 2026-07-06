@@ -134,7 +134,7 @@ function UsersPage() {
               <ShieldCheck className="h-4 w-4 text-primary" /> Administrador
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Gerencia laboratórios, bancadas, usuários e configurações globais.
+              Gerencia salas bioreator, bancadas, usuários e configurações globais.
             </p>
           </div>
           <div className="rounded-md border p-3">

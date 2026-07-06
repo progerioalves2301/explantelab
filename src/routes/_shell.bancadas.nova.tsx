@@ -98,7 +98,7 @@ function NovaBancadaPage() {
           <CardHeader>
             <CardTitle>Identificação</CardTitle>
             <CardDescription>
-              Dê um nome e escolha o laboratório onde ela ficará.
+              Dê um nome e escolha o sala bioreator onde ela ficará.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -118,13 +118,13 @@ function NovaBancadaPage() {
 
               <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
                 <div className="grid gap-2">
-                  <Label htmlFor="lab">Laboratório</Label>
+                  <Label htmlFor="lab">Sala Bioreator</Label>
                   <Select value={labId} onValueChange={setLabId}>
                     <SelectTrigger id="lab">
                       <SelectValue placeholder="Selecione…" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="nenhum">Sem laboratório</SelectItem>
+                      <SelectItem value="nenhum">Sem sala bioreator</SelectItem>
                       {labs.map((l) => (
                         <SelectItem key={l.id} value={l.id}>
                           {l.nome}
@@ -134,7 +134,7 @@ function NovaBancadaPage() {
                   </Select>
                   {labs.length === 0 && (
                     <p className="text-[11px] text-muted-foreground">
-                      Nenhum laboratório cadastrado.{" "}
+                      Nenhum sala bioreator cadastrado.{" "}
                       <Link to="/laboratorios" className="underline">
                         Criar agora
                       </Link>
@@ -229,7 +229,7 @@ function Provisioning({
               não abrir, acesse{" "}
               <code className="rounded bg-muted px-1 font-mono">http://192.168.4.1</code>.
             </li>
-            <li>Selecione o Wi-Fi do laboratório e informe a senha.</li>
+            <li>Selecione o Wi-Fi do sala bioreator e informe a senha.</li>
             <li>
               No campo <strong>Código de pareamento</strong>, digite os 6 dígitos
               acima.

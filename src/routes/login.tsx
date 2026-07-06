@@ -13,7 +13,7 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Login — Explante" },
-      { name: "description", content: "Acesso restrito aos técnicos do laboratório." },
+      { name: "description", content: "Acesso restrito aos técnicos do sala bioreator." },
     ],
   }),
   component: LoginPage,
@@ -67,7 +67,7 @@ function LoginPage() {
         <Card className="card-elevated">
           <CardHeader>
             <CardTitle>Entrar</CardTitle>
-            <CardDescription>Use suas credenciais do laboratório.</CardDescription>
+            <CardDescription>Use suas credenciais do sala bioreator.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="grid gap-4">

@@ -45,7 +45,7 @@ export const Route = createFileRoute("/_shell/configuracoes")({
       { title: "Configurações — GeneLab IoT" },
       {
         name: "description",
-        content: "Ciclo padrão da instalação e aplicação em massa por laboratório.",
+        content: "Ciclo padrão da instalação e aplicação em massa por sala bioreator.",
       },
     ],
   }),
@@ -149,7 +149,7 @@ function ConfigPage() {
   const escopoLabel =
     escopo === ESCOPO_TODAS
       ? "TODAS as bancadas da instalação"
-      : `todas as bancadas do laboratório "${labs.find((l) => l.id === escopo)?.nome ?? "?"}"`;
+      : `todas as bancadas do sala bioreator "${labs.find((l) => l.id === escopo)?.nome ?? "?"}"`;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -157,7 +157,7 @@ function ConfigPage() {
         <h1 className="text-2xl font-bold tracking-tight">Configurações</h1>
         <p className="text-sm text-muted-foreground">
           Ciclo padrão da instalação. Serve de base para novas bancadas e pode
-          ser aplicado em massa a um laboratório inteiro.
+          ser aplicado em massa a um sala bioreator inteiro.
         </p>
       </div>
 
@@ -279,7 +279,7 @@ function ConfigPage() {
                 </SelectItem>
                 {labs.map((l) => (
                   <SelectItem key={l.id} value={l.id}>
-                    Laboratório: {l.nome}
+                    Sala Bioreator: {l.nome}
                   </SelectItem>
                 ))}
               </SelectContent>

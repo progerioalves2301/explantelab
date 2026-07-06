@@ -47,11 +47,11 @@ function upsertLaboratorio(items: Laboratorio[], row: Laboratorio) {
 export const Route = createFileRoute("/_shell/laboratorios")({
   head: () => ({
     meta: [
-      { title: "Laboratórios — GeneLab IoT" },
+      { title: "Salas Bioreator — GeneLab IoT" },
       {
         name: "description",
         content:
-          "Gestão das salas de laboratório e agrupamento das bancadas ESP32.",
+          "Gestão das salas de sala bioreator e agrupamento das bancadas ESP32.",
       },
     ],
   }),
@@ -140,7 +140,7 @@ function LaboratoriosPage() {
       setNome("");
       setDescricao("");
       setCor("#22c55e");
-      toast.success("Laboratório criado");
+      toast.success("Sala Bioreator criado");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao criar");
     } finally {
@@ -151,15 +151,15 @@ function LaboratoriosPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Laboratórios</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Salas Bioreator</h1>
         <p className="text-sm text-muted-foreground">
-          Agrupe as bancadas por sala. Sugerimos até 8 bancadas por laboratório.
+          Agrupe as bancadas por sala. Sugerimos até 8 bancadas por sala bioreator.
         </p>
       </div>
 
       <Card className="card-elevated">
         <CardHeader>
-          <CardTitle className="text-base">Novo laboratório</CardTitle>
+          <CardTitle className="text-base">Novo sala bioreator</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -220,7 +220,7 @@ function LaboratoriosPage() {
         <Card className="card-elevated">
           <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
             <FlaskConical className="h-8 w-8 text-muted-foreground" />
-            <div className="font-semibold">Nenhum laboratório cadastrado</div>
+            <div className="font-semibold">Nenhum sala bioreator cadastrado</div>
             <p className="text-sm text-muted-foreground">
               Crie a primeira sala acima. Depois vincule as bancadas.
             </p>
@@ -378,7 +378,7 @@ function LabRow({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Excluir {lab.nome}?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      As bancadas vinculadas ficarão sem laboratório (não serão
+                      As bancadas vinculadas ficarão sem sala bioreator (não serão
                       apagadas). Você pode reatribuí-las depois.
                     </AlertDialogDescription>
                   </AlertDialogHeader>

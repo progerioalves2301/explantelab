@@ -16,7 +16,7 @@ import logoLeaf from "@/assets/explante-leaf.png";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Laboratórios", url: "/laboratorios", icon: FlaskConical },
+  { title: "Salas Bioreator", url: "/laboratorios", icon: FlaskConical },
   { title: "Nova bancada", url: "/bancadas/nova", icon: PlusCircle },
   { title: "Alertas", url: "/alertas", icon: Bell },
   { title: "Configurações", url: "/configuracoes", icon: Settings },

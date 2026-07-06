@@ -174,7 +174,7 @@ export function BancadaConfigDialog({
                 </span>
               ) : (
                 <span className="rounded-full border border-dashed px-2 py-0.5 text-[11px] text-muted-foreground">
-                  Sem laboratório
+                  Sem sala bioreator
                 </span>
               );
             })()}
@@ -202,13 +202,13 @@ export function BancadaConfigDialog({
             </div>
             <div className="grid grid-cols-[1fr_100px] gap-2">
               <div className="grid gap-1.5">
-                <Label className="text-xs">Laboratório</Label>
+                <Label className="text-xs">Sala Bioreator</Label>
                 <Select value={laboratorioId} onValueChange={setLaboratorioId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sem laboratório" />
+                    <SelectValue placeholder="Sem sala bioreator" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={SEM_LAB}>Sem laboratório</SelectItem>
+                    <SelectItem value={SEM_LAB}>Sem sala bioreator</SelectItem>
                     {laboratorios.map((l) => (
                       <SelectItem key={l.id} value={l.id}>
                         {l.nome}

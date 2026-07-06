@@ -88,7 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         property: "og:description",
         content:
-          "Automação e telemetria das bancadas ESP32 dos laboratórios Explante Biotecnologia.",
+          "Automação e telemetria das bancadas ESP32 dos salas bioreator Explante Biotecnologia.",
       },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Explante Lab" },
@@ -97,7 +97,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "twitter:description",
         content:
-          "Automação e telemetria das bancadas ESP32 dos laboratórios Explante Biotecnologia.",
+          "Automação e telemetria das bancadas ESP32 dos salas bioreator Explante Biotecnologia.",
       },
     ],
     links: [
