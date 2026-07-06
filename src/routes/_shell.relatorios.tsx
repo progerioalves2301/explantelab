@@ -218,7 +218,7 @@ function SalaRelatorio({
             ? c.horarios_disparo
             : [];
           return (
-            <Card key={b.id} className="card-elevated">
+            <Card key={b.id} className="card-elevated print:break-inside-avoid print:shadow-none print:border">
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-sm font-semibold">
