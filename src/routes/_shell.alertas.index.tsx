@@ -33,11 +33,14 @@ function AlertasPage() {
       const data = await listar();
       setAlertas(data);
     } catch (e) {
-      toast.error("Falha ao carregar alertas");
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[alertas] falha:", msg, e);
+      toast.error(`Falha ao carregar alertas: ${msg}`);
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     carregar();
