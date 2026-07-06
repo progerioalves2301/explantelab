@@ -65,7 +65,7 @@ function hexToRgb(hex: string) {
   };
 }
 
-function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
+function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[], mode: "save" | "print" = "save") {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
