@@ -147,15 +147,33 @@ function RelatoriosPage() {
           variant="outline"
           size="sm"
           onClick={() => {
-            const original = document.title;
-            document.title = "Relatorio de Ciclos";
+            const printTitle = "Relatorio de Ciclos";
+            const titlesToRestore: Array<{ doc: Document; title: string }> = [];
+
+            const applyPrintTitle = (targetWindow: Window | null) => {
+              try {
+                const targetDocument = targetWindow?.document;
+                if (!targetDocument) return;
+                titlesToRestore.push({ doc: targetDocument, title: targetDocument.title });
+                targetDocument.title = printTitle;
+              } catch {
+                // Ignora janelas externas/cross-origin do preview.
+              }
+            };
+
+            applyPrintTitle(window);
+            applyPrintTitle(window.parent !== window ? window.parent : null);
+            applyPrintTitle(window.top !== window && window.top !== window.parent ? window.top : null);
+
             const restore = () => {
-              document.title = original;
+              titlesToRestore.forEach(({ doc, title }) => {
+                doc.title = title;
+              });
               window.removeEventListener("afterprint", restore);
             };
+
             window.addEventListener("afterprint", restore);
             window.print();
-            setTimeout(restore, 2000);
           }}
           className="print-hide print:hidden"
         >
