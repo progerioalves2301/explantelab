@@ -120,7 +120,19 @@ function RelatoriosPage() {
   const firstTab = "__todas__";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 print-report">
+      <style>{`
+        @media print {
+          @page { size: A4; margin: 12mm; }
+          html, body { background: white !important; }
+          aside, header, nav, [data-sidebar], [role="tablist"] { display: none !important; }
+          main { padding: 0 !important; }
+          .print-report [role="tabpanel"] { display: block !important; }
+          .print-report [role="tabpanel"][hidden] { display: none !important; }
+          .print-report .card-elevated { box-shadow: none !important; break-inside: avoid; page-break-inside: avoid; }
+        }
+      `}</style>
+
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-primary">
