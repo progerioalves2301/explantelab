@@ -117,7 +117,7 @@ function RelatoriosPage() {
     );
   }
 
-  const firstTab = salasComBancadas[0].lab.id;
+  const firstTab = "__todas__";
 
   return (
     <div className="space-y-4">
@@ -137,6 +137,12 @@ function RelatoriosPage() {
 
       <Tabs defaultValue={firstTab} className="w-full">
         <TabsList className="flex h-auto flex-wrap justify-start gap-1">
+          <TabsTrigger value="__todas__" className="gap-2">
+            Todas
+            <Badge variant="secondary" className="ml-1 text-[10px]">
+              {bancadas.length}
+            </Badge>
+          </TabsTrigger>
           {salasComBancadas.map(({ lab, bancadas: bs }) => (
             <TabsTrigger key={lab.id} value={lab.id} className="gap-2">
               <span
@@ -151,6 +157,12 @@ function RelatoriosPage() {
           ))}
         </TabsList>
 
+        <TabsContent value="__todas__" className="mt-4 space-y-6">
+          {salasComBancadas.map(({ lab, bancadas: bs }) => (
+            <SalaRelatorio key={lab.id} lab={lab} bancadas={bs} />
+          ))}
+        </TabsContent>
+
         {salasComBancadas.map(({ lab, bancadas: bs }) => (
           <TabsContent key={lab.id} value={lab.id} className="mt-4 space-y-3">
             <SalaRelatorio lab={lab} bancadas={bs} />
@@ -158,6 +170,7 @@ function RelatoriosPage() {
         ))}
       </Tabs>
     </div>
+
   );
 }
 
