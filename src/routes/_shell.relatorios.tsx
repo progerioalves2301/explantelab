@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { jsPDF } from "jspdf";
 import { useEffect, useMemo, useState } from "react";
-import { FileText, FlaskConical, Clock, Loader2, Printer } from "lucide-react";
+import { FileText, FlaskConical, Clock, Loader2 } from "lucide-react";
 import {
   Tabs,
   TabsContent,
@@ -65,7 +65,7 @@ function hexToRgb(hex: string) {
   };
 }
 
-function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[], mode: "save" | "print" = "save") {
+function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -154,20 +154,7 @@ function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[], mode: "save" | "
     });
   });
 
-  if (mode === "print") {
-    doc.setProperties({ title: "Relatorio de Ciclos" });
-    doc.autoPrint();
-    const blobUrl = doc.output("bloburl") as unknown as string;
-    // Abre em nova aba (ação disparada pelo clique do usuário, não é bloqueada)
-    // O PDF já traz autoPrint, então o diálogo de impressão abre sozinho.
-    const win = window.open(blobUrl, "_blank");
-    if (!win) {
-      // Fallback: força download caso o navegador bloqueie a nova aba
-      doc.save(PDF_FILENAME);
-    }
-  } else {
-    doc.save(PDF_FILENAME);
-  }
+  doc.save(PDF_FILENAME);
 }
 
 function RelatoriosPage() {
@@ -278,7 +265,7 @@ function RelatoriosPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => gerarRelatorioPdf(salasComBancadas, "save")}
+            onClick={() => gerarRelatorioPdf(salasComBancadas)}
             className="print-hide print:hidden"
           >
             <FileText className="mr-1.5 h-4 w-4" /> Salvar PDF
