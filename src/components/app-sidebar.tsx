@@ -19,6 +19,7 @@ const items = [
   { title: "Salas Bioreator", url: "/laboratorios", icon: FlaskConical },
   { title: "Nova bancada", url: "/bancadas/nova", icon: PlusCircle },
   { title: "Alertas", url: "/alertas", icon: Bell },
+  { title: "Relatórios", url: "/relatorios", icon: FileText },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
   { title: "Usuários", url: "/usuarios", icon: Users },
 ] as const;
