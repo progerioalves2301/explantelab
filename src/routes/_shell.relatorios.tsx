@@ -130,6 +130,7 @@ function RelatoriosPage() {
           .print-report [role="tabpanel"] { display: block !important; }
           .print-report [role="tabpanel"][hidden] { display: none !important; }
           .print-report .card-elevated { box-shadow: none !important; break-inside: avoid; page-break-inside: avoid; }
+          .print-hide, .print-hide * { display: none !important; }
         }
       `}</style>
 
@@ -142,10 +143,11 @@ function RelatoriosPage() {
             Programação atual das bancadas de cada sala bioreator.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => window.print()} className="print:hidden">
+        <Button variant="outline" size="sm" onClick={() => window.print()} className="print-hide print:hidden">
           <Printer className="mr-1.5 h-4 w-4" /> Imprimir
         </Button>
       </div>
+
 
       <Tabs defaultValue={firstTab} className="w-full">
         <TabsList className="flex h-auto flex-wrap justify-start gap-1">
