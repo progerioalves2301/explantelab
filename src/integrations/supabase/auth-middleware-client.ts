@@ -13,11 +13,10 @@ function readTokenFromStorage(): string | null {
       if (!key.startsWith("sb-") || !key.endsWith("-auth-token")) continue;
       const raw = window.localStorage.getItem(key);
       if (!raw) continue;
-      const parsed = JSON.parse(raw) as { access_token?: string; expires_at?: number };
+      const parsed = JSON.parse(raw) as { access_token?: string };
       const token = parsed?.access_token;
-      if (!token) continue;
-      if (parsed.expires_at && parsed.expires_at * 1000 < Date.now()) continue;
-      return token;
+      if (token) return token;
+
     }
   } catch {
     // ignore
