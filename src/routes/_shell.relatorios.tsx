@@ -46,6 +46,15 @@ function fmtSegundos(total: number) {
   return `${s}s`;
 }
 
+function totalCiclo(b: Bancada) {
+  return (
+    (b.config?.tempo_injecao_segundos ?? 0) +
+    (b.config?.tempo_pausa_segundos ?? 0) +
+    (b.config?.tempo_retorno_segundos ?? 0) +
+    (b.config?.tempo_alivio_segundos ?? 0)
+  );
+}
+
 function hexToRgb(hex: string) {
   const value = hex.replace("#", "");
   if (value.length !== 6) return { r: 34, g: 197, b: 94 };
@@ -309,12 +318,6 @@ function SalaRelatorio({
   lab: Laboratorio;
   bancadas: Bancada[];
 }) {
-  const totalCiclo = (b: Bancada) =>
-    (b.config?.tempo_injecao_segundos ?? 0) +
-    (b.config?.tempo_pausa_segundos ?? 0) +
-    (b.config?.tempo_retorno_segundos ?? 0) +
-    (b.config?.tempo_alivio_segundos ?? 0);
-
   return (
     <div className="space-y-3 print:break-before-page first:print:break-before-auto">
       <Card className="card-elevated overflow-hidden print:break-inside-avoid print:shadow-none print:border">
