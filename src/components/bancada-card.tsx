@@ -197,7 +197,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               <span
                 className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium"
                 style={{ borderColor: laboratorio.cor, color: laboratorio.cor }}
-                title={`Laboratório: ${laboratorio.nome}`}
+                title={`Sala Bioreator: ${laboratorio.nome}`}
               >
                 <span
                   className="h-1.5 w-1.5 rounded-full"
@@ -208,7 +208,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               </span>
             ) : (
               <span className="rounded-full border border-dashed px-2 py-0.5 text-[10px] text-muted-foreground">
-                Sem laboratório
+                Sem sala bioreator
               </span>
             )}
             <p className="font-mono text-[10px] text-muted-foreground">

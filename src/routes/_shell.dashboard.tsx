@@ -266,7 +266,7 @@ function DashboardPage() {
             <FiltroChip
               active={labFiltro === "sem"}
               onClick={() => setLabFiltro("sem")}
-              label={`Sem laboratório (${bancadasComStatus.filter((b) => !b.laboratorio_id).length})`}
+              label={`Sem sala bioreator (${bancadasComStatus.filter((b) => !b.laboratorio_id).length})`}
             />
           )}
         </div>
@@ -287,7 +287,7 @@ function DashboardPage() {
               <p className="text-sm text-muted-foreground">
                 {bancadasComStatus.length === 0
                   ? "Crie a primeira e receba o token para colar no portal AP do ESP32."
-                  : "Selecione outro laboratório ou cadastre uma bancada aqui."}
+                  : "Selecione outro sala bioreator ou cadastre uma bancada aqui."}
               </p>
             </div>
             <Button asChild size="sm">
