@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { jsPDF } from "jspdf";
 import { useEffect, useMemo, useState } from "react";
 import { FileText, FlaskConical, Clock, Loader2, Printer } from "lucide-react";
 import {
@@ -29,6 +30,12 @@ export const Route = createFileRoute("/_shell/relatorios")({
 });
 
 const SEM_LAB = "__sem_lab__";
+const PDF_FILENAME = "Relatorio de Ciclos.pdf";
+
+type SalaComBancadas = {
+  lab: Laboratorio;
+  bancadas: Bancada[];
+};
 
 function fmtSegundos(total: number) {
   if (!Number.isFinite(total) || total <= 0) return "0s";
@@ -37,6 +44,117 @@ function fmtSegundos(total: number) {
   if (m > 0 && s > 0) return `${m}min ${s}s`;
   if (m > 0) return `${m}min`;
   return `${s}s`;
+}
+
+function totalCiclo(b: Bancada) {
+  return (
+    (b.config?.tempo_injecao_segundos ?? 0) +
+    (b.config?.tempo_pausa_segundos ?? 0) +
+    (b.config?.tempo_retorno_segundos ?? 0) +
+    (b.config?.tempo_alivio_segundos ?? 0)
+  );
+}
+
+function hexToRgb(hex: string) {
+  const value = hex.replace("#", "");
+  if (value.length !== 6) return { r: 34, g: 197, b: 94 };
+  return {
+    r: Number.parseInt(value.slice(0, 2), 16),
+    g: Number.parseInt(value.slice(2, 4), 16),
+    b: Number.parseInt(value.slice(4, 6), 16),
+  };
+}
+
+function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 12;
+  const contentWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  const addPageIfNeeded = (height: number) => {
+    if (y + height <= pageHeight - margin) return;
+    doc.addPage();
+    y = margin;
+  };
+
+  doc.setProperties({ title: "Relatorio de Ciclos" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("Relatórios de Ciclos", margin, y);
+  y += 7;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(90, 90, 90);
+  doc.text("Programação atual das bancadas de cada sala bioreator.", margin, y);
+  y += 9;
+  doc.setTextColor(0, 0, 0);
+
+  salasComBancadas.forEach(({ lab, bancadas }, salaIndex) => {
+    const labColor = hexToRgb(lab.cor || "#22c55e");
+    addPageIfNeeded(22);
+    if (salaIndex > 0 && y > margin + 20) y += 2;
+
+    doc.setFillColor(labColor.r, labColor.g, labColor.b);
+    doc.rect(margin, y, contentWidth, 2, "F");
+    y += 6;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(`${lab.nome} — ${bancadas.length} bancada${bancadas.length === 1 ? "" : "s"}`, margin, y);
+    y += 7;
+    if (lab.descricao) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(90, 90, 90);
+      doc.text(lab.descricao, margin, y);
+      doc.setTextColor(0, 0, 0);
+      y += 5;
+    }
+
+    bancadas.forEach((b) => {
+      const c = b.config ?? {
+        tempo_injecao_segundos: 0,
+        tempo_pausa_segundos: 0,
+        tempo_retorno_segundos: 0,
+        tempo_alivio_segundos: 0,
+        horarios_disparo: [] as string[],
+      };
+      const horarios = Array.isArray(c.horarios_disparo) ? c.horarios_disparo : [];
+      const horarioTexto = horarios.length > 0 ? horarios.join(", ") : "Nenhum horário programado";
+      const horarioLinhas = doc.splitTextToSize(horarioTexto, contentWidth - 10) as string[];
+      const infoLinhas = [
+        `Status: ${b.status}`,
+        b.firmware_version ? `Firmware: ${b.firmware_version}${b.ip_local ? ` · ${b.ip_local}` : ""}` : null,
+        `Injeção: ${fmtSegundos(c.tempo_injecao_segundos)}   Pausa: ${fmtSegundos(c.tempo_pausa_segundos)}`,
+        `Retorno: ${fmtSegundos(c.tempo_retorno_segundos)}   Alívio: ${fmtSegundos(c.tempo_alivio_segundos)}`,
+        `Duração total: ${fmtSegundos(totalCiclo(b))}`,
+        `Horários de disparo: ${horarioLinhas[0] ?? ""}`,
+        ...horarioLinhas.slice(1).map((linha) => `  ${linha}`),
+        b.temp_min !== null || b.temp_max !== null
+          ? `Faixa de temperatura: ${b.temp_min ?? "-"}°C … ${b.temp_max ?? "-"}°C`
+          : null,
+      ].filter(Boolean) as string[];
+      const cardHeight = 13 + infoLinhas.length * 4.4;
+
+      addPageIfNeeded(cardHeight + 4);
+      doc.setDrawColor(220, 226, 232);
+      doc.setFillColor(250, 250, 250);
+      doc.roundedRect(margin, y, contentWidth, cardHeight, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text(b.nome, margin + 5, y + 7);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      infoLinhas.forEach((linha, index) => {
+        doc.text(linha, margin + 5, y + 12 + index * 4.4);
+      });
+      y += cardHeight + 4;
+    });
+  });
+
+  doc.save(PDF_FILENAME);
 }
 
 function RelatoriosPage() {
@@ -146,46 +264,10 @@ function RelatoriosPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => {
-            const printTitle = "Relatorio de Ciclos";
-            const report = document.querySelector(".print-report")?.cloneNode(true) as HTMLElement | null;
-            const printWindow = window.open("", "_blank", "width=900,height=700");
-
-            if (!report || !printWindow) {
-              document.title = printTitle;
-              window.print();
-              return;
-            }
-
-            report.querySelectorAll(".print-hide").forEach((el) => el.remove());
-
-            const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
-              .map((node) => node.outerHTML)
-              .join("\n");
-
-            printWindow.document.open();
-            printWindow.document.write(`<!doctype html>
-              <html lang="pt-BR">
-                <head>
-                  <meta charset="utf-8" />
-                  <meta name="viewport" content="width=device-width, initial-scale=1" />
-                  <title>${printTitle}</title>
-                  ${styles}
-                </head>
-                <body>${report.outerHTML}</body>
-              </html>`);
-            printWindow.document.close();
-            printWindow.document.title = printTitle;
-            printWindow.addEventListener("afterprint", () => printWindow.close(), { once: true });
-            printWindow.setTimeout(() => {
-              printWindow.document.title = printTitle;
-              printWindow.focus();
-              printWindow.print();
-            }, 300);
-          }}
+          onClick={() => gerarRelatorioPdf(salasComBancadas)}
           className="print-hide print:hidden"
         >
-          <Printer className="mr-1.5 h-4 w-4" /> Imprimir
+          <Printer className="mr-1.5 h-4 w-4" /> Salvar PDF
         </Button>
       </div>
 
@@ -236,12 +318,6 @@ function SalaRelatorio({
   lab: Laboratorio;
   bancadas: Bancada[];
 }) {
-  const totalCiclo = (b: Bancada) =>
-    (b.config?.tempo_injecao_segundos ?? 0) +
-    (b.config?.tempo_pausa_segundos ?? 0) +
-    (b.config?.tempo_retorno_segundos ?? 0) +
-    (b.config?.tempo_alivio_segundos ?? 0);
-
   return (
     <div className="space-y-3 print:break-before-page first:print:break-before-auto">
       <Card className="card-elevated overflow-hidden print:break-inside-avoid print:shadow-none print:border">
