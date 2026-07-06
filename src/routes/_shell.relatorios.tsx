@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_shell/relatorios")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Relatórios — Explante Lab" },
+      { title: "Relatorio de Ciclos" },
       {
         name: "description",
         content:
