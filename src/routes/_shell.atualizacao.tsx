@@ -73,6 +73,39 @@ function AtualizacaoPage() {
   const [dispatchingId, setDispatchingId] = useState<string | null>(null);
   const [dispatchingAll, setDispatchingAll] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Guarda "versão esperada" por bancada após disparar OTA.
+  // Quando a telemetria trouxer essa versão, exibe toast de sucesso.
+  const [aguardando, setAguardando] = useState<Record<string, string>>({});
+  const aguardandoRef = useRef<Record<string, string>>({});
+  aguardandoRef.current = aguardando;
+
+  // Extrai "1.9.0" de "bancada_esp32_v1_9_0.ino.bin" (ou similar).
+  const extrairVersao = (filename: string): string | null => {
+    const m = filename.match(/v(\d+)[._](\d+)[._](\d+)/i);
+    return m ? `${m[1]}.${m[2]}.${m[3]}` : null;
+  };
+
+  const recarregarBancadas = async () => {
+    try {
+      const bs = await listarBancadas();
+      // Detecta bancadas que atingiram a versão esperada
+      const pend = aguardandoRef.current;
+      const novoPend = { ...pend };
+      let mudou = false;
+      for (const b of bs) {
+        const esperada = pend[b.id];
+        if (esperada && b.firmware_version === esperada) {
+          toast.success(`${b.nome} atualizada para v${esperada}.`);
+          delete novoPend[b.id];
+          mudou = true;
+        }
+      }
+      if (mudou) setAguardando(novoPend);
+      setBancadas(bs);
+    } catch {
+      /* silencioso — poll de fundo */
+    }
+  };
 
   const carregar = async () => {
     setLoading(true);
@@ -101,8 +134,13 @@ function AtualizacaoPage() {
 
   useEffect(() => {
     void carregar();
+    // Poll a cada 5s p/ refletir nova versão de firmware após OTA.
+    const id = setInterval(() => {
+      if (isAdmin) void recarregarBancadas();
+    }, 5000);
+    return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isAdmin]);
 
   const handleUpload = async (file: File) => {
     if (!file.name.toLowerCase().endsWith(".bin")) {
