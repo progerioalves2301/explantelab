@@ -94,8 +94,27 @@ function ConfigPage() {
   const update = (k: keyof Configuracoes, v: string) =>
     setConfig((prev) => ({ ...prev, [k]: Number(v) || 0 }));
 
-  const updateLuz = (k: "luz_ligar" | "luz_desligar", v: string) =>
-    setConfig((prev) => ({ ...prev, [k]: v }));
+  const updateLuz = (idx: number, k: "ligar" | "desligar", v: string) =>
+    setConfig((prev) => {
+      const list = [...(prev.luz_janelas ?? [])];
+      list[idx] = { ...list[idx], [k]: v };
+      return { ...prev, luz_janelas: list };
+    });
+
+  const addLuz = () =>
+    setConfig((prev) => ({
+      ...prev,
+      luz_janelas: [
+        ...(prev.luz_janelas ?? []),
+        { ligar: "06:00", desligar: "18:00" },
+      ],
+    }));
+
+  const removeLuz = (idx: number) =>
+    setConfig((prev) => ({
+      ...prev,
+      luz_janelas: (prev.luz_janelas ?? []).filter((_, i) => i !== idx),
+    }));
 
   const horarios = config.horarios_disparo ?? [];
   const setHorario = (idx: number, v: string) =>
