@@ -40,11 +40,17 @@ static const char* SUPABASE_ANON_KEY =
   "ainxeRe7j4bfS5oHMJ3EbXihQ54N5jzfl_ySMa-2g_Y";
 
 // -------- Pinagem --------
-static const int PIN_V1 = 25;
-static const int PIN_V2 = 26;
-static const int PIN_V3 = 27;
-static const int PIN_V4 = 32;
-static const int PIN_V5 = 33;
+// V1 e V4 abrem juntas (par injecao)  -> controladas pelo mesmo GPIO
+// V2 e V3 abrem juntas (par retorno)  -> controladas pelo mesmo GPIO
+// V5 (alivio) continua independente
+static const int PIN_V1_V4 = 25;   // par injecao (V1 + V4)
+static const int PIN_V2_V3 = 26;   // par retorno (V2 + V3)
+static const int PIN_V5    = 33;   // alivio
+// Aliases para manter compatibilidade da telemetria (v1..v5)
+static const int PIN_V1 = PIN_V1_V4;
+static const int PIN_V4 = PIN_V1_V4;
+static const int PIN_V2 = PIN_V2_V3;
+static const int PIN_V3 = PIN_V2_V3;
 static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
@@ -101,10 +107,10 @@ static const char* faseNome(FaseCiclo f) {
 }
 
 void escreverValvulas(bool v1, bool v2, bool v3, bool v4, bool v5) {
-  digitalWrite(PIN_V1, v1 ? HIGH : LOW);
-  digitalWrite(PIN_V2, v2 ? HIGH : LOW);
-  digitalWrite(PIN_V3, v3 ? HIGH : LOW);
-  digitalWrite(PIN_V4, v4 ? HIGH : LOW);
+  // V1 e V4 compartilham GPIO (par injecao) -> abre se qualquer um pedir
+  digitalWrite(PIN_V1_V4, (v1 || v4) ? HIGH : LOW);
+  // V2 e V3 compartilham GPIO (par retorno) -> abre se qualquer um pedir
+  digitalWrite(PIN_V2_V3, (v2 || v3) ? HIGH : LOW);
   digitalWrite(PIN_V5, v5 ? HIGH : LOW);
 }
 
@@ -334,7 +340,7 @@ void enviarTelemetria() {
   v["v4"] = digitalRead(PIN_V4) == HIGH;
   v["v5"] = digitalRead(PIN_V5) == HIGH;
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.2.0";
+  doc["_firmware_version"]       = "1.3.0";
   doc["_ip_local"]               = WiFi.localIP().toString();
   if (!isnan(g_temperatura_planta)) {
     doc["_temperatura_planta"] = g_temperatura_planta;
