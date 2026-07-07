@@ -179,6 +179,7 @@ export type Database = {
           id: string
           ip_local: string | null
           laboratorio_id: string | null
+          luz_ligada: boolean
           nome: string
           offline_threshold_segundos: number
           posicao: number | null
@@ -199,6 +200,7 @@ export type Database = {
           id?: string
           ip_local?: string | null
           laboratorio_id?: string | null
+          luz_ligada?: boolean
           nome: string
           offline_threshold_segundos?: number
           posicao?: number | null
@@ -219,6 +221,7 @@ export type Database = {
           id?: string
           ip_local?: string | null
           laboratorio_id?: string | null
+          luz_ligada?: boolean
           nome?: string
           offline_threshold_segundos?: number
           posicao?: number | null
@@ -334,32 +337,20 @@ export type Database = {
         Args: { _bancada_id: string; _device_token: string }
         Returns: Json
       }
-      bench_push_telemetry:
-        | {
-            Args: {
-              _bancada_id: string
-              _device_token: string
-              _firmware_version: string
-              _ip_local: string
-              _proximo_ciclo_segundos: number
-              _status: string
-              _valvulas: Json
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              _bancada_id: string
-              _device_token: string
-              _firmware_version: string
-              _ip_local: string
-              _proximo_ciclo_segundos: number
-              _status: string
-              _temperatura_planta?: number
-              _valvulas: Json
-            }
-            Returns: Json
-          }
+      bench_push_telemetry: {
+        Args: {
+          _bancada_id: string
+          _device_token: string
+          _firmware_version: string
+          _ip_local: string
+          _luz_ligada?: boolean
+          _proximo_ciclo_segundos: number
+          _status: string
+          _temperatura_planta?: number
+          _valvulas: Json
+        }
+        Returns: Json
+      }
       detectar_alertas: { Args: never; Returns: number }
       has_role: {
         Args: {

@@ -65,16 +65,22 @@ float g_temperatura_planta = NAN;
 // -------- Estado --------
 enum FaseCiclo { REPOUSO, INJETANDO, PAUSADO, RETORNANDO, ALIVIO, MANUAL, OFFLINE };
 
+static const int MAX_LUZ_JANELAS = 8;
+struct LuzJanela {
+  char ligar[6];      // "HH:MM"
+  char desligar[6];   // "HH:MM"
+};
+
 struct Config {
   uint32_t tempo_injecao_segundos   = 150;
   uint32_t tempo_pausa_segundos     = 60;
   uint32_t tempo_retorno_segundos   = 150;
   uint32_t tempo_alivio_segundos    = 10;
   uint32_t intervalo_ciclo_horas    = 4;
-  // Timer das luzes (fuso America/Sao_Paulo). Formato "HH:MM".
-  // Suporta janela que atravessa a meia-noite (ex.: liga 20:00, desliga 06:00).
-  char     luz_ligar[6]             = "06:00";
-  char     luz_desligar[6]          = "18:00";
+  // Timer das luzes (fuso America/Sao_Paulo). Cada janela suporta
+  // atravessar meia-noite (ex.: liga 20:00, desliga 06:00).
+  uint8_t   luz_n                   = 1;
+  LuzJanela luz_janelas[MAX_LUZ_JANELAS] = { { "06:00", "18:00" } };
   uint32_t versao                   = 0;
 };
 
@@ -144,30 +150,61 @@ int hhmmParaMinutos(const char* s) {
 
 bool g_luz_ligada = false;
 
+// Serializa cfg.luz_janelas em JSON compacto para persistir em Preferences.
+String serializarLuzJanelas() {
+  String out = "[";
+  for (uint8_t i = 0; i < cfg.luz_n && i < MAX_LUZ_JANELAS; i++) {
+    if (i) out += ',';
+    out += "{\"ligar\":\"";
+    out += cfg.luz_janelas[i].ligar;
+    out += "\",\"desligar\":\"";
+    out += cfg.luz_janelas[i].desligar;
+    out += "\"}";
+  }
+  out += ']';
+  return out;
+}
+
+// Copia janelas a partir de um JsonArrayConst (validando HH:MM).
+void aplicarLuzJanelasJson(JsonArrayConst arr) {
+  uint8_t n = 0;
+  for (JsonVariantConst v : arr) {
+    if (n >= MAX_LUZ_JANELAS) break;
+    const char* lg = v["ligar"]    | (const char*)nullptr;
+    const char* dl = v["desligar"] | (const char*)nullptr;
+    if (!lg || !dl) continue;
+    if (hhmmParaMinutos(lg) < 0 || hhmmParaMinutos(dl) < 0) continue;
+    strncpy(cfg.luz_janelas[n].ligar,    lg, sizeof(cfg.luz_janelas[n].ligar) - 1);
+    strncpy(cfg.luz_janelas[n].desligar, dl, sizeof(cfg.luz_janelas[n].desligar) - 1);
+    cfg.luz_janelas[n].ligar[sizeof(cfg.luz_janelas[n].ligar) - 1] = 0;
+    cfg.luz_janelas[n].desligar[sizeof(cfg.luz_janelas[n].desligar) - 1] = 0;
+    n++;
+  }
+  if (n > 0) cfg.luz_n = n;   // mantem anterior se a lista veio vazia
+}
+
+bool janelaAtiva(const LuzJanela& j, int agora) {
+  int on  = hhmmParaMinutos(j.ligar);
+  int off = hhmmParaMinutos(j.desligar);
+  if (on < 0 || off < 0 || on == off) return false;
+  if (on < off)  return agora >= on && agora < off;
+  return agora >= on || agora < off;    // atravessa meia-noite
+}
+
 void tickLuz() {
   struct tm ti;
   if (!getLocalTime(&ti, 50)) return;   // NTP ainda nao sincronizou
   int agora = ti.tm_hour * 60 + ti.tm_min;
-  int on  = hhmmParaMinutos(cfg.luz_ligar);
-  int off = hhmmParaMinutos(cfg.luz_desligar);
-  if (on < 0 || off < 0) return;
-  if (on == off) return;                // janela nula: nao mexe
-
-  bool deveLigar;
-  if (on < off) {
-    // janela dentro do mesmo dia (ex.: 06:00 -> 18:00)
-    deveLigar = (agora >= on && agora < off);
-  } else {
-    // janela atravessando meia-noite (ex.: 20:00 -> 06:00)
-    deveLigar = (agora >= on || agora < off);
+  bool deveLigar = false;
+  for (uint8_t i = 0; i < cfg.luz_n && i < MAX_LUZ_JANELAS; i++) {
+    if (janelaAtiva(cfg.luz_janelas[i], agora)) { deveLigar = true; break; }
   }
   if (deveLigar != g_luz_ligada) {
     g_luz_ligada = deveLigar;
     digitalWrite(PIN_LUZ, deveLigar ? HIGH : LOW);
-    Serial.printf("[LUZ] %s (%02d:%02d)  janela %s->%s\n",
+    Serial.printf("[LUZ] %s (%02d:%02d) [%u janela(s)]\n",
                   deveLigar ? "ON" : "OFF",
-                  ti.tm_hour, ti.tm_min,
-                  cfg.luz_ligar, cfg.luz_desligar);
+                  ti.tm_hour, ti.tm_min, (unsigned)cfg.luz_n);
   }
 }
 
@@ -182,12 +219,25 @@ void carregarPrefs() {
   cfg.tempo_retorno_segundos = prefs.getUInt("t_ret",  150);
   cfg.tempo_alivio_segundos  = prefs.getUInt("t_ali",  10);
   cfg.intervalo_ciclo_horas  = prefs.getUInt("t_int",  4);
-  String lon = prefs.getString("luz_on",  "06:00");
-  String lof = prefs.getString("luz_off", "18:00");
-  strncpy(cfg.luz_ligar,    lon.c_str(), sizeof(cfg.luz_ligar) - 1);
-  strncpy(cfg.luz_desligar, lof.c_str(), sizeof(cfg.luz_desligar) - 1);
-  cfg.luz_ligar[sizeof(cfg.luz_ligar) - 1] = 0;
-  cfg.luz_desligar[sizeof(cfg.luz_desligar) - 1] = 0;
+
+  // Preferido: JSON completo de luz_janelas (v1.5.0+)
+  String jj = prefs.getString("luz_jj", "");
+  if (jj.length() > 0) {
+    JsonDocument d;
+    if (deserializeJson(d, jj) == DeserializationError::Ok && d.is<JsonArray>()) {
+      aplicarLuzJanelasJson(d.as<JsonArrayConst>());
+    }
+  } else {
+    // Compat: migra o par escalar (luz_on/luz_off) usado até a v1.4.0.
+    String lon = prefs.getString("luz_on",  "06:00");
+    String lof = prefs.getString("luz_off", "18:00");
+    strncpy(cfg.luz_janelas[0].ligar,    lon.c_str(), sizeof(cfg.luz_janelas[0].ligar) - 1);
+    strncpy(cfg.luz_janelas[0].desligar, lof.c_str(), sizeof(cfg.luz_janelas[0].desligar) - 1);
+    cfg.luz_janelas[0].ligar[sizeof(cfg.luz_janelas[0].ligar) - 1] = 0;
+    cfg.luz_janelas[0].desligar[sizeof(cfg.luz_janelas[0].desligar) - 1] = 0;
+    cfg.luz_n = 1;
+  }
+
   cfg.versao                 = prefs.getUInt("cfgv",   0);
   prefs.end();
 }
@@ -206,8 +256,9 @@ void salvarConfig() {
   prefs.putUInt("t_ret", cfg.tempo_retorno_segundos);
   prefs.putUInt("t_ali", cfg.tempo_alivio_segundos);
   prefs.putUInt("t_int", cfg.intervalo_ciclo_horas);
-  prefs.putString("luz_on",  cfg.luz_ligar);
-  prefs.putString("luz_off", cfg.luz_desligar);
+  prefs.putString("luz_jj", serializarLuzJanelas());
+  prefs.remove("luz_on");   // limpa chaves antigas se existirem
+  prefs.remove("luz_off");
   prefs.putUInt("cfgv",  cfg.versao);
   prefs.end();
 }
@@ -265,7 +316,7 @@ static const char PORTAL_HEAD[] PROGMEM =
   "</div><div class=\"card\">";
 
 static const char PORTAL_FOOT[] PROGMEM =
-  "</div><div class=\"footer\">ESP32 • Firmware 1.4.0</div></div>";
+  "</div><div class=\"footer\">ESP32 • Firmware 1.5.0</div></div>";
 
 void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
@@ -394,8 +445,9 @@ void enviarTelemetria() {
   v["v4"] = digitalRead(PIN_V4) == HIGH;
   v["v5"] = digitalRead(PIN_V5) == HIGH;
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.4.0";
+  doc["_firmware_version"]       = "1.5.0";
   doc["_ip_local"]               = WiFi.localIP().toString();
+  doc["_luz_ligada"]             = g_luz_ligada;
   if (!isnan(g_temperatura_planta)) {
     doc["_temperatura_planta"] = g_temperatura_planta;
   } else {
@@ -418,20 +470,12 @@ void enviarTelemetria() {
     cfg.tempo_retorno_segundos = c["tempo_retorno_segundos"] | cfg.tempo_retorno_segundos;
     cfg.tempo_alivio_segundos  = c["tempo_alivio_segundos"]  | cfg.tempo_alivio_segundos;
     cfg.intervalo_ciclo_horas  = c["intervalo_ciclo_horas"]  | cfg.intervalo_ciclo_horas;
-    const char* lon = c["luz_ligar"]    | (const char*)nullptr;
-    const char* lof = c["luz_desligar"] | (const char*)nullptr;
-    if (lon && hhmmParaMinutos(lon) >= 0) {
-      strncpy(cfg.luz_ligar, lon, sizeof(cfg.luz_ligar) - 1);
-      cfg.luz_ligar[sizeof(cfg.luz_ligar) - 1] = 0;
-    }
-    if (lof && hhmmParaMinutos(lof) >= 0) {
-      strncpy(cfg.luz_desligar, lof, sizeof(cfg.luz_desligar) - 1);
-      cfg.luz_desligar[sizeof(cfg.luz_desligar) - 1] = 0;
-    }
+    JsonArrayConst arr = c["luz_janelas"].as<JsonArrayConst>();
+    if (!arr.isNull()) aplicarLuzJanelasJson(arr);
     cfg.versao = nova_ver;
     salvarConfig();
-    Serial.printf("[CFG] atualizado p/ versão %u (luz %s->%s)\n",
-                  (unsigned)nova_ver, cfg.luz_ligar, cfg.luz_desligar);
+    Serial.printf("[CFG] atualizado p/ versão %u (%u janela(s) de luz)\n",
+                  (unsigned)nova_ver, (unsigned)cfg.luz_n);
   }
 }
 
@@ -460,20 +504,12 @@ void tratarComando(JsonObject cmd) {
     cfg.tempo_retorno_segundos = p["tempo_retorno_segundos"] | cfg.tempo_retorno_segundos;
     cfg.tempo_alivio_segundos  = p["tempo_alivio_segundos"]  | cfg.tempo_alivio_segundos;
     cfg.intervalo_ciclo_horas  = p["intervalo_ciclo_horas"]  | cfg.intervalo_ciclo_horas;
-    const char* lon = p["luz_ligar"]    | (const char*)nullptr;
-    const char* lof = p["luz_desligar"] | (const char*)nullptr;
-    if (lon && hhmmParaMinutos(lon) >= 0) {
-      strncpy(cfg.luz_ligar, lon, sizeof(cfg.luz_ligar) - 1);
-      cfg.luz_ligar[sizeof(cfg.luz_ligar) - 1] = 0;
-    }
-    if (lof && hhmmParaMinutos(lof) >= 0) {
-      strncpy(cfg.luz_desligar, lof, sizeof(cfg.luz_desligar) - 1);
-      cfg.luz_desligar[sizeof(cfg.luz_desligar) - 1] = 0;
-    }
+    JsonArrayConst arr = p["luz_janelas"].as<JsonArrayConst>();
+    if (!arr.isNull()) aplicarLuzJanelasJson(arr);
     cfg.versao++;
     salvarConfig();
-    Serial.printf("[CFG] UPDATE_CONFIG aplicado (luz %s->%s)\n",
-                  cfg.luz_ligar, cfg.luz_desligar);
+    Serial.printf("[CFG] UPDATE_CONFIG aplicado (%u janela(s) de luz)\n",
+                  (unsigned)cfg.luz_n);
   } else if (strcmp(tipo, "SET_VALVE") == 0) {
     // Log bruto do payload para depuração no Monitor Serial
     String rawPayload;

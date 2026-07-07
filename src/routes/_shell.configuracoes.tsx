@@ -94,8 +94,27 @@ function ConfigPage() {
   const update = (k: keyof Configuracoes, v: string) =>
     setConfig((prev) => ({ ...prev, [k]: Number(v) || 0 }));
 
-  const updateLuz = (k: "luz_ligar" | "luz_desligar", v: string) =>
-    setConfig((prev) => ({ ...prev, [k]: v }));
+  const updateLuz = (idx: number, k: "ligar" | "desligar", v: string) =>
+    setConfig((prev) => {
+      const list = [...(prev.luz_janelas ?? [])];
+      list[idx] = { ...list[idx], [k]: v };
+      return { ...prev, luz_janelas: list };
+    });
+
+  const addLuz = () =>
+    setConfig((prev) => ({
+      ...prev,
+      luz_janelas: [
+        ...(prev.luz_janelas ?? []),
+        { ligar: "06:00", desligar: "18:00" },
+      ],
+    }));
+
+  const removeLuz = (idx: number) =>
+    setConfig((prev) => ({
+      ...prev,
+      luz_janelas: (prev.luz_janelas ?? []).filter((_, i) => i !== idx),
+    }));
 
   const horarios = config.horarios_disparo ?? [];
   const setHorario = (idx: number, v: string) =>
@@ -248,39 +267,60 @@ function ConfigPage() {
             </div>
 
             <div className="grid gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3">
-              <Label className="flex items-center gap-1.5 text-xs font-semibold text-yellow-700 dark:text-yellow-400">
-                <Clock className="h-3.5 w-3.5" />
-                Timer das luzes da bancada (GPIO 27)
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5 text-xs font-semibold text-yellow-700 dark:text-yellow-400">
+                  <Clock className="h-3.5 w-3.5" />
+                  Timer das luzes da bancada (GPIO 27)
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addLuz}
+                  disabled={(config.luz_janelas ?? []).length >= 8}
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  Nova janela
+                </Button>
+              </div>
               <p className="text-[11px] text-muted-foreground">
-                Fuso America/Sao_Paulo. Suporta janela que atravessa a
+                Fuso America/Sao_Paulo. Cada janela suporta atravessar
                 meia-noite (ex.: ligar 20:00, desligar 06:00).
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="grid gap-1">
-                  <Label htmlFor="luz-on" className="text-[11px] text-muted-foreground">
-                    Ligar às
-                  </Label>
-                  <Input
-                    id="luz-on"
-                    type="time"
-                    value={config.luz_ligar ?? "06:00"}
-                    onChange={(e) => updateLuz("luz_ligar", e.target.value)}
-                    className="font-mono"
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="luz-off" className="text-[11px] text-muted-foreground">
-                    Desligar às
-                  </Label>
-                  <Input
-                    id="luz-off"
-                    type="time"
-                    value={config.luz_desligar ?? "18:00"}
-                    onChange={(e) => updateLuz("luz_desligar", e.target.value)}
-                    className="font-mono"
-                  />
-                </div>
+              <div className="grid gap-2">
+                {(config.luz_janelas ?? []).map((j, idx) => (
+                  <div key={idx} className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
+                    <div className="grid gap-1">
+                      <Label className="text-[11px] text-muted-foreground">Ligar</Label>
+                      <Input
+                        type="time"
+                        value={j.ligar}
+                        onChange={(e) => updateLuz(idx, "ligar", e.target.value)}
+                        className="font-mono"
+                      />
+                    </div>
+                    <div className="grid gap-1">
+                      <Label className="text-[11px] text-muted-foreground">Desligar</Label>
+                      <Input
+                        type="time"
+                        value={j.desligar}
+                        onChange={(e) => updateLuz(idx, "desligar", e.target.value)}
+                        className="font-mono"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 shrink-0 text-red-600 hover:bg-red-600/10 hover:text-red-600"
+                      onClick={() => removeLuz(idx)}
+                      disabled={(config.luz_janelas ?? []).length <= 1}
+                      aria-label="Remover janela"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </div>
 

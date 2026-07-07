@@ -14,8 +14,15 @@ const configSchema = z.object({
     .array(z.string().regex(HORARIO_REGEX, "Formato HH:MM"))
     .min(1, "Ao menos 1 horário")
     .max(24, "Máximo 24 horários"),
-  luz_ligar: z.string().regex(HORARIO_REGEX, "Formato HH:MM"),
-  luz_desligar: z.string().regex(HORARIO_REGEX, "Formato HH:MM"),
+  luz_janelas: z
+    .array(
+      z.object({
+        ligar: z.string().regex(HORARIO_REGEX, "Formato HH:MM"),
+        desligar: z.string().regex(HORARIO_REGEX, "Formato HH:MM"),
+      }),
+    )
+    .min(1, "Ao menos 1 janela de luz")
+    .max(8, "Máximo 8 janelas"),
 });
 
 const DEFAULT_KEY = "default_ciclo";

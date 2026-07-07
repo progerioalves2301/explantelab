@@ -17,17 +17,22 @@ export interface ValvulasEstado {
   v5: boolean;
 }
 
+export interface LuzJanela {
+  /** Horário de ligar as luzes ("HH:MM", fuso America/Sao_Paulo). */
+  ligar: string;
+  /** Horário de desligar as luzes ("HH:MM", fuso America/Sao_Paulo). */
+  desligar: string;
+}
+
 export interface Configuracoes {
   tempo_injecao_segundos: number;
   tempo_pausa_segundos: number;
   tempo_retorno_segundos: number;
   tempo_alivio_segundos: number;
-  /** Lista de horários (formato "HH:MM", fuso America/Sao_Paulo). */
+  /** Lista de horários de disparo do ciclo (formato "HH:MM"). */
   horarios_disparo: string[];
-  /** Timer das luzes — horário de ligar ("HH:MM"). */
-  luz_ligar: string;
-  /** Timer das luzes — horário de desligar ("HH:MM"). */
-  luz_desligar: string;
+  /** Janelas do timer das luzes (cada item = par ligar/desligar). */
+  luz_janelas: LuzJanela[];
 }
 
 export interface Laboratorio {
@@ -57,6 +62,7 @@ export interface Bancada {
   offline_threshold_segundos: number;
   laboratorio_id: string | null;
   posicao: number | null;
+  luz_ligada: boolean;
   created_at: string;
 }
 
@@ -82,8 +88,7 @@ export const DEFAULT_CONFIG: Configuracoes = {
   tempo_retorno_segundos: 150,
   tempo_alivio_segundos: 10,
   horarios_disparo: ["06:00", "12:00", "18:00", "00:00"],
-  luz_ligar: "06:00",
-  luz_desligar: "18:00",
+  luz_janelas: [{ ligar: "06:00", desligar: "18:00" }],
 };
 
 export const DEFAULT_VALVULAS: ValvulasEstado = {
