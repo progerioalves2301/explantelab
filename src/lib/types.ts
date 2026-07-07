@@ -33,6 +33,11 @@ export interface Configuracoes {
   horarios_disparo: string[];
   /** Janelas do timer das luzes (cada item = par ligar/desligar). */
   luz_janelas: LuzJanela[];
+  /**
+   * Fuso horário POSIX aplicado no ESP32 (ex.: "<-03>3" para BRT,
+   * "UTC0", "EST5EDT,M3.2.0,M11.1.0"). Opcional — omissão = America/Sao_Paulo.
+   */
+  tz?: string;
 }
 
 export interface Laboratorio {

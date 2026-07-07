@@ -67,6 +67,8 @@ float g_temperatura_planta = NAN;
 enum FaseCiclo { REPOUSO, INJETANDO, PAUSADO, RETORNANDO, ALIVIO, MANUAL, OFFLINE };
 
 static const int MAX_LUZ_JANELAS = 8;
+static const int MAX_HORARIOS    = 24;
+static const char DEFAULT_TZ[]   = "<-03>3";   // America/Sao_Paulo (POSIX)
 struct LuzJanela {
   char ligar[6];      // "HH:MM"
   char desligar[6];   // "HH:MM"
@@ -77,12 +79,21 @@ struct Config {
   uint32_t tempo_pausa_segundos     = 60;
   uint32_t tempo_retorno_segundos   = 150;
   uint32_t tempo_alivio_segundos    = 10;
+  // Fallback offline: se NUNCA sincronizou NTP, dispara ciclo a cada N horas
+  // usando millis() a partir do 1º ciclo (ou boot).
   uint32_t intervalo_ciclo_horas    = 4;
-  // Timer das luzes (fuso America/Sao_Paulo). Cada janela suporta
+  // Timer das luzes (fuso configurável em cfg.tz). Cada janela suporta
   // atravessar meia-noite (ex.: liga 20:00, desliga 06:00).
   uint8_t   luz_n                   = 1;
   LuzJanela luz_janelas[MAX_LUZ_JANELAS] = { { "06:00", "18:00" } };
-  uint32_t versao                   = 0;
+  // Agendamento LOCAL dos ciclos (não depende do backend).
+  uint8_t   horarios_n              = 4;
+  char      horarios_disparo[MAX_HORARIOS][6] = {
+    "06:00", "12:00", "18:00", "00:00"
+  };
+  // POSIX TZ string, ex.: "<-03>3" (BRT), "UTC0", "EST5EDT,M3.2.0,M11.1.0"
+  char      tz[40]                  = "<-03>3";
+  uint32_t  versao                  = 0;
 };
 
 struct Creds {
@@ -209,6 +220,95 @@ void tickLuz() {
   }
 }
 
+// Forward decl: timers globais declarados abaixo.
+extern unsigned long lastTelem;
+
+// -------- Agendamento local dos ciclos (independente da internet) --------
+// Guardas para não disparar o mesmo horário 2x nem sobrepor um ciclo em curso.
+int  g_ultimo_disparo_min      = -1;   // minuto absoluto (dia*1440+min) do último disparo
+uint32_t g_ultimo_disparo_ms   = 0;    // fallback quando NTP nunca sincronizou
+bool     g_ntp_ja_sincronizou  = false;
+
+void aplicarTz(const char* tz) {
+  const char* z = (tz && *tz) ? tz : DEFAULT_TZ;
+  setenv("TZ", z, 1);
+  tzset();
+}
+
+String serializarHorarios() {
+  String out = "[";
+  for (uint8_t i = 0; i < cfg.horarios_n && i < MAX_HORARIOS; i++) {
+    if (i) out += ',';
+    out += '"';
+    out += cfg.horarios_disparo[i];
+    out += '"';
+  }
+  out += ']';
+  return out;
+}
+
+void aplicarHorariosJson(JsonArrayConst arr) {
+  uint8_t n = 0;
+  for (JsonVariantConst v : arr) {
+    if (n >= MAX_HORARIOS) break;
+    const char* s = v.as<const char*>();
+    if (!s) continue;
+    if (hhmmParaMinutos(s) < 0) continue;
+    strncpy(cfg.horarios_disparo[n], s, 5);
+    cfg.horarios_disparo[n][5] = 0;
+    n++;
+  }
+  if (n > 0) cfg.horarios_n = n;
+}
+
+// Retorna true se `hhmm` (ex. "06:00") corresponde ao horário local atual.
+bool horarioBate(const char* hhmm, const struct tm& ti) {
+  int m = hhmmParaMinutos(hhmm);
+  if (m < 0) return false;
+  return (ti.tm_hour * 60 + ti.tm_min) == m;
+}
+
+// Dispara automaticamente o ciclo:
+//  - Se NTP sincronizou: quando o relógio local bate em um horário programado.
+//  - Fallback: se nunca sincronizou, dispara a cada intervalo_ciclo_horas horas.
+void tickAgendaCiclo() {
+  // Não sobrepor: só dispara quando está em REPOUSO e sem pausa manual.
+  if (fase != REPOUSO || pausado_manual) return;
+
+  struct tm ti;
+  bool temHora = getLocalTime(&ti, 50);
+  if (temHora) g_ntp_ja_sincronizou = true;
+
+  if (temHora) {
+    int minutoAbs = ti.tm_yday * 1440 + ti.tm_hour * 60 + ti.tm_min;
+    if (minutoAbs == g_ultimo_disparo_min) return;   // já disparou neste minuto
+    for (uint8_t i = 0; i < cfg.horarios_n && i < MAX_HORARIOS; i++) {
+      if (horarioBate(cfg.horarios_disparo[i], ti)) {
+        g_ultimo_disparo_min = minutoAbs;
+        g_ultimo_disparo_ms  = millis();
+        Serial.printf("[AGENDA] disparo local %02d:%02d (horario %s)\n",
+                      ti.tm_hour, ti.tm_min, cfg.horarios_disparo[i]);
+        aplicarFase(INJETANDO);
+        lastTelem = 0;
+        return;
+      }
+    }
+    return;
+  }
+
+  // Sem NTP: fallback por intervalo (millis).
+  uint32_t intervalo_ms = cfg.intervalo_ciclo_horas * 3600UL * 1000UL;
+  if (intervalo_ms == 0) return;
+  uint32_t agora = millis();
+  if (g_ultimo_disparo_ms == 0 || (agora - g_ultimo_disparo_ms) >= intervalo_ms) {
+    g_ultimo_disparo_ms = agora;
+    Serial.printf("[AGENDA] disparo por intervalo (sem NTP) cada %uh\n",
+                  (unsigned)cfg.intervalo_ciclo_horas);
+    aplicarFase(INJETANDO);
+    lastTelem = 0;
+  }
+}
+
 
 // -------- Persistência --------
 void carregarPrefs() {
@@ -239,6 +339,18 @@ void carregarPrefs() {
     cfg.luz_n = 1;
   }
 
+  // v1.7.0+: horários locais de disparo + fuso configurável
+  String hj = prefs.getString("hor_jj", "");
+  if (hj.length() > 0) {
+    JsonDocument d;
+    if (deserializeJson(d, hj) == DeserializationError::Ok && d.is<JsonArray>()) {
+      aplicarHorariosJson(d.as<JsonArrayConst>());
+    }
+  }
+  String tzs = prefs.getString("tz", DEFAULT_TZ);
+  strncpy(cfg.tz, tzs.c_str(), sizeof(cfg.tz) - 1);
+  cfg.tz[sizeof(cfg.tz) - 1] = 0;
+
   cfg.versao                 = prefs.getUInt("cfgv",   0);
   prefs.end();
 }
@@ -260,6 +372,8 @@ void salvarConfig() {
   prefs.putString("luz_jj", serializarLuzJanelas());
   prefs.remove("luz_on");   // limpa chaves antigas se existirem
   prefs.remove("luz_off");
+  prefs.putString("hor_jj", serializarHorarios());
+  prefs.putString("tz",     cfg.tz);
   prefs.putUInt("cfgv",  cfg.versao);
   prefs.end();
 }
@@ -446,7 +560,7 @@ void enviarTelemetria() {
   v["v4"] = digitalRead(PIN_V4) == HIGH;
   v["v5"] = digitalRead(PIN_V5) == HIGH;
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.6.0";
+  doc["_firmware_version"]       = "1.7.0";
   doc["_ip_local"]               = WiFi.localIP().toString();
   doc["_luz_ligada"]             = g_luz_ligada;
   if (!isnan(g_temperatura_planta)) {
@@ -473,10 +587,19 @@ void enviarTelemetria() {
     cfg.intervalo_ciclo_horas  = c["intervalo_ciclo_horas"]  | cfg.intervalo_ciclo_horas;
     JsonArrayConst arr = c["luz_janelas"].as<JsonArrayConst>();
     if (!arr.isNull()) aplicarLuzJanelasJson(arr);
+    JsonArrayConst harr = c["horarios_disparo"].as<JsonArrayConst>();
+    if (!harr.isNull()) aplicarHorariosJson(harr);
+    const char* tzs = c["tz"] | (const char*)nullptr;
+    if (tzs && *tzs) {
+      strncpy(cfg.tz, tzs, sizeof(cfg.tz) - 1);
+      cfg.tz[sizeof(cfg.tz) - 1] = 0;
+      aplicarTz(cfg.tz);
+    }
     cfg.versao = nova_ver;
     salvarConfig();
-    Serial.printf("[CFG] atualizado p/ versão %u (%u janela(s) de luz)\n",
-                  (unsigned)nova_ver, (unsigned)cfg.luz_n);
+    Serial.printf("[CFG] atualizado p/ versão %u (%u horario(s), %u janela(s) de luz, tz=%s)\n",
+                  (unsigned)nova_ver, (unsigned)cfg.horarios_n,
+                  (unsigned)cfg.luz_n, cfg.tz);
   }
 }
 
@@ -507,10 +630,18 @@ void tratarComando(JsonObject cmd) {
     cfg.intervalo_ciclo_horas  = p["intervalo_ciclo_horas"]  | cfg.intervalo_ciclo_horas;
     JsonArrayConst arr = p["luz_janelas"].as<JsonArrayConst>();
     if (!arr.isNull()) aplicarLuzJanelasJson(arr);
+    JsonArrayConst harr = p["horarios_disparo"].as<JsonArrayConst>();
+    if (!harr.isNull()) aplicarHorariosJson(harr);
+    const char* tzs = p["tz"] | (const char*)nullptr;
+    if (tzs && *tzs) {
+      strncpy(cfg.tz, tzs, sizeof(cfg.tz) - 1);
+      cfg.tz[sizeof(cfg.tz) - 1] = 0;
+      aplicarTz(cfg.tz);
+    }
     cfg.versao++;
     salvarConfig();
-    Serial.printf("[CFG] UPDATE_CONFIG aplicado (%u janela(s) de luz)\n",
-                  (unsigned)cfg.luz_n);
+    Serial.printf("[CFG] UPDATE_CONFIG aplicado (%u horario(s), %u janela(s) de luz, tz=%s)\n",
+                  (unsigned)cfg.horarios_n, (unsigned)cfg.luz_n, cfg.tz);
   } else if (strcmp(tipo, "SET_VALVE") == 0) {
     // Log bruto do payload para depuração no Monitor Serial
     String rawPayload;
@@ -690,7 +821,9 @@ void setup() {
   digitalWrite(PIN_LED, HIGH);
 
   // NTP com fuso America/Sao_Paulo (UTC-3, sem horário de verão).
-  configTzTime("<-03>3", "pool.ntp.org", "time.google.com", "a.st1.ntp.br");
+  // Fuso vem das Preferences (persistido). Default: America/Sao_Paulo.
+  aplicarTz(cfg.tz);
+  configTzTime(cfg.tz, "pool.ntp.org", "time.google.com", "a.st1.ntp.br");
 
   if (precisaParear) {
     if (strlen(pairing_code_buf) != 6) {
@@ -726,7 +859,7 @@ void lerTemperatura() {
 void loop() {
   unsigned long now = millis();
 
-  if (now - lastTick > 1000)  { lastTick  = now; tickCiclo(); tickLuz(); }
+  if (now - lastTick > 1000)  { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); }
   if (now - lastTemp > 1000)  { lastTemp  = now; lerTemperatura(); }
   if (now - lastCmd  > 1500)  { lastCmd   = now; puxarComandos(); }
   if (now - lastTelem > 2000) { lastTelem = now; enviarTelemetria(); }
