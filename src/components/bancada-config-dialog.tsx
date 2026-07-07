@@ -302,8 +302,44 @@ export function BancadaConfigDialog({
               <Label htmlFor="al" className="text-xs">Alívio (s)</Label>
               <Input id="al" type="number" min={0} value={config.tempo_alivio_segundos}
                 onChange={(e) => update("tempo_alivio_segundos", e.target.value)} />
-            </div>
           </div>
+
+          <div className="grid gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3">
+            <Label className="flex items-center gap-1.5 text-xs font-semibold text-yellow-700 dark:text-yellow-400">
+              <Clock className="h-3.5 w-3.5" />
+              Timer das luzes (GPIO 27)
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="grid gap-1">
+                <Label htmlFor="luz-on" className="text-[11px] text-muted-foreground">
+                  Ligar às
+                </Label>
+                <Input
+                  id="luz-on"
+                  type="time"
+                  value={config.luz_ligar ?? "06:00"}
+                  onChange={(e) => updateLuz("luz_ligar", e.target.value)}
+                  className="font-mono"
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="luz-off" className="text-[11px] text-muted-foreground">
+                  Desligar às
+                </Label>
+                <Input
+                  id="luz-off"
+                  type="time"
+                  value={config.luz_desligar ?? "18:00"}
+                  onChange={(e) => updateLuz("luz_desligar", e.target.value)}
+                  className="font-mono"
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Fuso America/Sao_Paulo. Suporta janela atravessando meia-noite.
+            </p>
+          </div>
+
 
           <div className="grid gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
             <Label className="text-xs font-semibold text-amber-700 dark:text-amber-400">
