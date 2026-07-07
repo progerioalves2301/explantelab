@@ -316,7 +316,7 @@ static const char PORTAL_HEAD[] PROGMEM =
   "</div><div class=\"card\">";
 
 static const char PORTAL_FOOT[] PROGMEM =
-  "</div><div class=\"footer\">ESP32 • Firmware 1.4.0</div></div>";
+  "</div><div class=\"footer\">ESP32 • Firmware 1.5.0</div></div>";
 
 void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
