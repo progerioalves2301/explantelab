@@ -220,6 +220,92 @@ void tickLuz() {
   }
 }
 
+// -------- Agendamento local dos ciclos (independente da internet) --------
+// Guardas para não disparar o mesmo horário 2x nem sobrepor um ciclo em curso.
+int  g_ultimo_disparo_min      = -1;   // minuto absoluto (dia*1440+min) do último disparo
+uint32_t g_ultimo_disparo_ms   = 0;    // fallback quando NTP nunca sincronizou
+bool     g_ntp_ja_sincronizou  = false;
+
+void aplicarTz(const char* tz) {
+  const char* z = (tz && *tz) ? tz : DEFAULT_TZ;
+  setenv("TZ", z, 1);
+  tzset();
+}
+
+String serializarHorarios() {
+  String out = "[";
+  for (uint8_t i = 0; i < cfg.horarios_n && i < MAX_HORARIOS; i++) {
+    if (i) out += ',';
+    out += '"';
+    out += cfg.horarios_disparo[i];
+    out += '"';
+  }
+  out += ']';
+  return out;
+}
+
+void aplicarHorariosJson(JsonArrayConst arr) {
+  uint8_t n = 0;
+  for (JsonVariantConst v : arr) {
+    if (n >= MAX_HORARIOS) break;
+    const char* s = v.as<const char*>();
+    if (!s) continue;
+    if (hhmmParaMinutos(s) < 0) continue;
+    strncpy(cfg.horarios_disparo[n], s, 5);
+    cfg.horarios_disparo[n][5] = 0;
+    n++;
+  }
+  if (n > 0) cfg.horarios_n = n;
+}
+
+// Retorna true se `hhmm` (ex. "06:00") corresponde ao horário local atual.
+bool horarioBate(const char* hhmm, const struct tm& ti) {
+  int m = hhmmParaMinutos(hhmm);
+  if (m < 0) return false;
+  return (ti.tm_hour * 60 + ti.tm_min) == m;
+}
+
+// Dispara automaticamente o ciclo:
+//  - Se NTP sincronizou: quando o relógio local bate em um horário programado.
+//  - Fallback: se nunca sincronizou, dispara a cada intervalo_ciclo_horas horas.
+void tickAgendaCiclo() {
+  // Não sobrepor: só dispara quando está em REPOUSO e sem pausa manual.
+  if (fase != REPOUSO || pausado_manual) return;
+
+  struct tm ti;
+  bool temHora = getLocalTime(&ti, 50);
+  if (temHora) g_ntp_ja_sincronizou = true;
+
+  if (temHora) {
+    int minutoAbs = ti.tm_yday * 1440 + ti.tm_hour * 60 + ti.tm_min;
+    if (minutoAbs == g_ultimo_disparo_min) return;   // já disparou neste minuto
+    for (uint8_t i = 0; i < cfg.horarios_n && i < MAX_HORARIOS; i++) {
+      if (horarioBate(cfg.horarios_disparo[i], ti)) {
+        g_ultimo_disparo_min = minutoAbs;
+        g_ultimo_disparo_ms  = millis();
+        Serial.printf("[AGENDA] disparo local %02d:%02d (horario %s)\n",
+                      ti.tm_hour, ti.tm_min, cfg.horarios_disparo[i]);
+        aplicarFase(INJETANDO);
+        lastTelem = 0;
+        return;
+      }
+    }
+    return;
+  }
+
+  // Sem NTP: fallback por intervalo (millis).
+  uint32_t intervalo_ms = cfg.intervalo_ciclo_horas * 3600UL * 1000UL;
+  if (intervalo_ms == 0) return;
+  uint32_t agora = millis();
+  if (g_ultimo_disparo_ms == 0 || (agora - g_ultimo_disparo_ms) >= intervalo_ms) {
+    g_ultimo_disparo_ms = agora;
+    Serial.printf("[AGENDA] disparo por intervalo (sem NTP) cada %uh\n",
+                  (unsigned)cfg.intervalo_ciclo_horas);
+    aplicarFase(INJETANDO);
+    lastTelem = 0;
+  }
+}
+
 
 // -------- Persistência --------
 void carregarPrefs() {
