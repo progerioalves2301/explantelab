@@ -606,7 +606,7 @@ void enviarTelemetria() {
   v["v4"] = digitalRead(PIN_V4) == HIGH;
   v["v5"] = digitalRead(PIN_V5) == HIGH;
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.8.0";
+  doc["_firmware_version"]       = "1.9.0";
   doc["_tem_rtc"]                = g_tem_rtc;
   doc["_ip_local"]               = WiFi.localIP().toString();
   doc["_luz_ligada"]             = g_luz_ligada;
