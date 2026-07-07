@@ -454,7 +454,8 @@ function AtualizacaoPage() {
                     </Button>
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         </CardContent>
