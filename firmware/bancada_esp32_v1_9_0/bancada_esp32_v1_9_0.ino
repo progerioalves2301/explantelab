@@ -922,10 +922,17 @@ void lerTemperatura() {
 void loop() {
   unsigned long now = millis();
 
-  if (now - lastTick > 1000)  { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); sincronizarNtpParaRtc(); }
-  if (now - lastTemp > 1000)  { lastTemp  = now; lerTemperatura(); }
-  if (now - lastCmd  > 1500)  { lastCmd   = now; puxarComandos(); }
-  if (now - lastTelem > 2000) { lastTelem = now; enviarTelemetria(); }
+  // v1.9.0 — intervalos adaptativos p/ suportar 100+ bancadas na mesma
+  // instância Supabase. Em REPOUSO (>99% do tempo) reduz drasticamente
+  // requisições; durante ciclo ativo / manual mantém responsividade.
+  bool ativo = (fase != REPOUSO) || pausado_manual;
+  unsigned long intervaloTelem = ativo ? 2000UL  : 15000UL;  // 2s ativo / 15s parado
+  unsigned long intervaloCmd   = ativo ? 1500UL  : 5000UL;   // 1.5s ativo / 5s parado
+
+  if (now - lastTick > 1000)          { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); sincronizarNtpParaRtc(); }
+  if (now - lastTemp > 5000)          { lastTemp  = now; lerTemperatura(); }  // temperatura muda devagar
+  if (now - lastCmd  > intervaloCmd)  { lastCmd   = now; puxarComandos(); }
+  if (now - lastTelem > intervaloTelem) { lastTelem = now; enviarTelemetria(); }
 
   static unsigned long btn_pressed_since = 0;
   if (digitalRead(PIN_RESET_BTN) == LOW) {
