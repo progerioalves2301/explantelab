@@ -74,6 +74,9 @@ export function BancadaConfigDialog({
   const update = (k: keyof Configuracoes, v: string) =>
     setConfig((prev) => ({ ...prev, [k]: Number(v) || 0 }));
 
+  const updateLuz = (k: "luz_ligar" | "luz_desligar", v: string) =>
+    setConfig((prev) => ({ ...prev, [k]: v }));
+
   const horarios = config.horarios_disparo ?? [];
 
   const setHorario = (idx: number, v: string) =>
