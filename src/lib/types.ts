@@ -24,6 +24,10 @@ export interface Configuracoes {
   tempo_alivio_segundos: number;
   /** Lista de horários (formato "HH:MM", fuso America/Sao_Paulo). */
   horarios_disparo: string[];
+  /** Timer das luzes — horário de ligar ("HH:MM"). */
+  luz_ligar: string;
+  /** Timer das luzes — horário de desligar ("HH:MM"). */
+  luz_desligar: string;
 }
 
 export interface Laboratorio {
