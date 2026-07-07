@@ -460,8 +460,20 @@ void tratarComando(JsonObject cmd) {
     cfg.tempo_retorno_segundos = p["tempo_retorno_segundos"] | cfg.tempo_retorno_segundos;
     cfg.tempo_alivio_segundos  = p["tempo_alivio_segundos"]  | cfg.tempo_alivio_segundos;
     cfg.intervalo_ciclo_horas  = p["intervalo_ciclo_horas"]  | cfg.intervalo_ciclo_horas;
+    const char* lon = p["luz_ligar"]    | (const char*)nullptr;
+    const char* lof = p["luz_desligar"] | (const char*)nullptr;
+    if (lon && hhmmParaMinutos(lon) >= 0) {
+      strncpy(cfg.luz_ligar, lon, sizeof(cfg.luz_ligar) - 1);
+      cfg.luz_ligar[sizeof(cfg.luz_ligar) - 1] = 0;
+    }
+    if (lof && hhmmParaMinutos(lof) >= 0) {
+      strncpy(cfg.luz_desligar, lof, sizeof(cfg.luz_desligar) - 1);
+      cfg.luz_desligar[sizeof(cfg.luz_desligar) - 1] = 0;
+    }
     cfg.versao++;
     salvarConfig();
+    Serial.printf("[CFG] UPDATE_CONFIG aplicado (luz %s->%s)\n",
+                  cfg.luz_ligar, cfg.luz_desligar);
   } else if (strcmp(tipo, "SET_VALVE") == 0) {
     // Log bruto do payload para depuração no Monitor Serial
     String rawPayload;
