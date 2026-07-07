@@ -372,6 +372,8 @@ void salvarConfig() {
   prefs.putString("luz_jj", serializarLuzJanelas());
   prefs.remove("luz_on");   // limpa chaves antigas se existirem
   prefs.remove("luz_off");
+  prefs.putString("hor_jj", serializarHorarios());
+  prefs.putString("tz",     cfg.tz);
   prefs.putUInt("cfgv",  cfg.versao);
   prefs.end();
 }
