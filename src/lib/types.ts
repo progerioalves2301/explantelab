@@ -62,6 +62,7 @@ export interface Bancada {
   offline_threshold_segundos: number;
   laboratorio_id: string | null;
   posicao: number | null;
+  luz_ligada: boolean;
   created_at: string;
 }
 
