@@ -218,7 +218,27 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <StatusBadge status={bancada.status} />
+          <div className="flex items-center gap-1.5">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors",
+                bancada.luz_ligada
+                  ? "border-yellow-500/60 bg-yellow-400/15 text-yellow-700 dark:text-yellow-300"
+                  : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
+              )}
+              title={bancada.luz_ligada ? "Luzes ligadas" : "Luzes desligadas"}
+              aria-label={bancada.luz_ligada ? "Luzes ligadas" : "Luzes desligadas"}
+            >
+              <Lightbulb
+                className={cn(
+                  "h-3 w-3",
+                  bancada.luz_ligada && "fill-current",
+                )}
+              />
+              {bancada.luz_ligada ? "ON" : "OFF"}
+            </span>
+            <StatusBadge status={bancada.status} />
+          </div>
           <span className="text-[10px] tabular-nums text-muted-foreground">
             há {formatShortDuration(tempoNoEstado(bancada, clock))}
           </span>
