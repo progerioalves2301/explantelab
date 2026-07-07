@@ -142,6 +142,12 @@ void carregarPrefs() {
   cfg.tempo_retorno_segundos = prefs.getUInt("t_ret",  150);
   cfg.tempo_alivio_segundos  = prefs.getUInt("t_ali",  10);
   cfg.intervalo_ciclo_horas  = prefs.getUInt("t_int",  4);
+  String lon = prefs.getString("luz_on",  "06:00");
+  String lof = prefs.getString("luz_off", "18:00");
+  strncpy(cfg.luz_ligar,    lon.c_str(), sizeof(cfg.luz_ligar) - 1);
+  strncpy(cfg.luz_desligar, lof.c_str(), sizeof(cfg.luz_desligar) - 1);
+  cfg.luz_ligar[sizeof(cfg.luz_ligar) - 1] = 0;
+  cfg.luz_desligar[sizeof(cfg.luz_desligar) - 1] = 0;
   cfg.versao                 = prefs.getUInt("cfgv",   0);
   prefs.end();
 }
@@ -160,6 +166,8 @@ void salvarConfig() {
   prefs.putUInt("t_ret", cfg.tempo_retorno_segundos);
   prefs.putUInt("t_ali", cfg.tempo_alivio_segundos);
   prefs.putUInt("t_int", cfg.intervalo_ciclo_horas);
+  prefs.putString("luz_on",  cfg.luz_ligar);
+  prefs.putString("luz_off", cfg.luz_desligar);
   prefs.putUInt("cfgv",  cfg.versao);
   prefs.end();
 }
