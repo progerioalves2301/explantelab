@@ -394,7 +394,7 @@ void enviarTelemetria() {
   v["v4"] = digitalRead(PIN_V4) == HIGH;
   v["v5"] = digitalRead(PIN_V5) == HIGH;
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.3.0";
+  doc["_firmware_version"]       = "1.4.0";
   doc["_ip_local"]               = WiFi.localIP().toString();
   if (!isnan(g_temperatura_planta)) {
     doc["_temperatura_planta"] = g_temperatura_planta;
