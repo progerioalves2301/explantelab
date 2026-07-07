@@ -113,7 +113,7 @@ export const listarBancadasParaOta = createServerFn({ method: "GET" })
     );
     const { data, error } = await supabaseAdmin
       .from("bancadas")
-      .select("id, nome, firmware_version, status, ip_local, ultima_leitura")
+      .select("id, nome, firmware_version, status, ip_local, ultima_sync")
       .order("nome", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []) as BancadaFirmwareInfo[];
