@@ -30,7 +30,10 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <time.h>            // NTP + horário local p/ timer das luzes
+#include <sys/time.h>        // settimeofday (sincronizar system clock com DS3231)
 #include <HTTPUpdate.h>      // OTA via HTTPS (v1.6.0)
+#include <Wire.h>            // I2C p/ DS3231 (v1.8.0)
+#include <RTClib.h>          // DS3231 opcional (v1.8.0)
 
 
 // -------- Config Supabase (fixa no binário) --------
