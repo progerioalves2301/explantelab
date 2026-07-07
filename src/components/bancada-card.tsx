@@ -3,6 +3,7 @@ import {
   Clock,
   FlaskConical,
   Leaf,
+  Lightbulb,
   Settings2,
   SlidersHorizontal,
   Sprout,
