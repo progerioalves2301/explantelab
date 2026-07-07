@@ -551,8 +551,65 @@ void tratarComando(JsonObject cmd) {
                   PIN_V4, digitalRead(PIN_V4),
                   PIN_V5, digitalRead(PIN_V5));
     lastTelem = 0; // publica novo estado das válvulas imediatamente
+  } else if (strcmp(tipo, "OTA_UPDATE") == 0) {
+    // Payload: { "url": "<https signed url>", "filename": "..." }
+    JsonVariantConst pv = cmd["payload"];
+    JsonDocument tmpDoc;
+    JsonObjectConst p;
+    if (pv.is<const char*>()) {
+      if (deserializeJson(tmpDoc, pv.as<const char*>()) == DeserializationError::Ok) {
+        p = tmpDoc.as<JsonObjectConst>();
+      }
+    } else {
+      p = pv.as<JsonObjectConst>();
+    }
+    const char* url = p["url"] | "";
+    if (!*url) {
+      Serial.println("[OTA] payload sem 'url' — abortado");
+      return;
+    }
+    Serial.printf("[OTA] iniciando download: %s\n", url);
+    // Para atualizar com segurança: desliga válvulas e luzes.
+    pausado_manual = true;
+    escreverValvulas(false, false, false, false, false);
+    digitalWrite(PIN_LUZ, LOW);
+    // Publica um último ping de telemetria antes de reiniciar.
+    enviarTelemetria();
+
+    WiFiClientSecure otaClient;
+    otaClient.setInsecure();
+    httpUpdate.rebootOnUpdate(true);
+    // Piscar LED durante download
+    httpUpdate.onProgress([](int cur, int total) {
+      static uint32_t lastLog = 0;
+      digitalWrite(PIN_LED, (cur / 8192) & 1 ? HIGH : LOW);
+      if (millis() - lastLog > 1000) {
+        lastLog = millis();
+        Serial.printf("[OTA] %d / %d bytes (%d%%)\n",
+                      cur, total, total > 0 ? (cur * 100 / total) : 0);
+      }
+    });
+    t_httpUpdate_return ret = httpUpdate.update(otaClient, String(url));
+    switch (ret) {
+      case HTTP_UPDATE_FAILED:
+        Serial.printf("[OTA] FALHOU: (%d) %s\n",
+                      httpUpdate.getLastError(),
+                      httpUpdate.getLastErrorString().c_str());
+        pausado_manual = false;   // libera ciclo automático de novo
+        digitalWrite(PIN_LED, HIGH);
+        break;
+      case HTTP_UPDATE_NO_UPDATES:
+        Serial.println("[OTA] Sem atualização disponível");
+        pausado_manual = false;
+        break;
+      case HTTP_UPDATE_OK:
+        Serial.println("[OTA] OK — reiniciando…");
+        // rebootOnUpdate(true) já cuidou do restart.
+        break;
+    }
   }
 }
+
 
 void puxarComandos() {
   if (creds.device_token.length() == 0) return;
