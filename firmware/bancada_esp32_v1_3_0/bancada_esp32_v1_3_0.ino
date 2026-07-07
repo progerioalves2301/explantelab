@@ -29,6 +29,7 @@
 #include <Preferences.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <time.h>            // NTP + horário local p/ timer das luzes
 
 
 // -------- Config Supabase (fixa no binário) --------
