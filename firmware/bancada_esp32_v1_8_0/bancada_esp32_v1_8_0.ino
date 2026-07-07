@@ -66,6 +66,13 @@ OneWire oneWire(PIN_DS18B20);
 DallasTemperature dsSensor(&oneWire);
 float g_temperatura_planta = NAN;
 
+// -------- RTC DS3231 (opcional — v1.8.0) --------
+// Ligação I²C padrão do ESP32: SDA=GPIO 21, SCL=GPIO 22, VCC=3.3V, GND=GND.
+// Se o módulo não estiver presente, o firmware cai automaticamente no NTP+millis.
+RTC_DS3231 g_rtc;
+bool       g_tem_rtc          = false;   // detectado no boot
+uint32_t   g_ultima_sync_rtc  = 0;       // millis() da última gravação NTP -> RTC
+
 // -------- Estado --------
 enum FaseCiclo { REPOUSO, INJETANDO, PAUSADO, RETORNANDO, ALIVIO, MANUAL, OFFLINE };
 
