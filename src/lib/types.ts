@@ -24,6 +24,10 @@ export interface Configuracoes {
   tempo_alivio_segundos: number;
   /** Lista de horários (formato "HH:MM", fuso America/Sao_Paulo). */
   horarios_disparo: string[];
+  /** Timer das luzes — horário de ligar ("HH:MM"). */
+  luz_ligar: string;
+  /** Timer das luzes — horário de desligar ("HH:MM"). */
+  luz_desligar: string;
 }
 
 export interface Laboratorio {
@@ -78,6 +82,8 @@ export const DEFAULT_CONFIG: Configuracoes = {
   tempo_retorno_segundos: 150,
   tempo_alivio_segundos: 10,
   horarios_disparo: ["06:00", "12:00", "18:00", "00:00"],
+  luz_ligar: "06:00",
+  luz_desligar: "18:00",
 };
 
 export const DEFAULT_VALVULAS: ValvulasEstado = {

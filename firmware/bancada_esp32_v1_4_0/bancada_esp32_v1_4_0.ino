@@ -29,6 +29,7 @@
 #include <Preferences.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <time.h>            // NTP + horário local p/ timer das luzes
 
 
 // -------- Config Supabase (fixa no binário) --------
@@ -51,6 +52,7 @@ static const int PIN_V1 = PIN_V1_V4;
 static const int PIN_V4 = PIN_V1_V4;
 static const int PIN_V2 = PIN_V2_V3;
 static const int PIN_V3 = PIN_V2_V3;
+static const int PIN_LUZ       = 27;   // relé das luzes da bancada (timer HH:MM)
 static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
@@ -69,6 +71,10 @@ struct Config {
   uint32_t tempo_retorno_segundos   = 150;
   uint32_t tempo_alivio_segundos    = 10;
   uint32_t intervalo_ciclo_horas    = 4;
+  // Timer das luzes (fuso America/Sao_Paulo). Formato "HH:MM".
+  // Suporta janela que atravessa a meia-noite (ex.: liga 20:00, desliga 06:00).
+  char     luz_ligar[6]             = "06:00";
+  char     luz_desligar[6]          = "18:00";
   uint32_t versao                   = 0;
 };
 
@@ -126,6 +132,46 @@ void aplicarFase(FaseCiclo f) {
   Serial.printf("[FASE] %s\n", faseNome(f));
 }
 
+// -------- Timer das luzes --------
+// Converte "HH:MM" -> minutos desde a meia-noite (-1 se inválido).
+int hhmmParaMinutos(const char* s) {
+  if (!s || strlen(s) < 4) return -1;
+  int h = 0, m = 0;
+  if (sscanf(s, "%d:%d", &h, &m) != 2) return -1;
+  if (h < 0 || h > 23 || m < 0 || m > 59) return -1;
+  return h * 60 + m;
+}
+
+bool g_luz_ligada = false;
+
+void tickLuz() {
+  struct tm ti;
+  if (!getLocalTime(&ti, 50)) return;   // NTP ainda nao sincronizou
+  int agora = ti.tm_hour * 60 + ti.tm_min;
+  int on  = hhmmParaMinutos(cfg.luz_ligar);
+  int off = hhmmParaMinutos(cfg.luz_desligar);
+  if (on < 0 || off < 0) return;
+  if (on == off) return;                // janela nula: nao mexe
+
+  bool deveLigar;
+  if (on < off) {
+    // janela dentro do mesmo dia (ex.: 06:00 -> 18:00)
+    deveLigar = (agora >= on && agora < off);
+  } else {
+    // janela atravessando meia-noite (ex.: 20:00 -> 06:00)
+    deveLigar = (agora >= on || agora < off);
+  }
+  if (deveLigar != g_luz_ligada) {
+    g_luz_ligada = deveLigar;
+    digitalWrite(PIN_LUZ, deveLigar ? HIGH : LOW);
+    Serial.printf("[LUZ] %s (%02d:%02d)  janela %s->%s\n",
+                  deveLigar ? "ON" : "OFF",
+                  ti.tm_hour, ti.tm_min,
+                  cfg.luz_ligar, cfg.luz_desligar);
+  }
+}
+
+
 // -------- Persistência --------
 void carregarPrefs() {
   prefs.begin("genelab", true);
@@ -136,6 +182,12 @@ void carregarPrefs() {
   cfg.tempo_retorno_segundos = prefs.getUInt("t_ret",  150);
   cfg.tempo_alivio_segundos  = prefs.getUInt("t_ali",  10);
   cfg.intervalo_ciclo_horas  = prefs.getUInt("t_int",  4);
+  String lon = prefs.getString("luz_on",  "06:00");
+  String lof = prefs.getString("luz_off", "18:00");
+  strncpy(cfg.luz_ligar,    lon.c_str(), sizeof(cfg.luz_ligar) - 1);
+  strncpy(cfg.luz_desligar, lof.c_str(), sizeof(cfg.luz_desligar) - 1);
+  cfg.luz_ligar[sizeof(cfg.luz_ligar) - 1] = 0;
+  cfg.luz_desligar[sizeof(cfg.luz_desligar) - 1] = 0;
   cfg.versao                 = prefs.getUInt("cfgv",   0);
   prefs.end();
 }
@@ -154,6 +206,8 @@ void salvarConfig() {
   prefs.putUInt("t_ret", cfg.tempo_retorno_segundos);
   prefs.putUInt("t_ali", cfg.tempo_alivio_segundos);
   prefs.putUInt("t_int", cfg.intervalo_ciclo_horas);
+  prefs.putString("luz_on",  cfg.luz_ligar);
+  prefs.putString("luz_off", cfg.luz_desligar);
   prefs.putUInt("cfgv",  cfg.versao);
   prefs.end();
 }
@@ -211,7 +265,7 @@ static const char PORTAL_HEAD[] PROGMEM =
   "</div><div class=\"card\">";
 
 static const char PORTAL_FOOT[] PROGMEM =
-  "</div><div class=\"footer\">ESP32 • Firmware 1.2.0</div></div>";
+  "</div><div class=\"footer\">ESP32 • Firmware 1.4.0</div></div>";
 
 void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
@@ -340,7 +394,7 @@ void enviarTelemetria() {
   v["v4"] = digitalRead(PIN_V4) == HIGH;
   v["v5"] = digitalRead(PIN_V5) == HIGH;
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.3.0";
+  doc["_firmware_version"]       = "1.4.0";
   doc["_ip_local"]               = WiFi.localIP().toString();
   if (!isnan(g_temperatura_planta)) {
     doc["_temperatura_planta"] = g_temperatura_planta;
@@ -364,9 +418,20 @@ void enviarTelemetria() {
     cfg.tempo_retorno_segundos = c["tempo_retorno_segundos"] | cfg.tempo_retorno_segundos;
     cfg.tempo_alivio_segundos  = c["tempo_alivio_segundos"]  | cfg.tempo_alivio_segundos;
     cfg.intervalo_ciclo_horas  = c["intervalo_ciclo_horas"]  | cfg.intervalo_ciclo_horas;
+    const char* lon = c["luz_ligar"]    | (const char*)nullptr;
+    const char* lof = c["luz_desligar"] | (const char*)nullptr;
+    if (lon && hhmmParaMinutos(lon) >= 0) {
+      strncpy(cfg.luz_ligar, lon, sizeof(cfg.luz_ligar) - 1);
+      cfg.luz_ligar[sizeof(cfg.luz_ligar) - 1] = 0;
+    }
+    if (lof && hhmmParaMinutos(lof) >= 0) {
+      strncpy(cfg.luz_desligar, lof, sizeof(cfg.luz_desligar) - 1);
+      cfg.luz_desligar[sizeof(cfg.luz_desligar) - 1] = 0;
+    }
     cfg.versao = nova_ver;
     salvarConfig();
-    Serial.printf("[CFG] atualizado p/ versão %u\n", (unsigned)nova_ver);
+    Serial.printf("[CFG] atualizado p/ versão %u (luz %s->%s)\n",
+                  (unsigned)nova_ver, cfg.luz_ligar, cfg.luz_desligar);
   }
 }
 
@@ -395,8 +460,20 @@ void tratarComando(JsonObject cmd) {
     cfg.tempo_retorno_segundos = p["tempo_retorno_segundos"] | cfg.tempo_retorno_segundos;
     cfg.tempo_alivio_segundos  = p["tempo_alivio_segundos"]  | cfg.tempo_alivio_segundos;
     cfg.intervalo_ciclo_horas  = p["intervalo_ciclo_horas"]  | cfg.intervalo_ciclo_horas;
+    const char* lon = p["luz_ligar"]    | (const char*)nullptr;
+    const char* lof = p["luz_desligar"] | (const char*)nullptr;
+    if (lon && hhmmParaMinutos(lon) >= 0) {
+      strncpy(cfg.luz_ligar, lon, sizeof(cfg.luz_ligar) - 1);
+      cfg.luz_ligar[sizeof(cfg.luz_ligar) - 1] = 0;
+    }
+    if (lof && hhmmParaMinutos(lof) >= 0) {
+      strncpy(cfg.luz_desligar, lof, sizeof(cfg.luz_desligar) - 1);
+      cfg.luz_desligar[sizeof(cfg.luz_desligar) - 1] = 0;
+    }
     cfg.versao++;
     salvarConfig();
+    Serial.printf("[CFG] UPDATE_CONFIG aplicado (luz %s->%s)\n",
+                  cfg.luz_ligar, cfg.luz_desligar);
   } else if (strcmp(tipo, "SET_VALVE") == 0) {
     // Log bruto do payload para depuração no Monitor Serial
     String rawPayload;
@@ -490,9 +567,10 @@ void setup() {
   delay(200);
   Serial.println("\n== GeneLab Bancada ESP32 (direct-Supabase) ==");
 
-  for (int p : {PIN_V1, PIN_V2, PIN_V3, PIN_V4, PIN_V5, PIN_LED}) {
+  for (int p : {PIN_V1_V4, PIN_V2_V3, PIN_V5, PIN_LUZ, PIN_LED}) {
     pinMode(p, OUTPUT); digitalWrite(p, LOW);
   }
+  g_luz_ligada = false;
   pinMode(PIN_RESET_BTN, INPUT_PULLUP);
 
   dsSensor.begin();
@@ -516,6 +594,9 @@ void setup() {
 
   Serial.printf("Wi-Fi OK: %s\n", WiFi.localIP().toString().c_str());
   digitalWrite(PIN_LED, HIGH);
+
+  // NTP com fuso America/Sao_Paulo (UTC-3, sem horário de verão).
+  configTzTime("<-03>3", "pool.ntp.org", "time.google.com", "a.st1.ntp.br");
 
   if (precisaParear) {
     if (strlen(pairing_code_buf) != 6) {
@@ -551,7 +632,7 @@ void lerTemperatura() {
 void loop() {
   unsigned long now = millis();
 
-  if (now - lastTick > 1000)  { lastTick  = now; tickCiclo(); }
+  if (now - lastTick > 1000)  { lastTick  = now; tickCiclo(); tickLuz(); }
   if (now - lastTemp > 1000)  { lastTemp  = now; lerTemperatura(); }
   if (now - lastCmd  > 1500)  { lastCmd   = now; puxarComandos(); }
   if (now - lastTelem > 2000) { lastTelem = now; enviarTelemetria(); }

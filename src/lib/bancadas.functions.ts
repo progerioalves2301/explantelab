@@ -14,6 +14,8 @@ const configSchema = z.object({
     .array(z.string().regex(HORARIO_REGEX, "Formato HH:MM"))
     .min(1, "Ao menos 1 horário")
     .max(24, "Máximo 24 horários"),
+  luz_ligar: z.string().regex(HORARIO_REGEX, "Formato HH:MM"),
+  luz_desligar: z.string().regex(HORARIO_REGEX, "Formato HH:MM"),
 });
 
 // Lista todas as bancadas (público — dashboard usa realtime a partir daqui).
