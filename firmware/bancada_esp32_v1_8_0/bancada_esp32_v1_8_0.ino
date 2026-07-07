@@ -245,6 +245,42 @@ void aplicarTz(const char* tz) {
   tzset();
 }
 
+// -------- DS3231 helpers (v1.8.0) --------
+// Grava a hora do DS3231 no relógio de sistema do ESP32 (UTC).
+// Assim `getLocalTime()` já retorna o horário correto mesmo sem NTP.
+void carregarHoraDoRtc() {
+  if (!g_tem_rtc) return;
+  DateTime now = g_rtc.now();
+  if (!now.isValid() || now.year() < 2024) {
+    Serial.println("[RTC] hora inválida (bateria fraca?) — ignorando");
+    return;
+  }
+  struct timeval tv;
+  tv.tv_sec  = now.unixtime();
+  tv.tv_usec = 0;
+  settimeofday(&tv, nullptr);
+  g_ntp_ja_sincronizou = true;   // temos hora confiável do RTC
+  Serial.printf("[RTC] hora carregada do DS3231: %04u-%02u-%02u %02u:%02u:%02u UTC\n",
+                now.year(), now.month(), now.day(),
+                now.hour(), now.minute(), now.second());
+}
+
+// Depois que o NTP sincronizou, escreve a hora atual no DS3231 (uma vez por hora).
+void sincronizarNtpParaRtc() {
+  if (!g_tem_rtc) return;
+  struct tm ti;
+  if (!getLocalTime(&ti, 50)) return;
+  // Só grava se o ano já for razoável (NTP confirmado).
+  if (ti.tm_year + 1900 < 2024) return;
+  uint32_t agora = millis();
+  // 1ª vez ou a cada 1h.
+  if (g_ultima_sync_rtc != 0 && (agora - g_ultima_sync_rtc) < 3600UL * 1000UL) return;
+  time_t utc = time(nullptr);
+  g_rtc.adjust(DateTime((uint32_t)utc));
+  g_ultima_sync_rtc = agora;
+  Serial.println("[RTC] DS3231 sincronizado a partir do NTP");
+}
+
 String serializarHorarios() {
   String out = "[";
   for (uint8_t i = 0; i < cfg.horarios_n && i < MAX_HORARIOS; i++) {
