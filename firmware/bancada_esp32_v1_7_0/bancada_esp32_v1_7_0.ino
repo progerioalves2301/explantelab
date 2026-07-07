@@ -220,6 +220,9 @@ void tickLuz() {
   }
 }
 
+// Forward decl: timers globais declarados abaixo.
+extern unsigned long lastTelem;
+
 // -------- Agendamento local dos ciclos (independente da internet) --------
 // Guardas para não disparar o mesmo horário 2x nem sobrepor um ciclo em curso.
 int  g_ultimo_disparo_min      = -1;   // minuto absoluto (dia*1440+min) do último disparo
