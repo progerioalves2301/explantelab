@@ -339,6 +339,18 @@ void carregarPrefs() {
     cfg.luz_n = 1;
   }
 
+  // v1.7.0+: horários locais de disparo + fuso configurável
+  String hj = prefs.getString("hor_jj", "");
+  if (hj.length() > 0) {
+    JsonDocument d;
+    if (deserializeJson(d, hj) == DeserializationError::Ok && d.is<JsonArray>()) {
+      aplicarHorariosJson(d.as<JsonArrayConst>());
+    }
+  }
+  String tzs = prefs.getString("tz", DEFAULT_TZ);
+  strncpy(cfg.tz, tzs.c_str(), sizeof(cfg.tz) - 1);
+  cfg.tz[sizeof(cfg.tz) - 1] = 0;
+
   cfg.versao                 = prefs.getUInt("cfgv",   0);
   prefs.end();
 }
