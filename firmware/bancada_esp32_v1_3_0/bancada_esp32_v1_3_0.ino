@@ -70,6 +70,10 @@ struct Config {
   uint32_t tempo_retorno_segundos   = 150;
   uint32_t tempo_alivio_segundos    = 10;
   uint32_t intervalo_ciclo_horas    = 4;
+  // Timer das luzes (fuso America/Sao_Paulo). Formato "HH:MM".
+  // Suporta janela que atravessa a meia-noite (ex.: liga 20:00, desliga 06:00).
+  char     luz_ligar[6]             = "06:00";
+  char     luz_desligar[6]          = "18:00";
   uint32_t versao                   = 0;
 };
 
