@@ -17,17 +17,22 @@ export interface ValvulasEstado {
   v5: boolean;
 }
 
+export interface LuzJanela {
+  /** Horário de ligar as luzes ("HH:MM", fuso America/Sao_Paulo). */
+  ligar: string;
+  /** Horário de desligar as luzes ("HH:MM", fuso America/Sao_Paulo). */
+  desligar: string;
+}
+
 export interface Configuracoes {
   tempo_injecao_segundos: number;
   tempo_pausa_segundos: number;
   tempo_retorno_segundos: number;
   tempo_alivio_segundos: number;
-  /** Lista de horários (formato "HH:MM", fuso America/Sao_Paulo). */
+  /** Lista de horários de disparo do ciclo (formato "HH:MM"). */
   horarios_disparo: string[];
-  /** Timer das luzes — horário de ligar ("HH:MM"). */
-  luz_ligar: string;
-  /** Timer das luzes — horário de desligar ("HH:MM"). */
-  luz_desligar: string;
+  /** Janelas do timer das luzes (cada item = par ligar/desligar). */
+  luz_janelas: LuzJanela[];
 }
 
 export interface Laboratorio {
