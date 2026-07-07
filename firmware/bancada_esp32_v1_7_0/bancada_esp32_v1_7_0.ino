@@ -630,10 +630,18 @@ void tratarComando(JsonObject cmd) {
     cfg.intervalo_ciclo_horas  = p["intervalo_ciclo_horas"]  | cfg.intervalo_ciclo_horas;
     JsonArrayConst arr = p["luz_janelas"].as<JsonArrayConst>();
     if (!arr.isNull()) aplicarLuzJanelasJson(arr);
+    JsonArrayConst harr = p["horarios_disparo"].as<JsonArrayConst>();
+    if (!harr.isNull()) aplicarHorariosJson(harr);
+    const char* tzs = p["tz"] | (const char*)nullptr;
+    if (tzs && *tzs) {
+      strncpy(cfg.tz, tzs, sizeof(cfg.tz) - 1);
+      cfg.tz[sizeof(cfg.tz) - 1] = 0;
+      aplicarTz(cfg.tz);
+    }
     cfg.versao++;
     salvarConfig();
-    Serial.printf("[CFG] UPDATE_CONFIG aplicado (%u janela(s) de luz)\n",
-                  (unsigned)cfg.luz_n);
+    Serial.printf("[CFG] UPDATE_CONFIG aplicado (%u horario(s), %u janela(s) de luz, tz=%s)\n",
+                  (unsigned)cfg.horarios_n, (unsigned)cfg.luz_n, cfg.tz);
   } else if (strcmp(tipo, "SET_VALVE") == 0) {
     // Log bruto do payload para depuração no Monitor Serial
     String rawPayload;
