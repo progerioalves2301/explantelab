@@ -1,5 +1,16 @@
+import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Settings, Users, PlusCircle, FlaskConical, Bell, FileText } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  LayoutDashboard,
+  Settings,
+  Users,
+  PlusCircle,
+  FlaskConical,
+  Bell,
+  FileText,
+  DownloadCloud,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,8 +24,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import logoLeaf from "@/assets/explante-leaf.png";
+import { meusPapeis } from "@/lib/roles.functions";
+import { supabase } from "@/integrations/supabase/client";
 
-const items = [
+type Item = { title: string; url: string; icon: typeof LayoutDashboard; adminOnly?: boolean };
+
+const items: readonly Item[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Salas Bioreator", url: "/laboratorios", icon: FlaskConical },
   { title: "Nova bancada", url: "/bancadas/nova", icon: PlusCircle },
@@ -22,12 +37,42 @@ const items = [
   { title: "Relatórios", url: "/relatorios", icon: FileText },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
   { title: "Usuários", url: "/usuarios", icon: Users },
+  { title: "Atualização", url: "/atualizacao", icon: DownloadCloud, adminOnly: true },
 ] as const;
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const meus = useServerFn(meusPapeis);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let cancel = false;
+    const check = async () => {
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        if (!sess.session) {
+          if (!cancel) setIsAdmin(false);
+          return;
+        }
+        const roles = await meus();
+        if (!cancel) setIsAdmin(roles.includes("admin"));
+      } catch {
+        if (!cancel) setIsAdmin(false);
+      }
+    };
+    void check();
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") void check();
+    });
+    return () => {
+      cancel = true;
+      sub.subscription.unsubscribe();
+    };
+  }, [meus]);
+
+  const visible = items.filter((i) => !i.adminOnly || isAdmin);
 
   return (
     <Sidebar collapsible="icon">
@@ -54,7 +99,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Operação</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {visible.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton
                     asChild
