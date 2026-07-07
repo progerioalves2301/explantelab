@@ -821,7 +821,9 @@ void setup() {
   digitalWrite(PIN_LED, HIGH);
 
   // NTP com fuso America/Sao_Paulo (UTC-3, sem horário de verão).
-  configTzTime("<-03>3", "pool.ntp.org", "time.google.com", "a.st1.ntp.br");
+  // Fuso vem das Preferences (persistido). Default: America/Sao_Paulo.
+  aplicarTz(cfg.tz);
+  configTzTime(cfg.tz, "pool.ntp.org", "time.google.com", "a.st1.ntp.br");
 
   if (precisaParear) {
     if (strlen(pairing_code_buf) != 6) {
