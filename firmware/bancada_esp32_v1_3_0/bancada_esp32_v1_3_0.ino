@@ -595,6 +595,9 @@ void setup() {
   Serial.printf("Wi-Fi OK: %s\n", WiFi.localIP().toString().c_str());
   digitalWrite(PIN_LED, HIGH);
 
+  // NTP com fuso America/Sao_Paulo (UTC-3, sem horário de verão).
+  configTzTime("<-03>3", "pool.ntp.org", "time.google.com", "a.st1.ntp.br");
+
   if (precisaParear) {
     if (strlen(pairing_code_buf) != 6) {
       Serial.println("[PAIR] código ausente/ inválido; reiniciando p/ novo portal");
