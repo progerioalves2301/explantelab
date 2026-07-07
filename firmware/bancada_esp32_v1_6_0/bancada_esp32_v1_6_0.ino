@@ -30,6 +30,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <time.h>            // NTP + horário local p/ timer das luzes
+#include <HTTPUpdate.h>      // OTA via HTTPS (v1.6.0)
 
 
 // -------- Config Supabase (fixa no binário) --------
