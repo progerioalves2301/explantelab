@@ -23,6 +23,7 @@ const configSchema = z.object({
     )
     .min(1, "Ao menos 1 janela de luz")
     .max(8, "Máximo 8 janelas"),
+  tz: z.string().min(2).max(40).optional(),
 });
 
 // Lista todas as bancadas (público — dashboard usa realtime a partir daqui).
