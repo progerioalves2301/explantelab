@@ -587,10 +587,19 @@ void enviarTelemetria() {
     cfg.intervalo_ciclo_horas  = c["intervalo_ciclo_horas"]  | cfg.intervalo_ciclo_horas;
     JsonArrayConst arr = c["luz_janelas"].as<JsonArrayConst>();
     if (!arr.isNull()) aplicarLuzJanelasJson(arr);
+    JsonArrayConst harr = c["horarios_disparo"].as<JsonArrayConst>();
+    if (!harr.isNull()) aplicarHorariosJson(harr);
+    const char* tzs = c["tz"] | (const char*)nullptr;
+    if (tzs && *tzs) {
+      strncpy(cfg.tz, tzs, sizeof(cfg.tz) - 1);
+      cfg.tz[sizeof(cfg.tz) - 1] = 0;
+      aplicarTz(cfg.tz);
+    }
     cfg.versao = nova_ver;
     salvarConfig();
-    Serial.printf("[CFG] atualizado p/ versão %u (%u janela(s) de luz)\n",
-                  (unsigned)nova_ver, (unsigned)cfg.luz_n);
+    Serial.printf("[CFG] atualizado p/ versão %u (%u horario(s), %u janela(s) de luz, tz=%s)\n",
+                  (unsigned)nova_ver, (unsigned)cfg.horarios_n,
+                  (unsigned)cfg.luz_n, cfg.tz);
   }
 }
 
