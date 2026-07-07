@@ -18,13 +18,11 @@ export interface BancadaFirmwareInfo {
   firmware_version: string | null;
   status: string;
   ip_local: string | null;
-  ultima_leitura: string | null;
+  ultima_sync: string | null;
 }
 
-async function assertAdmin(context: {
-  supabase: { rpc: (fn: string, args: unknown) => Promise<{ data: unknown }> };
-  userId: string;
-}) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assertAdmin(context: any) {
   const { data } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
