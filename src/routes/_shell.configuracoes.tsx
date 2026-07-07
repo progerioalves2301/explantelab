@@ -247,6 +247,44 @@ function ConfigPage() {
               </div>
             </div>
 
+            <div className="grid gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3">
+              <Label className="flex items-center gap-1.5 text-xs font-semibold text-yellow-700 dark:text-yellow-400">
+                <Clock className="h-3.5 w-3.5" />
+                Timer das luzes da bancada (GPIO 27)
+              </Label>
+              <p className="text-[11px] text-muted-foreground">
+                Fuso America/Sao_Paulo. Suporta janela que atravessa a
+                meia-noite (ex.: ligar 20:00, desligar 06:00).
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="grid gap-1">
+                  <Label htmlFor="luz-on" className="text-[11px] text-muted-foreground">
+                    Ligar às
+                  </Label>
+                  <Input
+                    id="luz-on"
+                    type="time"
+                    value={config.luz_ligar ?? "06:00"}
+                    onChange={(e) => updateLuz("luz_ligar", e.target.value)}
+                    className="font-mono"
+                  />
+                </div>
+                <div className="grid gap-1">
+                  <Label htmlFor="luz-off" className="text-[11px] text-muted-foreground">
+                    Desligar às
+                  </Label>
+                  <Input
+                    id="luz-off"
+                    type="time"
+                    value={config.luz_desligar ?? "18:00"}
+                    onChange={(e) => updateLuz("luz_desligar", e.target.value)}
+                    className="font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+
             <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-muted-foreground">
                 Salvar padrão só afeta bancadas <em>novas</em>. Para atualizar
