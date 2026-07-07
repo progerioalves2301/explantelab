@@ -51,6 +51,7 @@ static const int PIN_V1 = PIN_V1_V4;
 static const int PIN_V4 = PIN_V1_V4;
 static const int PIN_V2 = PIN_V2_V3;
 static const int PIN_V3 = PIN_V2_V3;
+static const int PIN_LUZ       = 27;   // relé das luzes da bancada (timer HH:MM)
 static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
