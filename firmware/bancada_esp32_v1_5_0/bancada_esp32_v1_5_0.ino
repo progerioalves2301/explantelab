@@ -65,16 +65,22 @@ float g_temperatura_planta = NAN;
 // -------- Estado --------
 enum FaseCiclo { REPOUSO, INJETANDO, PAUSADO, RETORNANDO, ALIVIO, MANUAL, OFFLINE };
 
+static const int MAX_LUZ_JANELAS = 8;
+struct LuzJanela {
+  char ligar[6];      // "HH:MM"
+  char desligar[6];   // "HH:MM"
+};
+
 struct Config {
   uint32_t tempo_injecao_segundos   = 150;
   uint32_t tempo_pausa_segundos     = 60;
   uint32_t tempo_retorno_segundos   = 150;
   uint32_t tempo_alivio_segundos    = 10;
   uint32_t intervalo_ciclo_horas    = 4;
-  // Timer das luzes (fuso America/Sao_Paulo). Formato "HH:MM".
-  // Suporta janela que atravessa a meia-noite (ex.: liga 20:00, desliga 06:00).
-  char     luz_ligar[6]             = "06:00";
-  char     luz_desligar[6]          = "18:00";
+  // Timer das luzes (fuso America/Sao_Paulo). Cada janela suporta
+  // atravessar meia-noite (ex.: liga 20:00, desliga 06:00).
+  uint8_t   luz_n                   = 1;
+  LuzJanela luz_janelas[MAX_LUZ_JANELAS] = { { "06:00", "18:00" } };
   uint32_t versao                   = 0;
 };
 
