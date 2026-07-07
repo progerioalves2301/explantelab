@@ -186,6 +186,7 @@ export type Database = {
           proximo_ciclo_segundos: number
           status: string
           status_desde: string | null
+          tem_rtc: boolean | null
           temp_max: number | null
           temp_min: number | null
           temperatura_planta: number | null
@@ -207,6 +208,7 @@ export type Database = {
           proximo_ciclo_segundos?: number
           status?: string
           status_desde?: string | null
+          tem_rtc?: boolean | null
           temp_max?: number | null
           temp_min?: number | null
           temperatura_planta?: number | null
@@ -228,6 +230,7 @@ export type Database = {
           proximo_ciclo_segundos?: number
           status?: string
           status_desde?: string | null
+          tem_rtc?: boolean | null
           temp_max?: number | null
           temp_min?: number | null
           temperatura_planta?: number | null
@@ -337,20 +340,36 @@ export type Database = {
         Args: { _bancada_id: string; _device_token: string }
         Returns: Json
       }
-      bench_push_telemetry: {
-        Args: {
-          _bancada_id: string
-          _device_token: string
-          _firmware_version: string
-          _ip_local: string
-          _luz_ligada?: boolean
-          _proximo_ciclo_segundos: number
-          _status: string
-          _temperatura_planta?: number
-          _valvulas: Json
-        }
-        Returns: Json
-      }
+      bench_push_telemetry:
+        | {
+            Args: {
+              _bancada_id: string
+              _device_token: string
+              _firmware_version: string
+              _ip_local: string
+              _luz_ligada?: boolean
+              _proximo_ciclo_segundos: number
+              _status: string
+              _temperatura_planta?: number
+              _valvulas: Json
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _bancada_id: string
+              _device_token: string
+              _firmware_version: string
+              _ip_local: string
+              _luz_ligada?: boolean
+              _proximo_ciclo_segundos: number
+              _status: string
+              _tem_rtc?: boolean
+              _temperatura_planta?: number
+              _valvulas: Json
+            }
+            Returns: Json
+          }
       detectar_alertas: { Args: never; Returns: number }
       has_role: {
         Args: {
