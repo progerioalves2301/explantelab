@@ -302,6 +302,7 @@ export function BancadaConfigDialog({
               <Label htmlFor="al" className="text-xs">Alívio (s)</Label>
               <Input id="al" type="number" min={0} value={config.tempo_alivio_segundos}
                 onChange={(e) => update("tempo_alivio_segundos", e.target.value)} />
+            </div>
           </div>
 
           <div className="grid gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3">
