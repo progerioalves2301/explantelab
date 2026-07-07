@@ -73,6 +73,39 @@ function AtualizacaoPage() {
   const [dispatchingId, setDispatchingId] = useState<string | null>(null);
   const [dispatchingAll, setDispatchingAll] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Guarda "versão esperada" por bancada após disparar OTA.
+  // Quando a telemetria trouxer essa versão, exibe toast de sucesso.
+  const [aguardando, setAguardando] = useState<Record<string, string>>({});
+  const aguardandoRef = useRef<Record<string, string>>({});
+  aguardandoRef.current = aguardando;
+
+  // Extrai "1.9.0" de "bancada_esp32_v1_9_0.ino.bin" (ou similar).
+  const extrairVersao = (filename: string): string | null => {
+    const m = filename.match(/v(\d+)[._](\d+)[._](\d+)/i);
+    return m ? `${m[1]}.${m[2]}.${m[3]}` : null;
+  };
+
+  const recarregarBancadas = async () => {
+    try {
+      const bs = await listarBancadas();
+      // Detecta bancadas que atingiram a versão esperada
+      const pend = aguardandoRef.current;
+      const novoPend = { ...pend };
+      let mudou = false;
+      for (const b of bs) {
+        const esperada = pend[b.id];
+        if (esperada && b.firmware_version === esperada) {
+          toast.success(`${b.nome} atualizada para v${esperada}.`);
+          delete novoPend[b.id];
+          mudou = true;
+        }
+      }
+      if (mudou) setAguardando(novoPend);
+      setBancadas(bs);
+    } catch {
+      /* silencioso — poll de fundo */
+    }
+  };
 
   const carregar = async () => {
     setLoading(true);
@@ -101,8 +134,13 @@ function AtualizacaoPage() {
 
   useEffect(() => {
     void carregar();
+    // Poll a cada 5s p/ refletir nova versão de firmware após OTA.
+    const id = setInterval(() => {
+      if (isAdmin) void recarregarBancadas();
+    }, 5000);
+    return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isAdmin]);
 
   const handleUpload = async (file: File) => {
     if (!file.name.toLowerCase().endsWith(".bin")) {
@@ -163,7 +201,15 @@ function AtualizacaoPage() {
     setDispatchingId(bancada_id);
     try {
       await otaOne({ data: { bancada_id, filename: selecionado } });
-      toast.success("Comando OTA enviado. A bancada baixará em segundos.");
+      const versao = extrairVersao(selecionado);
+      if (versao) {
+        setAguardando((p) => ({ ...p, [bancada_id]: versao }));
+      }
+      toast.success(
+        versao
+          ? `Comando OTA enviado. Aguardando bancada reportar v${versao}…`
+          : "Comando OTA enviado. A bancada baixará em segundos.",
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao disparar OTA");
     } finally {
@@ -182,7 +228,17 @@ function AtualizacaoPage() {
     setDispatchingAll(true);
     try {
       const r = await otaAll({ data: { filename: selecionado } });
-      toast.success(`OTA enviado para ${r.total} bancada(s).`);
+      const versao = extrairVersao(selecionado);
+      if (versao) {
+        const marca: Record<string, string> = {};
+        for (const b of bancadas) marca[b.id] = versao;
+        setAguardando((p) => ({ ...p, ...marca }));
+      }
+      toast.success(
+        versao
+          ? `OTA enviado para ${r.total} bancada(s). Aguardando reportarem v${versao}…`
+          : `OTA enviado para ${r.total} bancada(s).`,
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao disparar OTA");
     } finally {
@@ -356,7 +412,9 @@ function AtualizacaoPage() {
                 Nenhuma bancada cadastrada.
               </div>
             ) : (
-              bancadas.map((b) => (
+              bancadas.map((b) => {
+                const esperada = aguardando[b.id];
+                return (
                 <div
                   key={b.id}
                   className="grid grid-cols-[1fr_120px_120px_140px] items-center gap-2 border-b px-3 py-2 text-sm last:border-b-0"
@@ -365,8 +423,14 @@ function AtualizacaoPage() {
                     <Cpu className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="truncate">{b.nome}</span>
                   </div>
-                  <span className="font-mono text-xs">
+                  <span className="font-mono text-xs flex items-center gap-1">
                     {b.firmware_version ?? "—"}
+                    {esperada && (
+                      <span className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                        →v{esperada}
+                      </span>
+                    )}
                   </span>
                   <Badge
                     variant={b.status === "Offline" ? "secondary" : "default"}
@@ -390,7 +454,8 @@ function AtualizacaoPage() {
                     </Button>
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         </CardContent>
