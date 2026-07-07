@@ -567,9 +567,10 @@ void setup() {
   delay(200);
   Serial.println("\n== GeneLab Bancada ESP32 (direct-Supabase) ==");
 
-  for (int p : {PIN_V1, PIN_V2, PIN_V3, PIN_V4, PIN_V5, PIN_LED}) {
+  for (int p : {PIN_V1_V4, PIN_V2_V3, PIN_V5, PIN_LUZ, PIN_LED}) {
     pinMode(p, OUTPUT); digitalWrite(p, LOW);
   }
+  g_luz_ligada = false;
   pinMode(PIN_RESET_BTN, INPUT_PULLUP);
 
   dsSensor.begin();
