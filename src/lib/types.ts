@@ -82,6 +82,8 @@ export const DEFAULT_CONFIG: Configuracoes = {
   tempo_retorno_segundos: 150,
   tempo_alivio_segundos: 10,
   horarios_disparo: ["06:00", "12:00", "18:00", "00:00"],
+  luz_ligar: "06:00",
+  luz_desligar: "18:00",
 };
 
 export const DEFAULT_VALVULAS: ValvulasEstado = {
