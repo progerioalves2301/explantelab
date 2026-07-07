@@ -412,7 +412,9 @@ function AtualizacaoPage() {
                 Nenhuma bancada cadastrada.
               </div>
             ) : (
-              bancadas.map((b) => (
+              bancadas.map((b) => {
+                const esperada = aguardando[b.id];
+                return (
                 <div
                   key={b.id}
                   className="grid grid-cols-[1fr_120px_120px_140px] items-center gap-2 border-b px-3 py-2 text-sm last:border-b-0"
@@ -421,8 +423,14 @@ function AtualizacaoPage() {
                     <Cpu className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="truncate">{b.nome}</span>
                   </div>
-                  <span className="font-mono text-xs">
+                  <span className="font-mono text-xs flex items-center gap-1">
                     {b.firmware_version ?? "—"}
+                    {esperada && (
+                      <span className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                        →v{esperada}
+                      </span>
+                    )}
                   </span>
                   <Badge
                     variant={b.status === "Offline" ? "secondary" : "default"}
