@@ -201,7 +201,15 @@ function AtualizacaoPage() {
     setDispatchingId(bancada_id);
     try {
       await otaOne({ data: { bancada_id, filename: selecionado } });
-      toast.success("Comando OTA enviado. A bancada baixará em segundos.");
+      const versao = extrairVersao(selecionado);
+      if (versao) {
+        setAguardando((p) => ({ ...p, [bancada_id]: versao }));
+      }
+      toast.success(
+        versao
+          ? `Comando OTA enviado. Aguardando bancada reportar v${versao}…`
+          : "Comando OTA enviado. A bancada baixará em segundos.",
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao disparar OTA");
     } finally {
@@ -220,7 +228,17 @@ function AtualizacaoPage() {
     setDispatchingAll(true);
     try {
       const r = await otaAll({ data: { filename: selecionado } });
-      toast.success(`OTA enviado para ${r.total} bancada(s).`);
+      const versao = extrairVersao(selecionado);
+      if (versao) {
+        const marca: Record<string, string> = {};
+        for (const b of bancadas) marca[b.id] = versao;
+        setAguardando((p) => ({ ...p, ...marca }));
+      }
+      toast.success(
+        versao
+          ? `OTA enviado para ${r.total} bancada(s). Aguardando reportarem v${versao}…`
+          : `OTA enviado para ${r.total} bancada(s).`,
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao disparar OTA");
     } finally {
