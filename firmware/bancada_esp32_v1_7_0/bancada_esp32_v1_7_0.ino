@@ -67,6 +67,8 @@ float g_temperatura_planta = NAN;
 enum FaseCiclo { REPOUSO, INJETANDO, PAUSADO, RETORNANDO, ALIVIO, MANUAL, OFFLINE };
 
 static const int MAX_LUZ_JANELAS = 8;
+static const int MAX_HORARIOS    = 24;
+static const char DEFAULT_TZ[]   = "<-03>3";   // America/Sao_Paulo (POSIX)
 struct LuzJanela {
   char ligar[6];      // "HH:MM"
   char desligar[6];   // "HH:MM"
@@ -77,12 +79,21 @@ struct Config {
   uint32_t tempo_pausa_segundos     = 60;
   uint32_t tempo_retorno_segundos   = 150;
   uint32_t tempo_alivio_segundos    = 10;
+  // Fallback offline: se NUNCA sincronizou NTP, dispara ciclo a cada N horas
+  // usando millis() a partir do 1º ciclo (ou boot).
   uint32_t intervalo_ciclo_horas    = 4;
-  // Timer das luzes (fuso America/Sao_Paulo). Cada janela suporta
+  // Timer das luzes (fuso configurável em cfg.tz). Cada janela suporta
   // atravessar meia-noite (ex.: liga 20:00, desliga 06:00).
   uint8_t   luz_n                   = 1;
   LuzJanela luz_janelas[MAX_LUZ_JANELAS] = { { "06:00", "18:00" } };
-  uint32_t versao                   = 0;
+  // Agendamento LOCAL dos ciclos (não depende do backend).
+  uint8_t   horarios_n              = 4;
+  char      horarios_disparo[MAX_HORARIOS][6] = {
+    "06:00", "12:00", "18:00", "00:00"
+  };
+  // POSIX TZ string, ex.: "<-03>3" (BRT), "UTC0", "EST5EDT,M3.2.0,M11.1.0"
+  char      tz[40]                  = "<-03>3";
+  uint32_t  versao                  = 0;
 };
 
 struct Creds {
