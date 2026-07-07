@@ -132,6 +132,46 @@ void aplicarFase(FaseCiclo f) {
   Serial.printf("[FASE] %s\n", faseNome(f));
 }
 
+// -------- Timer das luzes --------
+// Converte "HH:MM" -> minutos desde a meia-noite (-1 se inválido).
+int hhmmParaMinutos(const char* s) {
+  if (!s || strlen(s) < 4) return -1;
+  int h = 0, m = 0;
+  if (sscanf(s, "%d:%d", &h, &m) != 2) return -1;
+  if (h < 0 || h > 23 || m < 0 || m > 59) return -1;
+  return h * 60 + m;
+}
+
+bool g_luz_ligada = false;
+
+void tickLuz() {
+  struct tm ti;
+  if (!getLocalTime(&ti, 50)) return;   // NTP ainda nao sincronizou
+  int agora = ti.tm_hour * 60 + ti.tm_min;
+  int on  = hhmmParaMinutos(cfg.luz_ligar);
+  int off = hhmmParaMinutos(cfg.luz_desligar);
+  if (on < 0 || off < 0) return;
+  if (on == off) return;                // janela nula: nao mexe
+
+  bool deveLigar;
+  if (on < off) {
+    // janela dentro do mesmo dia (ex.: 06:00 -> 18:00)
+    deveLigar = (agora >= on && agora < off);
+  } else {
+    // janela atravessando meia-noite (ex.: 20:00 -> 06:00)
+    deveLigar = (agora >= on || agora < off);
+  }
+  if (deveLigar != g_luz_ligada) {
+    g_luz_ligada = deveLigar;
+    digitalWrite(PIN_LUZ, deveLigar ? HIGH : LOW);
+    Serial.printf("[LUZ] %s (%02d:%02d)  janela %s->%s\n",
+                  deveLigar ? "ON" : "OFF",
+                  ti.tm_hour, ti.tm_min,
+                  cfg.luz_ligar, cfg.luz_desligar);
+  }
+}
+
+
 // -------- Persistência --------
 void carregarPrefs() {
   prefs.begin("genelab", true);
