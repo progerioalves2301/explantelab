@@ -859,7 +859,7 @@ void lerTemperatura() {
 void loop() {
   unsigned long now = millis();
 
-  if (now - lastTick > 1000)  { lastTick  = now; tickCiclo(); tickLuz(); }
+  if (now - lastTick > 1000)  { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); }
   if (now - lastTemp > 1000)  { lastTemp  = now; lerTemperatura(); }
   if (now - lastCmd  > 1500)  { lastCmd   = now; puxarComandos(); }
   if (now - lastTelem > 2000) { lastTelem = now; enviarTelemetria(); }
