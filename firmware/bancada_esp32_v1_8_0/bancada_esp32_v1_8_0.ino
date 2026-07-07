@@ -849,7 +849,23 @@ void setup() {
   dsSensor.setWaitForConversion(false);
   dsSensor.requestTemperatures();
 
+  // DS3231 opcional (I²C em SDA=21 / SCL=22). Se não responder, seguimos sem ele.
+  Wire.begin();
+  g_tem_rtc = g_rtc.begin();
+  if (g_tem_rtc) {
+    Serial.println("[RTC] DS3231 detectado no barramento I2C");
+    if (g_rtc.lostPower()) {
+      Serial.println("[RTC] perdeu energia — aguardando NTP p/ ajustar");
+    }
+  } else {
+    Serial.println("[RTC] DS3231 não encontrado — usando NTP + millis()");
+  }
+
   carregarPrefs();
+
+  // Aplica fuso ANTES de ler a hora do RTC p/ que getLocalTime já retorne local.
+  aplicarTz(cfg.tz);
+  carregarHoraDoRtc();
 
   if (digitalRead(PIN_RESET_BTN) == LOW) {
     Serial.println("Botão RESET pressionado — apagando credenciais em 5s…");
