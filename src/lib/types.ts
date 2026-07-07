@@ -71,7 +71,8 @@ export type ComandoTipo =
   | "UPDATE_CONFIG"
   | "PAUSE"
   | "RESUME"
-  | "SET_VALVE";
+  | "SET_VALVE"
+  | "OTA_UPDATE";
 
 export interface Comando {
   id: string;
