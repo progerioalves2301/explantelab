@@ -418,9 +418,20 @@ void enviarTelemetria() {
     cfg.tempo_retorno_segundos = c["tempo_retorno_segundos"] | cfg.tempo_retorno_segundos;
     cfg.tempo_alivio_segundos  = c["tempo_alivio_segundos"]  | cfg.tempo_alivio_segundos;
     cfg.intervalo_ciclo_horas  = c["intervalo_ciclo_horas"]  | cfg.intervalo_ciclo_horas;
+    const char* lon = c["luz_ligar"]    | (const char*)nullptr;
+    const char* lof = c["luz_desligar"] | (const char*)nullptr;
+    if (lon && hhmmParaMinutos(lon) >= 0) {
+      strncpy(cfg.luz_ligar, lon, sizeof(cfg.luz_ligar) - 1);
+      cfg.luz_ligar[sizeof(cfg.luz_ligar) - 1] = 0;
+    }
+    if (lof && hhmmParaMinutos(lof) >= 0) {
+      strncpy(cfg.luz_desligar, lof, sizeof(cfg.luz_desligar) - 1);
+      cfg.luz_desligar[sizeof(cfg.luz_desligar) - 1] = 0;
+    }
     cfg.versao = nova_ver;
     salvarConfig();
-    Serial.printf("[CFG] atualizado p/ versão %u\n", (unsigned)nova_ver);
+    Serial.printf("[CFG] atualizado p/ versão %u (luz %s->%s)\n",
+                  (unsigned)nova_ver, cfg.luz_ligar, cfg.luz_desligar);
   }
 }
 
