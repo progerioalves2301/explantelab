@@ -560,7 +560,7 @@ void enviarTelemetria() {
   v["v4"] = digitalRead(PIN_V4) == HIGH;
   v["v5"] = digitalRead(PIN_V5) == HIGH;
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.6.0";
+  doc["_firmware_version"]       = "1.7.0";
   doc["_ip_local"]               = WiFi.localIP().toString();
   doc["_luz_ligada"]             = g_luz_ligada;
   if (!isnan(g_temperatura_planta)) {
