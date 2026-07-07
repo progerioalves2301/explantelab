@@ -30,7 +30,10 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <time.h>            // NTP + horário local p/ timer das luzes
+#include <sys/time.h>        // settimeofday (sincronizar system clock com DS3231)
 #include <HTTPUpdate.h>      // OTA via HTTPS (v1.6.0)
+#include <Wire.h>            // I2C p/ DS3231 (v1.8.0)
+#include <RTClib.h>          // DS3231 opcional (v1.8.0)
 
 
 // -------- Config Supabase (fixa no binário) --------
@@ -62,6 +65,13 @@ static const int PIN_DS18B20 = 4;
 OneWire oneWire(PIN_DS18B20);
 DallasTemperature dsSensor(&oneWire);
 float g_temperatura_planta = NAN;
+
+// -------- RTC DS3231 (opcional — v1.8.0) --------
+// Ligação I²C padrão do ESP32: SDA=GPIO 21, SCL=GPIO 22, VCC=3.3V, GND=GND.
+// Se o módulo não estiver presente, o firmware cai automaticamente no NTP+millis.
+RTC_DS3231 g_rtc;
+bool       g_tem_rtc          = false;   // detectado no boot
+uint32_t   g_ultima_sync_rtc  = 0;       // millis() da última gravação NTP -> RTC
 
 // -------- Estado --------
 enum FaseCiclo { REPOUSO, INJETANDO, PAUSADO, RETORNANDO, ALIVIO, MANUAL, OFFLINE };
@@ -233,6 +243,42 @@ void aplicarTz(const char* tz) {
   const char* z = (tz && *tz) ? tz : DEFAULT_TZ;
   setenv("TZ", z, 1);
   tzset();
+}
+
+// -------- DS3231 helpers (v1.8.0) --------
+// Grava a hora do DS3231 no relógio de sistema do ESP32 (UTC).
+// Assim `getLocalTime()` já retorna o horário correto mesmo sem NTP.
+void carregarHoraDoRtc() {
+  if (!g_tem_rtc) return;
+  DateTime now = g_rtc.now();
+  if (!now.isValid() || now.year() < 2024) {
+    Serial.println("[RTC] hora inválida (bateria fraca?) — ignorando");
+    return;
+  }
+  struct timeval tv;
+  tv.tv_sec  = now.unixtime();
+  tv.tv_usec = 0;
+  settimeofday(&tv, nullptr);
+  g_ntp_ja_sincronizou = true;   // temos hora confiável do RTC
+  Serial.printf("[RTC] hora carregada do DS3231: %04u-%02u-%02u %02u:%02u:%02u UTC\n",
+                now.year(), now.month(), now.day(),
+                now.hour(), now.minute(), now.second());
+}
+
+// Depois que o NTP sincronizou, escreve a hora atual no DS3231 (uma vez por hora).
+void sincronizarNtpParaRtc() {
+  if (!g_tem_rtc) return;
+  struct tm ti;
+  if (!getLocalTime(&ti, 50)) return;
+  // Só grava se o ano já for razoável (NTP confirmado).
+  if (ti.tm_year + 1900 < 2024) return;
+  uint32_t agora = millis();
+  // 1ª vez ou a cada 1h.
+  if (g_ultima_sync_rtc != 0 && (agora - g_ultima_sync_rtc) < 3600UL * 1000UL) return;
+  time_t utc = time(nullptr);
+  g_rtc.adjust(DateTime((uint32_t)utc));
+  g_ultima_sync_rtc = agora;
+  Serial.println("[RTC] DS3231 sincronizado a partir do NTP");
 }
 
 String serializarHorarios() {
@@ -431,7 +477,7 @@ static const char PORTAL_HEAD[] PROGMEM =
   "</div><div class=\"card\">";
 
 static const char PORTAL_FOOT[] PROGMEM =
-  "</div><div class=\"footer\">ESP32 • Firmware 1.5.0</div></div>";
+  "</div><div class=\"footer\">ESP32 • Firmware 1.8.0</div></div>";
 
 void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
@@ -560,7 +606,8 @@ void enviarTelemetria() {
   v["v4"] = digitalRead(PIN_V4) == HIGH;
   v["v5"] = digitalRead(PIN_V5) == HIGH;
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.7.0";
+  doc["_firmware_version"]       = "1.8.0";
+  doc["_tem_rtc"]                = g_tem_rtc;
   doc["_ip_local"]               = WiFi.localIP().toString();
   doc["_luz_ligada"]             = g_luz_ligada;
   if (!isnan(g_temperatura_planta)) {
@@ -802,7 +849,23 @@ void setup() {
   dsSensor.setWaitForConversion(false);
   dsSensor.requestTemperatures();
 
+  // DS3231 opcional (I²C em SDA=21 / SCL=22). Se não responder, seguimos sem ele.
+  Wire.begin();
+  g_tem_rtc = g_rtc.begin();
+  if (g_tem_rtc) {
+    Serial.println("[RTC] DS3231 detectado no barramento I2C");
+    if (g_rtc.lostPower()) {
+      Serial.println("[RTC] perdeu energia — aguardando NTP p/ ajustar");
+    }
+  } else {
+    Serial.println("[RTC] DS3231 não encontrado — usando NTP + millis()");
+  }
+
   carregarPrefs();
+
+  // Aplica fuso ANTES de ler a hora do RTC p/ que getLocalTime já retorne local.
+  aplicarTz(cfg.tz);
+  carregarHoraDoRtc();
 
   if (digitalRead(PIN_RESET_BTN) == LOW) {
     Serial.println("Botão RESET pressionado — apagando credenciais em 5s…");
@@ -859,7 +922,7 @@ void lerTemperatura() {
 void loop() {
   unsigned long now = millis();
 
-  if (now - lastTick > 1000)  { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); }
+  if (now - lastTick > 1000)  { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); sincronizarNtpParaRtc(); }
   if (now - lastTemp > 1000)  { lastTemp  = now; lerTemperatura(); }
   if (now - lastCmd  > 1500)  { lastCmd   = now; puxarComandos(); }
   if (now - lastTelem > 2000) { lastTelem = now; enviarTelemetria(); }
