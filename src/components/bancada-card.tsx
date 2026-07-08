@@ -86,9 +86,8 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
       ? "injetando"
       : bancada.status === "Retornando"
         ? "retornando"
-        : bancada.status === "Alivio"
-          ? "alivio"
-          : "idle";
+        : "idle";
+
 
   // ----- Estado otimista das válvulas -----
   // Assim que o usuário clica em Bio Reator Planta/Meio, a UI já reflete o
