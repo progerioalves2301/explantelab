@@ -53,16 +53,14 @@ function LoginPage() {
     <div className="grid min-h-screen place-items-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <div className="rounded-xl bg-white px-5 py-3 shadow-lg ring-1 ring-border">
+          <div className="rounded-xl bg-white px-6 py-4 shadow-lg ring-1 ring-border">
             <img
               src={logoVitroCeres.url}
               alt="VitroCeres OS by Explante Biotecnologia"
-              className="h-12 w-auto object-contain"
+              className="h-[68px] w-auto object-contain"
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Monitoramento de Bio Reatores — acesso restrito
-          </p>
+          <p className="text-xs text-muted-foreground">Acesso restrito</p>
         </div>
 
         <Card className="card-elevated">
