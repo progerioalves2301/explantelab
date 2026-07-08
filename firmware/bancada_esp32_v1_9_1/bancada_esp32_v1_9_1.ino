@@ -61,6 +61,22 @@ static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
 
+// -------- Polaridade dos relés (v1.9.1) --------
+// Módulo SSR "Low Level Trigger" (4 canais): CH em LOW  = relé LIGA.
+// Módulo mecânico comum (High Level Trigger): CH em HIGH = relé LIGA.
+// Deixe true se sua placa tem "Low Level Trigger" escrito na serigrafia.
+static const bool RELAY_ACTIVE_LOW = true;
+
+static inline int relayOnLevel()  { return RELAY_ACTIVE_LOW ? LOW  : HIGH; }
+static inline int relayOffLevel() { return RELAY_ACTIVE_LOW ? HIGH : LOW;  }
+static inline void relayWrite(int pin, bool on) {
+  digitalWrite(pin, on ? relayOnLevel() : relayOffLevel());
+}
+static inline bool relayRead(int pin) {
+  return digitalRead(pin) == relayOnLevel();
+}
+
+
 // -------- Sensor DS18B20 (temperatura da planta) --------
 OneWire oneWire(PIN_DS18B20);
 DallasTemperature dsSensor(&oneWire);
