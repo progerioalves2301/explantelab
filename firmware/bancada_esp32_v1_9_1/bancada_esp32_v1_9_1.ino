@@ -67,14 +67,12 @@ static const int PIN_DS18B20 = 4;
 // Deixe true se sua placa tem "Low Level Trigger" escrito na serigrafia.
 static const bool RELAY_ACTIVE_LOW = true;
 
-static inline int relayOnLevel()  { return RELAY_ACTIVE_LOW ? LOW  : HIGH; }
-static inline int relayOffLevel() { return RELAY_ACTIVE_LOW ? HIGH : LOW;  }
-static inline void relayWrite(int pin, bool on) {
-  digitalWrite(pin, on ? relayOnLevel() : relayOffLevel());
-}
-static inline bool relayRead(int pin) {
-  return digitalRead(pin) == relayOnLevel();
-}
+// Macros (não geram protótipo automático no Arduino IDE — evita ordem de tipo).
+#define RELAY_ON_LEVEL  (RELAY_ACTIVE_LOW ? LOW  : HIGH)
+#define RELAY_OFF_LEVEL (RELAY_ACTIVE_LOW ? HIGH : LOW)
+#define relayWrite(pin, on) digitalWrite((pin), (on) ? RELAY_ON_LEVEL : RELAY_OFF_LEVEL)
+#define relayRead(pin)      (digitalRead(pin) == RELAY_ON_LEVEL)
+
 
 
 // -------- Sensor DS18B20 (temperatura da planta) --------
