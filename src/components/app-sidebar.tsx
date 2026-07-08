@@ -87,7 +87,7 @@ export function AppSidebar() {
               <img
                 src={logoVitroCeres.url}
                 alt="VitroCeres OS by Explante Biotecnologia"
-                className="h-11 w-auto object-contain"
+                className="h-[50px] w-auto object-contain"
               />
             </div>
           )}
