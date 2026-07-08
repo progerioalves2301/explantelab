@@ -76,22 +76,20 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b">
-        <div className="flex items-center gap-2 px-2 py-1.5">
-          {collapsed ? (
+      <SidebarHeader className="border-b p-0">
+        {collapsed ? (
+          <div className="flex items-center justify-center p-2">
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white ring-1 ring-border">
               <span className="font-display text-base font-bold text-primary">V</span>
             </div>
-          ) : (
-            <div className="flex min-w-0 items-center">
-              <img
-                src={logoVitroCeres.url}
-                alt="VitroCeres OS by Explante Biotecnologia"
-                className="h-[50px] w-auto object-contain"
-              />
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <img
+            src={logoVitroCeres.url}
+            alt="VitroCeres OS by Explante Biotecnologia"
+            className="block w-full object-contain"
+          />
+        )}
       </SidebarHeader>
 
       <SidebarContent>
