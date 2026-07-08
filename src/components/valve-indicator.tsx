@@ -1,37 +1,31 @@
-import { Droplet, Wind } from "lucide-react";
+import { Droplet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ValvulasEstado } from "@/lib/types";
 
 interface Props {
   valvulas: ValvulasEstado;
-  mode: "injetando" | "retornando" | "alivio" | "idle";
+  mode: "injetando" | "retornando" | "idle";
 }
 
-// V1+V4 → Meio (azul). V2+V3 → Planta (verde). V5 → alívio de pressão (warn).
+// V1+V4 → Meio (azul). V2+V3 → Planta (verde). V5 removida do projeto.
 export function ValveIndicator({ valvulas, mode: _mode }: Props) {
   const items: Array<{
     key: keyof ValvulasEstado;
     label: string;
-    role: "meio" | "planta" | "relief";
+    role: "meio" | "planta";
   }> = [
     { key: "v1", label: "Meio", role: "meio" },
     { key: "v2", label: "Planta", role: "planta" },
     { key: "v3", label: "Planta", role: "planta" },
     { key: "v4", label: "Meio", role: "meio" },
-    { key: "v5", label: "V5", role: "relief" },
   ];
 
   return (
-    <div className="grid grid-cols-5 gap-2">
+    <div className="grid grid-cols-4 gap-2">
       {items.map(({ key, label, role }) => {
         const active = valvulas[key];
         const activeClass =
-          role === "relief"
-            ? "valve-active-warn"
-            : role === "meio"
-              ? "valve-active-fluid"
-              : "valve-active-leaf";
-        const Icon = role === "relief" ? Wind : Droplet;
+          role === "meio" ? "valve-active-fluid" : "valve-active-leaf";
 
         return (
           <div key={key} className="flex flex-col items-center gap-1">
@@ -42,9 +36,9 @@ export function ValveIndicator({ valvulas, mode: _mode }: Props) {
                   ? activeClass
                   : "border-border bg-muted text-muted-foreground",
               )}
-              aria-label={`Válvula ${label} ${active ? "aberta" : "fechada"}${role === "relief" ? " (alívio)" : ""}`}
+              aria-label={`Válvula ${label} ${active ? "aberta" : "fechada"}`}
             >
-              <Icon className="h-4 w-4" />
+              <Droplet className="h-4 w-4" />
             </div>
             <span className="text-[10px] font-mono text-muted-foreground">
               {label}
