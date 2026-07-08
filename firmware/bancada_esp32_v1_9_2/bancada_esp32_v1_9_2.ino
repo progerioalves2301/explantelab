@@ -47,15 +47,15 @@ static const char* SUPABASE_ANON_KEY =
 // -------- Pinagem --------
 // V1 e V4 abrem juntas (par injecao)  -> controladas pelo mesmo GPIO
 // V2 e V3 abrem juntas (par retorno)  -> controladas pelo mesmo GPIO
-// V5 (alivio) continua independente
+// V5 (alivio) REMOVIDA a partir da v1.9.2 — projeto não usa mais essa válvula.
 static const int PIN_V1_V4 = 25;   // par injecao (V1 + V4)
 static const int PIN_V2_V3 = 26;   // par retorno (V2 + V3)
-static const int PIN_V5    = 33;   // alivio
-// Aliases para manter compatibilidade da telemetria (v1..v5)
+// Aliases para manter compatibilidade da telemetria (v1..v4)
 static const int PIN_V1 = PIN_V1_V4;
 static const int PIN_V4 = PIN_V1_V4;
 static const int PIN_V2 = PIN_V2_V3;
 static const int PIN_V3 = PIN_V2_V3;
+
 static const int PIN_LUZ       = 27;   // relé das luzes da bancada (timer HH:MM)
 static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
