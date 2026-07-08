@@ -23,7 +23,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import logoLeaf from "@/assets/explante-leaf.png";
+import logoVitroCeres from "@/assets/vitroceres-logo.asset.json";
 import { meusPapeis } from "@/lib/roles.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -78,14 +78,17 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-2 py-1.5">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white ring-1 ring-border">
-            <img src={logoLeaf} alt="Explante Lab" className="h-7 w-7 object-contain" width={28} height={28} />
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <div className="truncate font-display text-sm font-bold text-primary">
-                Explante <span className="italic">Lab</span>
-              </div>
+          {collapsed ? (
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white ring-1 ring-border">
+              <span className="font-display text-base font-bold text-primary">V</span>
+            </div>
+          ) : (
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <img
+                src={logoVitroCeres.url}
+                alt="VitroCeres OS by Explante Biotecnologia"
+                className="h-8 w-auto object-contain"
+              />
               <div className="truncate text-[10px] text-muted-foreground">
                 Monitoramento de Bio Reatores
               </div>
