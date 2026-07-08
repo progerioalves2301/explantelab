@@ -620,9 +620,10 @@ void enviarTelemetria() {
   v["v2"] = relayRead(PIN_V2);
   v["v3"] = relayRead(PIN_V3);
   v["v4"] = relayRead(PIN_V4);
-  v["v5"] = relayRead(PIN_V5);
+  v["v5"] = false;   // V5 removida do projeto (v1.9.2+)
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.9.1";
+  doc["_firmware_version"]       = "1.9.2";
+
 
   doc["_tem_rtc"]                = g_tem_rtc;
   doc["_ip_local"]               = WiFi.localIP().toString();
