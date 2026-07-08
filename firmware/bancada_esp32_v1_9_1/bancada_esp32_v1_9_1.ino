@@ -769,7 +769,7 @@ void tratarComando(JsonObject cmd) {
     // Para atualizar com segurança: desliga válvulas e luzes.
     pausado_manual = true;
     escreverValvulas(false, false, false, false, false);
-    digitalWrite(PIN_LUZ, LOW);
+    relayWrite(PIN_LUZ, false);
     // Publica um último ping de telemetria antes de reiniciar.
     enviarTelemetria();
 
