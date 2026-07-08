@@ -240,7 +240,7 @@ void tickLuz() {
   }
   if (deveLigar != g_luz_ligada) {
     g_luz_ligada = deveLigar;
-    digitalWrite(PIN_LUZ, deveLigar ? HIGH : LOW);
+    relayWrite(PIN_LUZ, deveLigar);
     Serial.printf("[LUZ] %s (%02d:%02d) [%u janela(s)]\n",
                   deveLigar ? "ON" : "OFF",
                   ti.tm_hour, ti.tm_min, (unsigned)cfg.luz_n);
