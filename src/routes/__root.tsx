@@ -78,22 +78,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Explante Lab — Monitoramento de Bio Reatores" },
+      { title: "VitroCeres OS — Monitoramento de Bio Reatores" },
       {
         name: "description",
         content:
-          "Painel Explante Lab: monitoramento em tempo real de bio reatores e bancadas de micropropagação in vitro.",
+          "VitroCeres OS by Explante Biotecnologia: monitoramento em tempo real de bio reatores e bancadas de micropropagação in vitro.",
       },
-      { property: "og:title", content: "Explante Lab — Monitoramento de Bio Reatores" },
+      { property: "og:title", content: "VitroCeres OS — Monitoramento de Bio Reatores" },
       {
         property: "og:description",
         content:
           "Automação e telemetria das bancadas ESP32 dos salas bioreator Explante Biotecnologia.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "Explante Lab" },
+      { property: "og:site_name", content: "VitroCeres OS" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Explante Lab — Monitoramento de Bio Reatores" },
+      { name: "twitter:title", content: "VitroCeres OS — Monitoramento de Bio Reatores" },
       {
         name: "twitter:description",
         content:
