@@ -741,11 +741,12 @@ void tratarComando(JsonObject cmd) {
     Serial.printf("[SET_VALVE] aplicado -> V1=%d V2=%d V3=%d V4=%d V5=%d\n",
                   v1, v2, v3, v4, v5);
     Serial.printf("[SET_VALVE] GPIOs -> PIN_V1(%d)=%d PIN_V2(%d)=%d PIN_V3(%d)=%d PIN_V4(%d)=%d PIN_V5(%d)=%d\n",
-                  PIN_V1, digitalRead(PIN_V1),
-                  PIN_V2, digitalRead(PIN_V2),
-                  PIN_V3, digitalRead(PIN_V3),
-                  PIN_V4, digitalRead(PIN_V4),
-                  PIN_V5, digitalRead(PIN_V5));
+                  PIN_V1, relayRead(PIN_V1),
+                  PIN_V2, relayRead(PIN_V2),
+                  PIN_V3, relayRead(PIN_V3),
+                  PIN_V4, relayRead(PIN_V4),
+                  PIN_V5, relayRead(PIN_V5));
+
     lastTelem = 0; // publica novo estado das válvulas imediatamente
   } else if (strcmp(tipo, "OTA_UPDATE") == 0) {
     // Payload: { "url": "<https signed url>", "filename": "..." }
