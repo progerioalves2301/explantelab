@@ -843,11 +843,14 @@ void tickCiclo() {
       if (decorrido >= cfg.tempo_pausa_segundos) aplicarFase(RETORNANDO);
       break;
     case RETORNANDO:
-      if (decorrido >= cfg.tempo_retorno_segundos) aplicarFase(ALIVIO);
+      // Retorno -> Repouso direto (fase ALIVIO removida com a V5 na v1.9.2)
+      if (decorrido >= cfg.tempo_retorno_segundos) aplicarFase(REPOUSO);
       break;
     case ALIVIO:
-      if (decorrido >= cfg.tempo_alivio_segundos) aplicarFase(REPOUSO);
+      // Compat: se alguma bancada estiver nessa fase por config antiga, sai imediato
+      aplicarFase(REPOUSO);
       break;
+
     case MANUAL: break;   // valvulas fixas ate novo comando
     case OFFLINE: break;
   }
