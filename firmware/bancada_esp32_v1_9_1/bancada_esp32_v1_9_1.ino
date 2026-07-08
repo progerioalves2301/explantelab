@@ -158,11 +158,12 @@ static const char* faseNome(FaseCiclo f) {
 
 void escreverValvulas(bool v1, bool v2, bool v3, bool v4, bool v5) {
   // V1 e V4 compartilham GPIO (par injecao) -> abre se qualquer um pedir
-  digitalWrite(PIN_V1_V4, (v1 || v4) ? HIGH : LOW);
+  relayWrite(PIN_V1_V4, v1 || v4);
   // V2 e V3 compartilham GPIO (par retorno) -> abre se qualquer um pedir
-  digitalWrite(PIN_V2_V3, (v2 || v3) ? HIGH : LOW);
-  digitalWrite(PIN_V5, v5 ? HIGH : LOW);
+  relayWrite(PIN_V2_V3, v2 || v3);
+  relayWrite(PIN_V5, v5);
 }
+
 
 void aplicarFase(FaseCiclo f) {
   fase = f;
