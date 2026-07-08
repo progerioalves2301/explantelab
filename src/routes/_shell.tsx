@@ -1,14 +1,21 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
+import { supabase } from "@/integrations/supabase/client";
 
 // Pathless layout with sidebar + header for authenticated app sections.
-// TODO(Supabase): trocar por _authenticated/ route gerenciado pela integração,
-// checando supabase.auth.getUser() em beforeLoad.
 export const Route = createFileRoute("/_shell")({
+  ssr: false,
+  beforeLoad: async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) {
+      throw redirect({ to: "/login" });
+    }
+  },
   component: ShellLayout,
 });
+
 
 function ShellLayout() {
   return (
