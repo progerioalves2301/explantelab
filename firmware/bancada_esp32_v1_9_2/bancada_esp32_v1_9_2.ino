@@ -731,21 +731,22 @@ void tratarComando(JsonObject cmd) {
     bool v2 = p["v2"] | false;
     bool v3 = p["v3"] | false;
     bool v4 = p["v4"] | false;
-    bool v5 = p["v5"] | false;
+    // v5 removida do projeto — ignorada mesmo se vier no payload
+    (void)p["v5"];
 
     pausado_manual = true;      // interrompe ciclo automático
     fase = MANUAL;
     fase_inicio_ms = millis();
-    escreverValvulas(v1, v2, v3, v4, v5);
+    escreverValvulas(v1, v2, v3, v4, false);
 
-    Serial.printf("[SET_VALVE] aplicado -> V1=%d V2=%d V3=%d V4=%d V5=%d\n",
-                  v1, v2, v3, v4, v5);
-    Serial.printf("[SET_VALVE] GPIOs -> PIN_V1(%d)=%d PIN_V2(%d)=%d PIN_V3(%d)=%d PIN_V4(%d)=%d PIN_V5(%d)=%d\n",
+    Serial.printf("[SET_VALVE] aplicado -> V1=%d V2=%d V3=%d V4=%d\n",
+                  v1, v2, v3, v4);
+    Serial.printf("[SET_VALVE] GPIOs -> PIN_V1(%d)=%d PIN_V2(%d)=%d PIN_V3(%d)=%d PIN_V4(%d)=%d\n",
                   PIN_V1, relayRead(PIN_V1),
                   PIN_V2, relayRead(PIN_V2),
                   PIN_V3, relayRead(PIN_V3),
-                  PIN_V4, relayRead(PIN_V4),
-                  PIN_V5, relayRead(PIN_V5));
+                  PIN_V4, relayRead(PIN_V4));
+
 
     lastTelem = 0; // publica novo estado das válvulas imediatamente
   } else if (strcmp(tipo, "OTA_UPDATE") == 0) {
