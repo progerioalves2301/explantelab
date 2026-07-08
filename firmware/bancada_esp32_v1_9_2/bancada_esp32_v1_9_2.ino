@@ -862,7 +862,7 @@ void setup() {
   // reset — o SSR interpreta como "quase LOW" e pode chavear brevemente.
   // Colocamos os pinos em OUTPUT + nível de "desligado" (HIGH em LLT) como
   // ABSOLUTA PRIMEIRA COISA, antes de Serial/sensores/rede.
-  for (int p : {PIN_V1_V4, PIN_V2_V3, PIN_V5, PIN_LUZ}) {
+  for (int p : {PIN_V1_V4, PIN_V2_V3, PIN_LUZ}) {
     pinMode(p, OUTPUT);
     relayWrite(p, false);
   }
