@@ -294,6 +294,24 @@ function AtualizacaoPage() {
         </p>
       </div>
 
+      <div className="flex items-start gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm dark:border-amber-400/30">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+        <div className="space-y-1 text-amber-900 dark:text-amber-100">
+          <p className="font-medium">
+            v1.9.1 — nova polaridade de relés (Low Level Trigger)
+          </p>
+          <p className="text-xs leading-relaxed text-amber-900/90 dark:text-amber-100/90">
+            O firmware v1.9.1 assume módulo SSR <strong>Low Level Trigger</strong> (LOW = liga). Recompile{" "}
+            <code>bancada_esp32_v1_9_1.ino</code> antes de subir o <code>.bin</code>.
+            Se alguma bancada ainda usa módulo mecânico <em>High Level Trigger</em>,{" "}
+            mude <code>RELAY_ACTIVE_LOW = false</code> no topo do sketch e compile
+            um <code>.bin</code> separado para ela. Enviar o binário errado inverte
+            todas as válvulas e a luz.
+          </p>
+        </div>
+      </div>
+
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
