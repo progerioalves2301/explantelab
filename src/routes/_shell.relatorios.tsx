@@ -388,10 +388,7 @@ function SalaRelatorio({
                     <dd className="text-right font-mono">
                       {fmtSegundos(c.tempo_retorno_segundos)}
                     </dd>
-                    <dt className="text-muted-foreground">Alívio</dt>
-                    <dd className="text-right font-mono">
-                      {fmtSegundos(c.tempo_alivio_segundos)}
-                    </dd>
+
                     <dt className="border-t pt-1 font-medium">Duração total</dt>
                     <dd className="border-t pt-1 text-right font-mono font-semibold">
                       {fmtSegundos(totalCiclo(b))}
