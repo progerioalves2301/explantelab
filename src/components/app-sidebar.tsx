@@ -83,15 +83,12 @@ export function AppSidebar() {
               <span className="font-display text-base font-bold text-primary">V</span>
             </div>
           ) : (
-            <div className="flex min-w-0 flex-col gap-0.5">
+            <div className="flex min-w-0 items-center">
               <img
                 src={logoVitroCeres.url}
                 alt="VitroCeres OS by Explante Biotecnologia"
-                className="h-8 w-auto object-contain"
+                className="h-11 w-auto object-contain"
               />
-              <div className="truncate text-[10px] text-muted-foreground">
-                Monitoramento de Bio Reatores
-              </div>
             </div>
           )}
         </div>
