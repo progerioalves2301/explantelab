@@ -301,7 +301,7 @@ export function BancadaConfigDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div className="grid gap-2">
               <Label htmlFor="inj" className="text-xs">Injeção (s)</Label>
               <Input id="inj" type="number" min={1} value={config.tempo_injecao_segundos}
@@ -317,12 +317,8 @@ export function BancadaConfigDialog({
               <Input id="ret" type="number" min={1} value={config.tempo_retorno_segundos}
                 onChange={(e) => update("tempo_retorno_segundos", e.target.value)} />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="al" className="text-xs">Alívio (s)</Label>
-              <Input id="al" type="number" min={0} value={config.tempo_alivio_segundos}
-                onChange={(e) => update("tempo_alivio_segundos", e.target.value)} />
-            </div>
           </div>
+
 
           <div className="grid gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3">
             <div className="flex items-center justify-between">
