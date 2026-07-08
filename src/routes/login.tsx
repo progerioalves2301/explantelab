@@ -57,7 +57,7 @@ function LoginPage() {
             <img
               src={logoVitroCeres.url}
               alt="VitroCeres OS by Explante Biotecnologia"
-              className="h-[68px] w-auto object-contain"
+              className="h-[78px] w-auto object-contain"
             />
           </div>
           <p className="text-xs text-muted-foreground">Acesso restrito</p>
