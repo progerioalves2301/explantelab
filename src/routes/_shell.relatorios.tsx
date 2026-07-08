@@ -127,7 +127,8 @@ function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
         `Status: ${b.status}`,
         b.firmware_version ? `Firmware: ${b.firmware_version}${b.ip_local ? ` · ${b.ip_local}` : ""}` : null,
         `Injeção: ${fmtSegundos(c.tempo_injecao_segundos)}   Pausa: ${fmtSegundos(c.tempo_pausa_segundos)}`,
-        `Retorno: ${fmtSegundos(c.tempo_retorno_segundos)}   Alívio: ${fmtSegundos(c.tempo_alivio_segundos)}`,
+        `Retorno: ${fmtSegundos(c.tempo_retorno_segundos)}`,
+
         `Duração total: ${fmtSegundos(totalCiclo(b))}`,
         `Horários de disparo: ${horarioLinhas[0] ?? ""}`,
         ...horarioLinhas.slice(1).map((linha) => `  ${linha}`),
