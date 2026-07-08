@@ -50,10 +50,10 @@ function totalCiclo(b: Bancada) {
   return (
     (b.config?.tempo_injecao_segundos ?? 0) +
     (b.config?.tempo_pausa_segundos ?? 0) +
-    (b.config?.tempo_retorno_segundos ?? 0) +
-    (b.config?.tempo_alivio_segundos ?? 0)
+    (b.config?.tempo_retorno_segundos ?? 0)
   );
 }
+
 
 function hexToRgb(hex: string) {
   const value = hex.replace("#", "");
