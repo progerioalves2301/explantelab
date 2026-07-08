@@ -854,15 +854,25 @@ void tickCiclo() {
 
 // -------- Setup / Loop --------
 void setup() {
+  // BOOT-SAFE: em placas Low Level Trigger, o GPIO fica em HIGH-Z durante o
+  // reset — o SSR interpreta como "quase LOW" e pode chavear brevemente.
+  // Colocamos os pinos em OUTPUT + nível de "desligado" (HIGH em LLT) como
+  // ABSOLUTA PRIMEIRA COISA, antes de Serial/sensores/rede.
+  for (int p : {PIN_V1_V4, PIN_V2_V3, PIN_V5, PIN_LUZ}) {
+    pinMode(p, OUTPUT);
+    relayWrite(p, false);
+  }
+  pinMode(PIN_LED, OUTPUT);
+  digitalWrite(PIN_LED, LOW);
+  g_luz_ligada = false;
+
   Serial.begin(115200);
   delay(200);
   Serial.println("\n== GeneLab Bancada ESP32 (direct-Supabase) ==");
+  Serial.printf("[RELAY] polaridade: ACTIVE_%s\n", RELAY_ACTIVE_LOW ? "LOW" : "HIGH");
 
-  for (int p : {PIN_V1_V4, PIN_V2_V3, PIN_V5, PIN_LUZ, PIN_LED}) {
-    pinMode(p, OUTPUT); digitalWrite(p, LOW);
-  }
-  g_luz_ligada = false;
   pinMode(PIN_RESET_BTN, INPUT_PULLUP);
+
 
   dsSensor.begin();
   dsSensor.setWaitForConversion(false);
