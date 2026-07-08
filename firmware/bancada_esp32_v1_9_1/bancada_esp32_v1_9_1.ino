@@ -617,13 +617,14 @@ void enviarTelemetria() {
   doc["_device_token"] = creds.device_token;
   doc["_status"]       = faseNome(fase);
   JsonObject v = doc["_valvulas"].to<JsonObject>();
-  v["v1"] = digitalRead(PIN_V1) == HIGH;
-  v["v2"] = digitalRead(PIN_V2) == HIGH;
-  v["v3"] = digitalRead(PIN_V3) == HIGH;
-  v["v4"] = digitalRead(PIN_V4) == HIGH;
-  v["v5"] = digitalRead(PIN_V5) == HIGH;
+  v["v1"] = relayRead(PIN_V1);
+  v["v2"] = relayRead(PIN_V2);
+  v["v3"] = relayRead(PIN_V3);
+  v["v4"] = relayRead(PIN_V4);
+  v["v5"] = relayRead(PIN_V5);
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.9.0";
+  doc["_firmware_version"]       = "1.9.1";
+
   doc["_tem_rtc"]                = g_tem_rtc;
   doc["_ip_local"]               = WiFi.localIP().toString();
   doc["_luz_ligada"]             = g_luz_ligada;
