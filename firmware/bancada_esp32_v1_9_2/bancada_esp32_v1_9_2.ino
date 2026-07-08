@@ -154,12 +154,12 @@ static const char* faseNome(FaseCiclo f) {
   return "Offline";
 }
 
-void escreverValvulas(bool v1, bool v2, bool v3, bool v4, bool v5) {
+void escreverValvulas(bool v1, bool v2, bool v3, bool v4, bool /*v5*/) {
   // V1 e V4 compartilham GPIO (par injecao) -> abre se qualquer um pedir
   relayWrite(PIN_V1_V4, v1 || v4);
   // V2 e V3 compartilham GPIO (par retorno) -> abre se qualquer um pedir
   relayWrite(PIN_V2_V3, v2 || v3);
-  relayWrite(PIN_V5, v5);
+  // v5 ignorado (válvula removida do projeto na v1.9.2)
 }
 
 
@@ -169,11 +169,12 @@ void aplicarFase(FaseCiclo f) {
   switch (f) {
     case INJETANDO:  escreverValvulas(true,  false, false, true,  false); break;
     case RETORNANDO: escreverValvulas(false, true,  true,  false, false); break;
-    case ALIVIO:     escreverValvulas(false, false, false, false, true);  break;
+    // ALIVIO mantido no enum para compat, mas sem fase ativa (V5 removida)
     default:         escreverValvulas(false, false, false, false, false); break;
   }
   Serial.printf("[FASE] %s\n", faseNome(f));
 }
+
 
 // -------- Timer das luzes --------
 // Converte "HH:MM" -> minutos desde a meia-noite (-1 se inválido).
