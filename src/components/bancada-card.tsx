@@ -47,7 +47,7 @@ interface Props {
 }
 
 
-// Presets dos botões Bio Reator (V1..V5)
+// Presets dos botões Bio Reator (V1..V4 — V5 removida do projeto, sempre false)
 const PRESET_PLANTA: ValvulasEstado = {
   v1: true,
   v2: false,
@@ -86,9 +86,8 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
       ? "injetando"
       : bancada.status === "Retornando"
         ? "retornando"
-        : bancada.status === "Alivio"
-          ? "alivio"
-          : "idle";
+        : "idle";
+
 
   // ----- Estado otimista das válvulas -----
   // Assim que o usuário clica em Bio Reator Planta/Meio, a UI já reflete o

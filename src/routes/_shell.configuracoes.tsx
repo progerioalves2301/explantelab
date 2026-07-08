@@ -190,11 +190,11 @@ function ConfigPage() {
           <CardHeader>
             <CardTitle>Ciclo pneumático padrão</CardTitle>
             <CardDescription>
-              Repouso → Injeção (V1+V4) → Pausa → Retorno (V2+V3) → Alívio (V5).
+              Repouso → Injeção (V1+V4) → Pausa → Retorno (V2+V3) → Repouso.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-5">
-            <div className="grid gap-3 sm:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-3">
               <Field
                 id="inj"
                 label="Injeção (s)"
@@ -213,13 +213,8 @@ function ConfigPage() {
                 value={config.tempo_retorno_segundos}
                 onChange={(v) => update("tempo_retorno_segundos", v)}
               />
-              <Field
-                id="al"
-                label="Alívio (s)"
-                value={config.tempo_alivio_segundos}
-                onChange={(v) => update("tempo_alivio_segundos", v)}
-              />
             </div>
+
 
             <div className="grid gap-2">
               <div className="flex items-center justify-between">

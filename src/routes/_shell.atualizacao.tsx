@@ -298,18 +298,19 @@ function AtualizacaoPage() {
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
         <div className="space-y-1 text-amber-900 dark:text-amber-100">
           <p className="font-medium">
-            v1.9.1 — nova polaridade de relés (Low Level Trigger)
+            v1.9.2 — válvula V5 (alívio) removida + relés Low Level Trigger
           </p>
           <p className="text-xs leading-relaxed text-amber-900/90 dark:text-amber-100/90">
-            O firmware v1.9.1 assume módulo SSR <strong>Low Level Trigger</strong> (LOW = liga). Recompile{" "}
-            <code>bancada_esp32_v1_9_1.ino</code> antes de subir o <code>.bin</code>.
-            Se alguma bancada ainda usa módulo mecânico <em>High Level Trigger</em>,{" "}
-            mude <code>RELAY_ACTIVE_LOW = false</code> no topo do sketch e compile
-            um <code>.bin</code> separado para ela. Enviar o binário errado inverte
-            todas as válvulas e a luz.
+            O firmware v1.9.2 ignora V5 (o projeto não usa mais alívio) e o ciclo
+            passa de Retorno → Repouso direto. A polaridade continua como <strong>Low Level Trigger</strong>{" "}
+            (LOW = liga). Recompile <code>bancada_esp32_v1_9_2.ino</code> antes
+            de subir o <code>.bin</code>. Se alguma bancada ainda usa módulo mecânico{" "}
+            <em>High Level Trigger</em>, mude <code>RELAY_ACTIVE_LOW = false</code>{" "}
+            no topo do sketch e compile um <code>.bin</code> separado.
           </p>
         </div>
       </div>
+
 
 
       <Card>
@@ -331,10 +332,11 @@ function AtualizacaoPage() {
             className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground hover:file:bg-primary/90"
           />
           <p className="text-xs text-muted-foreground">
-            Compile o sketch <code>bancada_esp32_v1_9_1.ino</code> em{" "}
+            Compile o sketch <code>bancada_esp32_v1_9_2.ino</code> em{" "}
             <em>Sketch → Export Compiled Binary</em> e envie o{" "}
             <code>.bin</code> gerado.
           </p>
+
 
         </CardContent>
       </Card>
