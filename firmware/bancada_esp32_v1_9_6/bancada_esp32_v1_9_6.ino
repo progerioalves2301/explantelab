@@ -994,7 +994,8 @@ void lerTemperatura() {
   if (g_tem_ds18b20) {
     conversaoOk = dsSensor.requestTemperaturesByAddress(g_ds18b20_addr);
   } else {
-    conversaoOk = dsSensor.requestTemperatures();
+    dsSensor.requestTemperatures();
+    conversaoOk = true;
   }
 
   float t = g_tem_ds18b20 ? dsSensor.getTempC(g_ds18b20_addr) : dsSensor.getTempCByIndex(0);
