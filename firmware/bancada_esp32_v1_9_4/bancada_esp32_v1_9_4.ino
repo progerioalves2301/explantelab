@@ -82,6 +82,13 @@ float g_temperatura_planta = NAN;
 float g_temperatura_publicada = NAN;   // último valor efetivamente enviado
 const float TEMP_DELTA_PUSH = 0.2f;    // °C — variação que força telemetria imediata
 
+// v1.9.4 — detecção de "sensor travado" (leitura idêntica por muito tempo)
+float         g_temp_ultimo_valor    = NAN;
+unsigned long g_temp_ultima_mudanca  = 0;      // millis() da última variação detectada
+bool          g_sensor_travado       = false;  // exposto na telemetria
+const unsigned long TEMP_STUCK_MS    = 120000UL; // 2 min sem qualquer variação => trava
+uint32_t      g_temp_reinicios       = 0;      // contador de re-inits do barramento 1-Wire
+
 // -------- RTC DS3231 (opcional — v1.8.0) --------
 // Ligação I²C padrão do ESP32: SDA=GPIO 21, SCL=GPIO 22, VCC=3.3V, GND=GND.
 // Se o módulo não estiver presente, o firmware cai automaticamente no NTP+millis.
