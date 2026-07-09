@@ -96,9 +96,7 @@ export const Route = createFileRoute("/api/public/bench/telemetry")({
           updatePayload.sensor_travado = payload.sensor_travado;
         }
 
-        if (payload.temperatura_valida === false) {
-          updatePayload.temperatura_planta = null;
-        } else if (
+        if (
           payload.temperatura_valida === true &&
           payload.temperatura_planta != null
         ) {
