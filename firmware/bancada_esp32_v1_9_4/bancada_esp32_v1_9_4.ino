@@ -631,7 +631,7 @@ void enviarTelemetria() {
   v["v4"] = relayRead(PIN_V4);
   v["v5"] = false;   // V5 removida do projeto (v1.9.2+)
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.9.3";
+  doc["_firmware_version"]       = "1.9.4";
 
 
   doc["_tem_rtc"]                = g_tem_rtc;
