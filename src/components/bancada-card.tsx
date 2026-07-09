@@ -88,8 +88,11 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
   const excluir = useServerFn(excluirBancada);
   const comandar = useServerFn(enviarComando);
   const gerarCodigo = useServerFn(regenerarPairingCode);
-  const sensorComFalha = Boolean(bancada.sensor_travado) || bancada.temperatura_planta == null;
   const sensorReinicios = bancada.sensor_reinicios ?? 0;
+  const sensorComFalha =
+    Boolean(bancada.sensor_travado) ||
+    bancada.temperatura_planta == null ||
+    sensorReinicios > 0;
 
   const abrirPareamento = async () => {
     setPairOpen(true);
