@@ -87,6 +87,31 @@ function AtualizacaoPage() {
     return m ? `${m[1]}.${m[2]}.${m[3]}` : null;
   };
 
+  const compararVersoes = (a: string | null, b: string | null) => {
+    if (!a && !b) return 0;
+    if (!a) return -1;
+    if (!b) return 1;
+    const pa = a.split(".").map(Number);
+    const pb = b.split(".").map(Number);
+    for (let i = 0; i < 3; i++) {
+      const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+      if (d !== 0) return d;
+    }
+    return 0;
+  };
+
+  const firmwareMaisNovo = (items = firmwares) =>
+    [...items].sort((a, b) => {
+      const byVersion = compararVersoes(extrairVersao(b.name), extrairVersao(a.name));
+      if (byVersion !== 0) return byVersion;
+      return new Date(b.updated_at ?? b.created_at ?? 0).getTime() - new Date(a.updated_at ?? a.created_at ?? 0).getTime();
+    })[0];
+
+  const selecionarMaisNovo = (items: FirmwareItem[]) => {
+    const latest = firmwareMaisNovo(items)?.name ?? "";
+    if (latest) setSelecionado(latest);
+  };
+
   const recarregarBancadas = async () => {
     try {
       const bs = await listarBancadas();
@@ -123,10 +148,15 @@ function AtualizacaoPage() {
       const admin = roles.includes("admin");
       setIsAdmin(admin);
       if (!admin) return;
-      const [fws, bs] = await Promise.all([listarFw(), listarBancadas()]);
+      const [rawFws, bs] = await Promise.all([listarFw(), listarBancadas()]);
+      const fws = [...rawFws].sort((a, b) => {
+        const byVersion = compararVersoes(extrairVersao(b.name), extrairVersao(a.name));
+        if (byVersion !== 0) return byVersion;
+        return new Date(b.updated_at ?? b.created_at ?? 0).getTime() - new Date(a.updated_at ?? a.created_at ?? 0).getTime();
+      });
       setFirmwares(fws);
       setBancadas(bs);
-      if (fws.length > 0 && !selecionado) setSelecionado(fws[0].name);
+      if (fws.length > 0) selecionarMaisNovo(fws);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao carregar");
     } finally {
@@ -175,9 +205,13 @@ function AtualizacaoPage() {
       });
       toast.success(`${file.name} enviado.`);
       if (fileRef.current) fileRef.current.value = "";
-      const fws = await listarFw();
+      const fws = [...(await listarFw())].sort((a, b) => {
+        const byVersion = compararVersoes(extrairVersao(b.name), extrairVersao(a.name));
+        if (byVersion !== 0) return byVersion;
+        return new Date(b.updated_at ?? b.created_at ?? 0).getTime() - new Date(a.updated_at ?? a.created_at ?? 0).getTime();
+      });
       setFirmwares(fws);
-      setSelecionado(file.name);
+      selecionarMaisNovo(fws);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha no upload");
     } finally {
@@ -200,6 +234,13 @@ function AtualizacaoPage() {
 
   const handleOtaOne = async (bancada_id: string) => {
     if (!selecionado) return toast.error("Selecione um firmware.");
+    const maisNovo = firmwareMaisNovo()?.name;
+    if (maisNovo && selecionado !== maisNovo) {
+      const ok = confirm(
+        `Atenção: ${selecionado} não é o firmware mais novo. O mais novo é ${maisNovo}. Deseja continuar mesmo assim?`,
+      );
+      if (!ok) return;
+    }
     setDispatchingId(bancada_id);
     try {
       await otaOne({ data: { bancada_id, filename: selecionado } });
@@ -221,6 +262,13 @@ function AtualizacaoPage() {
 
   const handleOtaAll = async () => {
     if (!selecionado) return toast.error("Selecione um firmware.");
+    const maisNovo = firmwareMaisNovo()?.name;
+    if (maisNovo && selecionado !== maisNovo) {
+      const ok = confirm(
+        `Atenção: ${selecionado} não é o firmware mais novo. O mais novo é ${maisNovo}. Deseja continuar mesmo assim?`,
+      );
+      if (!ok) return;
+    }
     if (
       !confirm(
         `Disparar OTA (${selecionado}) para TODAS as ${bancadas.length} bancadas?`,
@@ -298,15 +346,11 @@ function AtualizacaoPage() {
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
         <div className="space-y-1 text-amber-900 dark:text-amber-100">
           <p className="font-medium">
-            v1.9.2 — válvula V5 (alívio) removida + relés Low Level Trigger
+            v1.9.6 — correção da temperatura travada no DS18B20
           </p>
           <p className="text-xs leading-relaxed text-amber-900/90 dark:text-amber-100/90">
-            O firmware v1.9.2 ignora V5 (o projeto não usa mais alívio) e o ciclo
-            passa de Retorno → Repouso direto. A polaridade continua como <strong>Low Level Trigger</strong>{" "}
-            (LOW = liga). Recompile <code>bancada_esp32_v1_9_2.ino</code> antes
-            de subir o <code>.bin</code>. Se alguma bancada ainda usa módulo mecânico{" "}
-            <em>High Level Trigger</em>, mude <code>RELAY_ACTIVE_LOW = false</code>{" "}
-            no topo do sketch e compile um <code>.bin</code> separado.
+            Use <code>bancada_esp32_v1_9_6.ino.bin</code>. A bancada só estará
+            atualizada quando o card reportar firmware <strong>1.9.6</strong> após reiniciar.
           </p>
         </div>
       </div>
@@ -360,7 +404,14 @@ function AtualizacaoPage() {
                   className="flex items-center justify-between gap-3 py-2"
                 >
                   <div className="min-w-0">
-                    <div className="truncate font-mono text-sm">{f.name}</div>
+                    <div className="flex items-center gap-2 truncate font-mono text-sm">
+                      <span className="truncate">{f.name}</span>
+                      {f.name === firmwareMaisNovo()?.name && (
+                        <Badge variant="default" className="shrink-0 text-[10px]">
+                          mais novo
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       {bytesLegivel(f.size)}
                       {f.updated_at &&
@@ -404,7 +455,7 @@ function AtualizacaoPage() {
                 <SelectContent>
                   {firmwares.map((f) => (
                     <SelectItem key={f.name} value={f.name}>
-                      {f.name}
+                      {f.name}{f.name === firmwareMaisNovo()?.name ? " — mais novo" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
