@@ -152,6 +152,77 @@ export const excluirBancada = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Regenera o código de pareamento (6 dígitos, válido 24h) para uma bancada
+// existente — útil quando o ESP32 é resetado / trocado e precisa re-parear.
+// O device_token é preservado (mesmo dispositivo continua válido); apenas o
+// código curto para digitação no portal AP é renovado.
+export const regenerarPairingCode = createServerFn({ method: "POST" })
+  .inputValidator((data: { bancada_id: string }) =>
+    z.object({ bancada_id: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+
+    // Garante que existe uma linha em bancada_secrets. Se não existir
+    // (bancada antiga sem secret), cria com token novo.
+    const { data: existing } = await supabaseAdmin
+      .from("bancada_secrets")
+      .select("bancada_id, device_token")
+      .eq("bancada_id", data.bancada_id)
+      .maybeSingle();
+
+    let device_token = existing?.device_token ?? "";
+    if (!device_token) {
+      const raw = new Uint8Array(32);
+      crypto.getRandomValues(raw);
+      device_token = btoa(String.fromCharCode(...raw))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+    }
+
+    let pairing_code = "";
+    let lastErr: string | null = null;
+    for (let i = 0; i < 6; i++) {
+      const n = new Uint32Array(1);
+      crypto.getRandomValues(n);
+      pairing_code = String(n[0] % 1_000_000).padStart(6, "0");
+      const expires_at = new Date(
+        Date.now() + 24 * 60 * 60 * 1000,
+      ).toISOString();
+
+      const { error: upErr } = existing
+        ? await supabaseAdmin
+            .from("bancada_secrets")
+            .update({
+              pairing_code,
+              pairing_expires_at: expires_at,
+            })
+            .eq("bancada_id", data.bancada_id)
+        : await supabaseAdmin.from("bancada_secrets").insert({
+            bancada_id: data.bancada_id,
+            device_token,
+            pairing_code,
+            pairing_expires_at: expires_at,
+          });
+
+      if (!upErr) {
+        lastErr = null;
+        break;
+      }
+      lastErr = upErr.message;
+      if (!/pairing_code/i.test(upErr.message)) break;
+    }
+    if (lastErr) throw new Error(lastErr);
+
+    return {
+      pairing_code,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    };
+  });
+
 // Atualizar propriedades básicas da bancada (nome, laboratório, posição).
 export const atualizarBancada = createServerFn({ method: "POST" })
   .inputValidator(
