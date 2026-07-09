@@ -637,6 +637,8 @@ void enviarTelemetria() {
   doc["_tem_rtc"]                = g_tem_rtc;
   doc["_ip_local"]               = WiFi.localIP().toString();
   doc["_luz_ligada"]             = g_luz_ligada;
+  doc["_sensor_travado"]         = g_sensor_travado;
+  doc["_sensor_reinicios"]       = g_temp_reinicios;
   if (!isnan(g_temperatura_planta)) {
     doc["_temperatura_planta"] = g_temperatura_planta;
   } else {
