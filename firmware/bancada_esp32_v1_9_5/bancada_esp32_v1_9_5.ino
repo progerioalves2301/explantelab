@@ -65,7 +65,7 @@ static const int PIN_DS18B20 = 4;
 // Módulo SSR "Low Level Trigger" (4 canais): CH em LOW  = relé LIGA.
 // Módulo mecânico comum (High Level Trigger): CH em HIGH = relé LIGA.
 // Deixe true se sua placa tem "Low Level Trigger" escrito na serigrafia.
-static const bool RELAY_ACTIVE_LOW = true;
+static const bool RELAY_ACTIVE_LOW = false;
 
 // Macros (não geram protótipo automático no Arduino IDE — evita ordem de tipo).
 #define RELAY_ON_LEVEL  (RELAY_ACTIVE_LOW ? LOW  : HIGH)
@@ -631,7 +631,7 @@ void enviarTelemetria() {
   v["v4"] = relayRead(PIN_V4);
   v["v5"] = false;   // V5 removida do projeto (v1.9.2+)
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.9.4";
+  doc["_firmware_version"]       = "1.9.5";
 
 
   doc["_tem_rtc"]                = g_tem_rtc;
