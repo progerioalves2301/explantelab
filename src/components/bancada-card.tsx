@@ -357,7 +357,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                   </div>
                   {sensorComAviso && (
                     <div className="text-[10px] text-amber-600 dark:text-amber-400">
-                      Leitura recebida; aviso anterior do sensor
+                      Última leitura; sensor sem leitura nova
                     </div>
                   )}
                   {sensorReinicios > 0 && (

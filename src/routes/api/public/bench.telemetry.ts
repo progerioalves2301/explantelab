@@ -96,17 +96,12 @@ export const Route = createFileRoute("/api/public/bench/telemetry")({
           updatePayload.sensor_travado = payload.sensor_travado;
         }
 
-        if (
-          payload.temperatura_valida === true &&
-          payload.temperatura_planta != null
-        ) {
+        if (payload.temperatura_valida === true && payload.temperatura_planta != null) {
           updatePayload.temperatura_planta = payload.temperatura_planta;
           updatePayload.sensor_travado = false;
-        } else if (payload.temperatura_planta !== undefined) {
+        } else if (payload.temperatura_valida !== false && payload.temperatura_planta != null) {
           updatePayload.temperatura_planta = payload.temperatura_planta;
-          if (payload.temperatura_planta != null) {
-            updatePayload.sensor_travado = false;
-          }
+          updatePayload.sensor_travado = false;
         }
 
         const { error: updErr } = await supabaseAdmin
