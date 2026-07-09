@@ -81,8 +81,38 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
   const [stopping, setStopping] = useState(false);
   const [sending, setSending] = useState(false);
   const [tab, setTab] = useState<"status" | "manual">("status");
+  const [pairOpen, setPairOpen] = useState(false);
+  const [pairCode, setPairCode] = useState<string | null>(null);
+  const [pairing, setPairing] = useState(false);
   const excluir = useServerFn(excluirBancada);
   const comandar = useServerFn(enviarComando);
+  const gerarCodigo = useServerFn(regenerarPairingCode);
+
+  const abrirPareamento = async () => {
+    setPairOpen(true);
+    setPairCode(null);
+    setPairing(true);
+    try {
+      const r = await gerarCodigo({ data: { bancada_id: bancada.id } });
+      setPairCode(r.pairing_code);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao gerar código");
+      setPairOpen(false);
+    } finally {
+      setPairing(false);
+    }
+  };
+
+  const copiarCodigo = async () => {
+    if (!pairCode) return;
+    try {
+      await navigator.clipboard.writeText(pairCode);
+      toast.success("Código copiado");
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
+
 
   const mode =
     bancada.status === "Injetando"
