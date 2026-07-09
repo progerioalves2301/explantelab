@@ -91,8 +91,10 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
   const sensorReinicios = bancada.sensor_reinicios ?? 0;
   const sensorComFalha =
     Boolean(bancada.sensor_travado) ||
-    bancada.temperatura_planta == null ||
-    sensorReinicios > 0;
+    bancada.temperatura_planta == null;
+  const textoTemperaturaIndisponivel = bancada.sensor_travado
+    ? "Sensor sem leitura"
+    : "Sem temperatura recebida";
 
   const abrirPareamento = async () => {
     setPairOpen(true);
@@ -349,7 +351,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                   </div>
                   <div className={cn("font-mono text-sm", sensorComFalha ? "text-destructive" : "text-foreground")}>
                     {sensorComFalha
-                      ? "Sensor sem leitura"
+                      ? textoTemperaturaIndisponivel
                       : `${bancada.temperatura_planta!.toFixed(1)} °C`}
                   </div>
                   {sensorReinicios > 0 && (
