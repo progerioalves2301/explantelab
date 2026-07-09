@@ -956,11 +956,47 @@ void setup() {
 
 // (timers movidos para antes de tratarComando)
 
+// v1.9.4 — reinicia o barramento 1-Wire e re-inicializa o DS18B20.
+// Chamado quando detectamos leitura "travada" (mesmo valor exato por >2 min),
+// sintoma clássico de pull-up marginal, contato ruim ou glitch no barramento.
+void reiniciarBarramento1Wire() {
+  Serial.printf("[TEMP] sensor travado em %.4f °C — reiniciando 1-Wire (reinit #%u)\n",
+                g_temp_ultimo_valor, (unsigned)(g_temp_reinicios + 1));
+  oneWire.reset();
+  dsSensor.begin();
+  dsSensor.setWaitForConversion(false);
+  dsSensor.requestTemperatures();
+  g_temp_reinicios++;
+  g_temp_ultima_mudanca = millis();   // dá mais 2 min antes do próximo retry
+}
+
 void lerTemperatura() {
   float t = dsSensor.getTempCByIndex(0);
   if (t > -50.0 && t < 125.0) g_temperatura_planta = t;
   else g_temperatura_planta = NAN;
   dsSensor.requestTemperatures(); // dispara próxima conversão (async)
+
+  // v1.9.4 — detecção de travamento. DS18B20 tem resolução de 0.0625°C;
+  // mesmo em ambiente estável a leitura oscila naturalmente ao longo de 2 min.
+  // Se o valor não mudou NEM 1 LSB nesse período, algo está errado.
+  unsigned long agora = millis();
+  if (!isnan(g_temperatura_planta)) {
+    if (isnan(g_temp_ultimo_valor) || g_temperatura_planta != g_temp_ultimo_valor) {
+      g_temp_ultimo_valor   = g_temperatura_planta;
+      g_temp_ultima_mudanca = agora;
+      if (g_sensor_travado) {
+        Serial.println("[TEMP] sensor voltou a responder");
+        g_sensor_travado = false;
+        lastTelem = 0; // força push pra dashboard atualizar
+      }
+    } else if (agora - g_temp_ultima_mudanca > TEMP_STUCK_MS) {
+      if (!g_sensor_travado) {
+        g_sensor_travado = true;
+        lastTelem = 0; // força push pra sinalizar no dashboard
+      }
+      reiniciarBarramento1Wire();
+    }
+  }
 
   // v1.9.3 — push adaptativo por variação de temperatura.
   // Em REPOUSO a telemetria vai a cada 15s pra poupar tráfego, mas se a
