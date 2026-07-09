@@ -1,7 +1,9 @@
 import {
   ArrowLeft,
   Clock,
+  Copy,
   FlaskConical,
+  KeyRound,
   Leaf,
   Lightbulb,
   Settings2,
@@ -11,6 +13,7 @@ import {
   Timer,
   Trash2,
 } from "lucide-react";
+
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
