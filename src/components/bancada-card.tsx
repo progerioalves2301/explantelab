@@ -530,7 +530,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           </AlertDialog>
         </div>
       </CardContent>
-      </CardContent>
+
 
       <AlertDialog open={pairOpen} onOpenChange={setPairOpen}>
         <AlertDialogContent>
