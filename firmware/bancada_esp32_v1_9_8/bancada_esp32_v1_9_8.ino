@@ -61,7 +61,7 @@ static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
 
-static const char* FIRMWARE_VERSION = "1.9.7";
+static const char* FIRMWARE_VERSION = "1.9.8";
 
 // -------- Polaridade dos relés (v1.9.5+) --------
 // v1.9.5: mudado para ACTIVE_HIGH para uso com SSR industrial tipo Fotek
@@ -84,8 +84,9 @@ DallasTemperature dsSensor(&oneWire);
 DeviceAddress g_ds18b20_addr;
 bool g_tem_ds18b20 = false;
 float g_temperatura_planta = NAN;
+float g_ultima_temperatura_valida = NAN; // v1.9.8 — não apaga o painel por falha momentânea
 float g_temperatura_publicada = NAN;   // último valor efetivamente enviado
-bool  g_temperatura_valida = false;    // v1.9.7 — informa ao backend se deve limpar valor antigo
+bool  g_temperatura_valida = false;    // informa ao backend se a leitura atual é válida
 const float TEMP_DELTA_PUSH = 0.2f;    // °C — variação que força telemetria imediata
 
 // v1.9.4 — detecção de "sensor travado" (leitura idêntica por muito tempo)
@@ -95,6 +96,8 @@ bool          g_sensor_travado       = false;  // exposto na telemetria
 const unsigned long TEMP_STUCK_MS    = 120000UL; // 2 min sem qualquer variação => trava
 uint32_t      g_temp_reinicios       = 0;      // contador de re-inits do barramento 1-Wire
 uint8_t       g_temp_falhas_seguidas = 0;      // leituras inválidas consecutivas
+uint8_t       g_temp_invalidas_consecutivas = 0; // v1.9.8 — falhas acumuladas até uma leitura boa
+const uint8_t TEMP_FALHAS_LIMPAR_BACKEND = 20;   // 20 x 3s ≈ 1 min antes de limpar o card
 
 // -------- RTC DS3231 (opcional — v1.8.0) --------
 // Ligação I²C padrão do ESP32: SDA=GPIO 21, SCL=GPIO 22, VCC=3.3V, GND=GND.
@@ -624,8 +627,8 @@ uint32_t proxCicloSegRest() {
   return (alvo_ms - agora) / 1000;
 }
 
-void enviarTelemetria() {
-  if (creds.device_token.length() == 0) return;
+bool enviarTelemetria() {
+  if (creds.device_token.length() == 0) return false;
 
   JsonDocument doc;
   doc["_bancada_id"]   = creds.bancada_id;
@@ -646,10 +649,19 @@ void enviarTelemetria() {
   doc["_luz_ligada"]             = g_luz_ligada;
   doc["_sensor_travado"]         = g_sensor_travado;
   doc["_sensor_reinicios"]       = g_temp_reinicios;
-  doc["_temperatura_valida"]     = g_temperatura_valida;
-  if (!isnan(g_temperatura_planta)) {
+
+  // v1.9.8: se uma fonte marginal causar uma falha isolada no 1-Wire, não
+  // apagamos a temperatura imediatamente. Só limpamos o backend após falha
+  // sustentada (~1 minuto), mas qualquer leitura válida nova é enviada na hora.
+  if (g_temperatura_valida && !isnan(g_temperatura_planta)) {
+    doc["_temperatura_valida"] = true;
     doc["_temperatura_planta"] = g_temperatura_planta;
+  } else if (!isnan(g_ultima_temperatura_valida) &&
+             g_temp_invalidas_consecutivas < TEMP_FALHAS_LIMPAR_BACKEND) {
+    doc["_temperatura_valida"] = true;
+    doc["_temperatura_planta"] = g_ultima_temperatura_valida;
   } else {
+    doc["_temperatura_valida"] = false;
     doc["_temperatura_planta"] = nullptr;
   }
 
@@ -657,10 +669,10 @@ void enviarTelemetria() {
   serializeJson(doc, body);
 
   String resp;
-  if (!supabaseRpc("bench_push_telemetry", body, resp)) return;
+  if (!supabaseRpc("bench_push_telemetry", body, resp)) return false;
 
   JsonDocument r;
-  if (deserializeJson(r, resp) != DeserializationError::Ok) return;
+  if (deserializeJson(r, resp) != DeserializationError::Ok) return false;
   uint32_t nova_ver = r["config_version"] | 0;
   if (nova_ver > cfg.versao) {
     JsonObject c = r["config"].as<JsonObject>();
@@ -685,6 +697,7 @@ void enviarTelemetria() {
                   (unsigned)nova_ver, (unsigned)cfg.horarios_n,
                   (unsigned)cfg.luz_n, cfg.tz);
   }
+  return true;
 }
 
 // -------- Loop timers (declarados aqui p/ tratarComando poder forçar telemetria) --------
@@ -936,6 +949,8 @@ void setup() {
   abrirPortalWifi(precisaParear);
 
   Serial.printf("Wi-Fi OK: %s\n", WiFi.localIP().toString().c_str());
+  WiFi.setSleep(false);       // v1.9.8 — evita economia de Wi-Fi atrapalhar HTTP em fonte externa
+  WiFi.setAutoReconnect(true);
   digitalWrite(PIN_LED, HIGH);
 
   // NTP com fuso America/Sao_Paulo (UTC-3, sem horário de verão).
@@ -986,7 +1001,7 @@ void reiniciarBarramento1Wire() {
 }
 
 void lerTemperatura() {
-  // v1.9.7: faz a conversão AGORA e aguarda terminar. Isso evita publicar
+  // v1.9.8: faz a conversão AGORA e aguarda terminar. Isso evita publicar
   // valor cacheado/antigo quando o barramento 1-Wire fica marginal.
   if (!g_tem_ds18b20) {
     g_tem_ds18b20 = dsSensor.getAddress(g_ds18b20_addr, 0);
@@ -1004,12 +1019,21 @@ void lerTemperatura() {
   bool valida = conversaoOk && t != DEVICE_DISCONNECTED_C && t > -50.0 && t < 125.0;
 
   if (valida) {
+    bool estavaInvalida = !g_temperatura_valida;
     g_temperatura_planta = t;
+    g_ultima_temperatura_valida = t;
     g_temperatura_valida = true;
     g_temp_falhas_seguidas = 0;
+    g_temp_invalidas_consecutivas = 0;
+    if (g_sensor_travado) {
+      Serial.println("[TEMP] sensor voltou a responder");
+      g_sensor_travado = false;
+    }
+    if (estavaInvalida) lastTelem = 0;
     Serial.printf("[TEMP] %.4f C\n", g_temperatura_planta);
   } else {
     g_temp_falhas_seguidas++;
+    if (g_temp_invalidas_consecutivas < 255) g_temp_invalidas_consecutivas++;
     Serial.printf("[TEMP] leitura invalida (ok=%d, t=%.4f, falhas=%u)\n",
                   conversaoOk ? 1 : 0, t, (unsigned)g_temp_falhas_seguidas);
     g_temperatura_planta = NAN;
@@ -1031,7 +1055,6 @@ void lerTemperatura() {
       g_temp_ultimo_valor   = g_temperatura_planta;
       g_temp_ultima_mudanca = agora;
       if (g_sensor_travado) {
-        Serial.println("[TEMP] sensor voltou a responder");
         g_sensor_travado = false;
         lastTelem = 0; // força push pra dashboard atualizar
       }
@@ -1074,8 +1097,9 @@ void loop() {
   if (now - lastCmd  > intervaloCmd)  { lastCmd   = now; puxarComandos(); }
   if (now - lastTelem > intervaloTelem) {
     lastTelem = now;
-    enviarTelemetria();
-    g_temperatura_publicada = g_temperatura_planta; // marca o que foi publicado
+    if (enviarTelemetria() && !isnan(g_temperatura_planta)) {
+      g_temperatura_publicada = g_temperatura_planta; // marca somente o que foi publicado com sucesso
+    }
   }
 
   static unsigned long btn_pressed_since = 0;
