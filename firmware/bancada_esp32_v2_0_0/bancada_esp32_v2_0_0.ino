@@ -61,7 +61,7 @@ static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
 
-static const char* FIRMWARE_VERSION = "1.9.9";
+static const char* FIRMWARE_VERSION = "2.0.0";
 
 // -------- Polaridade dos relés (v1.9.5+) --------
 // v1.9.5: mudado para ACTIVE_HIGH para uso com SSR industrial tipo Fotek
@@ -84,7 +84,7 @@ DallasTemperature dsSensor(&oneWire);
 DeviceAddress g_ds18b20_addr;
 bool g_tem_ds18b20 = false;
 float g_temperatura_planta = NAN;
-float g_ultima_temperatura_valida = NAN; // v1.9.8 — não apaga o painel por falha momentânea
+float g_ultima_temperatura_valida = NAN; // diagnóstico local; não é reenviada como leitura nova
 float g_temperatura_publicada = NAN;   // último valor efetivamente enviado
 bool  g_temperatura_valida = false;    // informa ao backend se a leitura atual é válida
 const float TEMP_DELTA_PUSH = 0.2f;    // °C — variação que força telemetria imediata
@@ -96,8 +96,7 @@ float         g_temp_ultimo_valor    = NAN;
 bool          g_sensor_travado       = false;  // exposto na telemetria
 uint32_t      g_temp_reinicios       = 0;      // contador de re-inits do barramento 1-Wire
 uint8_t       g_temp_falhas_seguidas = 0;      // leituras inválidas consecutivas
-uint8_t       g_temp_invalidas_consecutivas = 0; // v1.9.8 — falhas acumuladas até uma leitura boa
-const uint8_t TEMP_FALHAS_LIMPAR_BACKEND = 20;   // 20 x 3s ≈ 1 min antes de limpar o card
+uint8_t       g_temp_invalidas_consecutivas = 0; // falhas acumuladas até uma leitura boa
 
 // -------- RTC DS3231 (opcional — v1.8.0) --------
 // Ligação I²C padrão do ESP32: SDA=GPIO 21, SCL=GPIO 22, VCC=3.3V, GND=GND.
@@ -650,16 +649,11 @@ bool enviarTelemetria() {
   doc["_sensor_travado"]         = g_sensor_travado;
   doc["_sensor_reinicios"]       = g_temp_reinicios;
 
-  // v1.9.8: se uma fonte marginal causar uma falha isolada no 1-Wire, não
-  // apagamos a temperatura imediatamente. Só limpamos o backend após falha
-  // sustentada (~1 minuto), mas qualquer leitura válida nova é enviada na hora.
+  // v2.0.0: envia somente leitura real do DS18B20. Não reenvia temperatura
+  // em cache como válida, porque isso fazia o dashboard parecer travado/atual.
   if (g_temperatura_valida && !isnan(g_temperatura_planta)) {
     doc["_temperatura_valida"] = true;
     doc["_temperatura_planta"] = g_temperatura_planta;
-  } else if (!isnan(g_ultima_temperatura_valida) &&
-             g_temp_invalidas_consecutivas < TEMP_FALHAS_LIMPAR_BACKEND) {
-    doc["_temperatura_valida"] = true;
-    doc["_temperatura_planta"] = g_ultima_temperatura_valida;
   } else {
     doc["_temperatura_valida"] = false;
     doc["_temperatura_planta"] = nullptr;
@@ -1032,8 +1026,9 @@ void lerTemperatura() {
   } else {
     g_temp_falhas_seguidas++;
     if (g_temp_invalidas_consecutivas < 255) g_temp_invalidas_consecutivas++;
-    Serial.printf("[TEMP] leitura invalida (ok=%d, t=%.4f, falhas=%u)\n",
-                  conversaoOk ? 1 : 0, t, (unsigned)g_temp_falhas_seguidas);
+    Serial.printf("[TEMP] leitura invalida (ok=%d, t=%.4f, falhas=%u, ultima=%.4f)\n",
+                  conversaoOk ? 1 : 0, t, (unsigned)g_temp_falhas_seguidas,
+                  g_ultima_temperatura_valida);
     g_temperatura_planta = NAN;
     g_temperatura_valida = false;
     lastTelem = 0; // publica null/estado atual para não parecer congelado
