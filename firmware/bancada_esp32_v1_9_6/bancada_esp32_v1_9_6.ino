@@ -973,17 +973,48 @@ void reiniciarBarramento1Wire() {
                 g_temp_ultimo_valor, (unsigned)(g_temp_reinicios + 1));
   oneWire.reset();
   dsSensor.begin();
-  dsSensor.setWaitForConversion(false);
-  dsSensor.requestTemperatures();
+  dsSensor.setResolution(12);
+  dsSensor.setWaitForConversion(true);
+  g_tem_ds18b20 = dsSensor.getAddress(g_ds18b20_addr, 0);
+  Serial.printf("[TEMP] re-scan: %u sensor(es), primeiro=%s\n",
+                (unsigned)dsSensor.getDeviceCount(),
+                g_tem_ds18b20 ? "OK" : "NAO encontrado");
   g_temp_reinicios++;
   g_temp_ultima_mudanca = millis();   // dá mais 2 min antes do próximo retry
 }
 
 void lerTemperatura() {
-  float t = dsSensor.getTempCByIndex(0);
-  if (t > -50.0 && t < 125.0) g_temperatura_planta = t;
-  else g_temperatura_planta = NAN;
-  dsSensor.requestTemperatures(); // dispara próxima conversão (async)
+  // v1.9.6: faz a conversão AGORA e aguarda terminar. Isso evita publicar
+  // valor cacheado/antigo quando o barramento 1-Wire fica marginal.
+  if (!g_tem_ds18b20) {
+    g_tem_ds18b20 = dsSensor.getAddress(g_ds18b20_addr, 0);
+  }
+
+  bool conversaoOk = false;
+  if (g_tem_ds18b20) {
+    conversaoOk = dsSensor.requestTemperaturesByAddress(g_ds18b20_addr);
+  } else {
+    conversaoOk = dsSensor.requestTemperatures();
+  }
+
+  float t = g_tem_ds18b20 ? dsSensor.getTempC(g_ds18b20_addr) : dsSensor.getTempCByIndex(0);
+  bool valida = conversaoOk && t != DEVICE_DISCONNECTED_C && t > -50.0 && t < 125.0;
+
+  if (valida) {
+    g_temperatura_planta = t;
+    g_temp_falhas_seguidas = 0;
+    Serial.printf("[TEMP] %.4f C\n", g_temperatura_planta);
+  } else {
+    g_temp_falhas_seguidas++;
+    Serial.printf("[TEMP] leitura invalida (ok=%d, t=%.4f, falhas=%u)\n",
+                  conversaoOk ? 1 : 0, t, (unsigned)g_temp_falhas_seguidas);
+    g_temperatura_planta = NAN;
+    lastTelem = 0; // publica null/estado atual para não parecer congelado
+    if (g_temp_falhas_seguidas >= 3) {
+      reiniciarBarramento1Wire();
+      g_temp_falhas_seguidas = 0;
+    }
+  }
 
   // v1.9.4 — detecção de travamento. DS18B20 tem resolução de 0.0625°C;
   // mesmo em ambiente estável a leitura oscila naturalmente ao longo de 2 min.
