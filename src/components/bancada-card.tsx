@@ -1,7 +1,9 @@
 import {
   ArrowLeft,
   Clock,
+  Copy,
   FlaskConical,
+  KeyRound,
   Leaf,
   Lightbulb,
   Settings2,
@@ -11,6 +13,7 @@ import {
   Timer,
   Trash2,
 } from "lucide-react";
+
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +34,7 @@ import { StatusBadge } from "./status-badge";
 import { ValveIndicator } from "./valve-indicator";
 import { formatCountdown, timeAgo } from "@/lib/mock-data";
 import { proximoDisparoSegundos } from "@/lib/schedule";
-import { enviarComando, excluirBancada } from "@/lib/bancadas.functions";
+import { enviarComando, excluirBancada, regenerarPairingCode } from "@/lib/bancadas.functions";
 import { toast } from "sonner";
 import type { Bancada, Laboratorio, ValvulasEstado } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -78,8 +81,38 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
   const [stopping, setStopping] = useState(false);
   const [sending, setSending] = useState(false);
   const [tab, setTab] = useState<"status" | "manual">("status");
+  const [pairOpen, setPairOpen] = useState(false);
+  const [pairCode, setPairCode] = useState<string | null>(null);
+  const [pairing, setPairing] = useState(false);
   const excluir = useServerFn(excluirBancada);
   const comandar = useServerFn(enviarComando);
+  const gerarCodigo = useServerFn(regenerarPairingCode);
+
+  const abrirPareamento = async () => {
+    setPairOpen(true);
+    setPairCode(null);
+    setPairing(true);
+    try {
+      const r = await gerarCodigo({ data: { bancada_id: bancada.id } });
+      setPairCode(r.pairing_code);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao gerar código");
+      setPairOpen(false);
+    } finally {
+      setPairing(false);
+    }
+  };
+
+  const copiarCodigo = async () => {
+    if (!pairCode) return;
+    try {
+      await navigator.clipboard.writeText(pairCode);
+      toast.success("Código copiado");
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
+
 
   const mode =
     bancada.status === "Injetando"
@@ -452,6 +485,17 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             <Square className="mr-1 h-3 w-3 shrink-0 fill-current" />
             {stopping ? "…" : "STOP"}
           </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={abrirPareamento}
+            disabled={pairing}
+            aria-label="Gerar código de pareamento"
+            title="Gerar código de pareamento"
+          >
+            <KeyRound className="h-3.5 w-3.5" />
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
@@ -486,6 +530,43 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           </AlertDialog>
         </div>
       </CardContent>
+
+
+      <AlertDialog open={pairOpen} onOpenChange={setPairOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Código de pareamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Digite este código no portal Wi-Fi do ESP32 da bancada{" "}
+              <span className="font-semibold">{bancada.nome}</span> para
+              re-conectá-la à conta. Válido por 24 horas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4 flex flex-col items-center gap-3">
+            {pairing || !pairCode ? (
+              <div className="text-sm text-muted-foreground">Gerando…</div>
+            ) : (
+              <>
+                <div className="rounded-lg border bg-muted px-6 py-4 font-mono text-4xl font-bold tracking-[0.4em] tabular-nums">
+                  {pairCode}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copiarCodigo}
+                  className="h-8 text-xs"
+                >
+                  <Copy className="mr-1 h-3.5 w-3.5" />
+                  Copiar
+                </Button>
+              </>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Fechar</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
