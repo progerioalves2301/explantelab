@@ -184,6 +184,8 @@ export type Database = {
           offline_threshold_segundos: number
           posicao: number | null
           proximo_ciclo_segundos: number
+          sensor_reinicios: number | null
+          sensor_travado: boolean | null
           status: string
           status_desde: string | null
           tem_rtc: boolean | null
@@ -206,6 +208,8 @@ export type Database = {
           offline_threshold_segundos?: number
           posicao?: number | null
           proximo_ciclo_segundos?: number
+          sensor_reinicios?: number | null
+          sensor_travado?: boolean | null
           status?: string
           status_desde?: string | null
           tem_rtc?: boolean | null
@@ -228,6 +232,8 @@ export type Database = {
           offline_threshold_segundos?: number
           posicao?: number | null
           proximo_ciclo_segundos?: number
+          sensor_reinicios?: number | null
+          sensor_travado?: boolean | null
           status?: string
           status_desde?: string | null
           tem_rtc?: boolean | null
@@ -363,6 +369,8 @@ export type Database = {
               _ip_local: string
               _luz_ligada?: boolean
               _proximo_ciclo_segundos: number
+              _sensor_reinicios?: number
+              _sensor_travado?: boolean
               _status: string
               _tem_rtc?: boolean
               _temperatura_planta?: number
