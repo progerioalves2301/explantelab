@@ -61,7 +61,7 @@ static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
 
-static const char* FIRMWARE_VERSION = "2.0.0";
+static const char* FIRMWARE_VERSION = "2.0.1";
 
 // -------- Polaridade dos relés (v1.9.5+) --------
 // v1.9.5: mudado para ACTIVE_HIGH para uso com SSR industrial tipo Fotek
@@ -511,7 +511,7 @@ static const char PORTAL_HEAD[] PROGMEM =
   "</div><div class=\"card\">";
 
 static const char PORTAL_FOOT[] PROGMEM =
-  "</div><div class=\"footer\">ESP32 • Firmware 1.9.7</div></div>";
+  "</div><div class=\"footer\">ESP32 • Firmware 2.0.1</div></div>";
 
 void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
@@ -649,7 +649,7 @@ bool enviarTelemetria() {
   doc["_sensor_travado"]         = g_sensor_travado;
   doc["_sensor_reinicios"]       = g_temp_reinicios;
 
-  // v2.0.0: envia somente leitura real do DS18B20. Não reenvia temperatura
+  // v2.0.1: envia somente leitura real do DS18B20. Não reenvia temperatura
   // em cache como válida, porque isso fazia o dashboard parecer travado/atual.
   if (g_temperatura_valida && !isnan(g_temperatura_planta)) {
     doc["_temperatura_valida"] = true;
@@ -993,22 +993,12 @@ void reiniciarBarramento1Wire() {
 }
 
 void lerTemperatura() {
-  // v1.9.8: faz a conversão AGORA e aguarda terminar. Isso evita publicar
-  // valor cacheado/antigo quando o barramento 1-Wire fica marginal.
-  if (!g_tem_ds18b20) {
-    g_tem_ds18b20 = dsSensor.getAddress(g_ds18b20_addr, 0);
-  }
-
-  bool conversaoOk = false;
-  if (g_tem_ds18b20) {
-    conversaoOk = dsSensor.requestTemperaturesByAddress(g_ds18b20_addr);
-  } else {
-    dsSensor.requestTemperatures();
-    conversaoOk = true;
-  }
-
-  float t = g_tem_ds18b20 ? dsSensor.getTempC(g_ds18b20_addr) : dsSensor.getTempCByIndex(0);
-  bool valida = conversaoOk && t != DEVICE_DISCONNECTED_C && t > -50.0 && t < 125.0;
+  // v2.0.1: leitura igual ao teste simples da IDE Arduino: converte o barramento
+  // inteiro e lê o primeiro sensor por índice. Isso evita falso erro quando a
+  // leitura por endereço retorna falha mesmo com o DS18B20 respondendo.
+  dsSensor.requestTemperatures();
+  float t = dsSensor.getTempCByIndex(0);
+  bool valida = t != DEVICE_DISCONNECTED_C && t > -50.0 && t < 125.0;
 
   if (valida) {
     bool estavaInvalida = !g_temperatura_valida;
@@ -1026,8 +1016,8 @@ void lerTemperatura() {
   } else {
     g_temp_falhas_seguidas++;
     if (g_temp_invalidas_consecutivas < 255) g_temp_invalidas_consecutivas++;
-    Serial.printf("[TEMP] leitura invalida (ok=%d, t=%.4f, falhas=%u, ultima=%.4f)\n",
-                  conversaoOk ? 1 : 0, t, (unsigned)g_temp_falhas_seguidas,
+    Serial.printf("[TEMP] leitura invalida (t=%.4f, falhas=%u, ultima=%.4f)\n",
+                  t, (unsigned)g_temp_falhas_seguidas,
                   g_ultima_temperatura_valida);
     g_temperatura_planta = NAN;
     g_temperatura_valida = false;
