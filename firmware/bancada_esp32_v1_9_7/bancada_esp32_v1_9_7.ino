@@ -61,7 +61,7 @@ static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
 
-static const char* FIRMWARE_VERSION = "1.9.6";
+static const char* FIRMWARE_VERSION = "1.9.7";
 
 // -------- Polaridade dos relés (v1.9.5+) --------
 // v1.9.5: mudado para ACTIVE_HIGH para uso com SSR industrial tipo Fotek
@@ -85,6 +85,7 @@ DeviceAddress g_ds18b20_addr;
 bool g_tem_ds18b20 = false;
 float g_temperatura_planta = NAN;
 float g_temperatura_publicada = NAN;   // último valor efetivamente enviado
+bool  g_temperatura_valida = false;    // v1.9.7 — informa ao backend se deve limpar valor antigo
 const float TEMP_DELTA_PUSH = 0.2f;    // °C — variação que força telemetria imediata
 
 // v1.9.4 — detecção de "sensor travado" (leitura idêntica por muito tempo)
@@ -508,7 +509,7 @@ static const char PORTAL_HEAD[] PROGMEM =
   "</div><div class=\"card\">";
 
 static const char PORTAL_FOOT[] PROGMEM =
-  "</div><div class=\"footer\">ESP32 • Firmware 1.9.1</div></div>";
+  "</div><div class=\"footer\">ESP32 • Firmware 1.9.7</div></div>";
 
 void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
@@ -645,6 +646,7 @@ void enviarTelemetria() {
   doc["_luz_ligada"]             = g_luz_ligada;
   doc["_sensor_travado"]         = g_sensor_travado;
   doc["_sensor_reinicios"]       = g_temp_reinicios;
+  doc["_temperatura_valida"]     = g_temperatura_valida;
   if (!isnan(g_temperatura_planta)) {
     doc["_temperatura_planta"] = g_temperatura_planta;
   } else {
@@ -984,7 +986,7 @@ void reiniciarBarramento1Wire() {
 }
 
 void lerTemperatura() {
-  // v1.9.6: faz a conversão AGORA e aguarda terminar. Isso evita publicar
+  // v1.9.7: faz a conversão AGORA e aguarda terminar. Isso evita publicar
   // valor cacheado/antigo quando o barramento 1-Wire fica marginal.
   if (!g_tem_ds18b20) {
     g_tem_ds18b20 = dsSensor.getAddress(g_ds18b20_addr, 0);
@@ -1003,6 +1005,7 @@ void lerTemperatura() {
 
   if (valida) {
     g_temperatura_planta = t;
+    g_temperatura_valida = true;
     g_temp_falhas_seguidas = 0;
     Serial.printf("[TEMP] %.4f C\n", g_temperatura_planta);
   } else {
@@ -1010,8 +1013,10 @@ void lerTemperatura() {
     Serial.printf("[TEMP] leitura invalida (ok=%d, t=%.4f, falhas=%u)\n",
                   conversaoOk ? 1 : 0, t, (unsigned)g_temp_falhas_seguidas);
     g_temperatura_planta = NAN;
+    g_temperatura_valida = false;
     lastTelem = 0; // publica null/estado atual para não parecer congelado
     if (g_temp_falhas_seguidas >= 3) {
+      g_sensor_travado = true;
       reiniciarBarramento1Wire();
       g_temp_falhas_seguidas = 0;
     }
@@ -1035,6 +1040,8 @@ void lerTemperatura() {
         g_sensor_travado = true;
         lastTelem = 0; // força push pra sinalizar no dashboard
       }
+      g_temperatura_planta = NAN;
+      g_temperatura_valida = false;
       reiniciarBarramento1Wire();
     }
   }

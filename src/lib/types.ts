@@ -68,6 +68,9 @@ export interface Bancada {
   laboratorio_id: string | null;
   posicao: number | null;
   luz_ligada: boolean;
+  tem_rtc?: boolean | null;
+  sensor_travado?: boolean | null;
+  sensor_reinicios?: number | null;
   created_at: string;
 }
 

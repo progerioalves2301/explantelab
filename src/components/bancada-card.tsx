@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  AlertTriangle,
   Clock,
   Copy,
   FlaskConical,
@@ -87,6 +88,8 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
   const excluir = useServerFn(excluirBancada);
   const comandar = useServerFn(enviarComando);
   const gerarCodigo = useServerFn(regenerarPairingCode);
+  const sensorComFalha = Boolean(bancada.sensor_travado) || bancada.temperatura_planta == null;
+  const sensorReinicios = bancada.sensor_reinicios ?? 0;
 
   const abrirPareamento = async () => {
     setPairOpen(true);
@@ -326,17 +329,31 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                   </div>
                 </div>
               </div>
-              <div className="col-span-2 flex items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-2 text-muted-foreground">
-                <Sprout className="h-4 w-4 text-emerald-500" />
+              <div
+                className={cn(
+                  "col-span-2 flex items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-2 text-muted-foreground",
+                  sensorComFalha && "border-destructive/40 bg-destructive/5",
+                )}
+              >
+                {sensorComFalha ? (
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                ) : (
+                  <Sprout className="h-4 w-4 text-emerald-500" />
+                )}
                 <div className="flex-1">
                   <div className="text-[10px] uppercase tracking-wide">
                     Temperatura planta
                   </div>
-                  <div className="font-mono text-sm text-foreground">
-                    {bancada.temperatura_planta != null
-                      ? `${bancada.temperatura_planta.toFixed(1)} °C`
-                      : "—"}
+                  <div className={cn("font-mono text-sm", sensorComFalha ? "text-destructive" : "text-foreground")}>
+                    {sensorComFalha
+                      ? "Sensor sem leitura"
+                      : `${bancada.temperatura_planta!.toFixed(1)} °C`}
                   </div>
+                  {sensorReinicios > 0 && (
+                    <div className="text-[10px] text-muted-foreground">
+                      Reinícios do sensor: {sensorReinicios}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
