@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import type { Database, Json } from "@/integrations/supabase/types";
+
+type BancadaUpdate = Database["public"]["Tables"]["bancadas"]["Update"];
 
 // ESP32 chama:
 //   POST /api/public/bench/telemetry
@@ -67,9 +70,9 @@ export const Route = createFileRoute("/api/public/bench/telemetry")({
           return json({ error: "invalid payload", detail: String(e) }, 400);
         }
 
-        const updatePayload: Record<string, unknown> = {
+        const updatePayload: BancadaUpdate = {
           status: payload.status,
-          valvulas: payload.valvulas,
+          valvulas: payload.valvulas as Json,
           proximo_ciclo_segundos: payload.proximo_ciclo_segundos,
           ultima_sync: new Date().toISOString(),
         };
