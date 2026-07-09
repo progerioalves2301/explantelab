@@ -437,6 +437,11 @@ function AtualizacaoPage() {
             ) : (
               bancadas.map((b) => {
                 const esperada = aguardando[b.id];
+                const idadeSync = b.ultima_sync
+                  ? (Date.now() - new Date(b.ultima_sync).getTime()) / 1000
+                  : Infinity;
+                const efetivoOffline = idadeSync > 90;
+                const statusMostrado = efetivoOffline ? "Offline" : b.status;
                 return (
                 <div
                   key={b.id}
@@ -456,10 +461,10 @@ function AtualizacaoPage() {
                     )}
                   </span>
                   <Badge
-                    variant={b.status === "Offline" ? "secondary" : "default"}
+                    variant={statusMostrado === "Offline" ? "secondary" : "default"}
                     className="w-fit"
                   >
-                    {b.status}
+                    {statusMostrado}
                   </Badge>
                   <div className="text-right">
                     <Button
