@@ -79,6 +79,8 @@ static const bool RELAY_ACTIVE_LOW = true;
 OneWire oneWire(PIN_DS18B20);
 DallasTemperature dsSensor(&oneWire);
 float g_temperatura_planta = NAN;
+float g_temperatura_publicada = NAN;   // último valor efetivamente enviado
+const float TEMP_DELTA_PUSH = 0.2f;    // °C — variação que força telemetria imediata
 
 // -------- RTC DS3231 (opcional — v1.8.0) --------
 // Ligação I²C padrão do ESP32: SDA=GPIO 21, SCL=GPIO 22, VCC=3.3V, GND=GND.
@@ -622,7 +624,7 @@ void enviarTelemetria() {
   v["v4"] = relayRead(PIN_V4);
   v["v5"] = false;   // V5 removida do projeto (v1.9.2+)
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.9.2";
+  doc["_firmware_version"]       = "1.9.3";
 
 
   doc["_tem_rtc"]                = g_tem_rtc;
@@ -950,6 +952,17 @@ void lerTemperatura() {
   if (t > -50.0 && t < 125.0) g_temperatura_planta = t;
   else g_temperatura_planta = NAN;
   dsSensor.requestTemperatures(); // dispara próxima conversão (async)
+
+  // v1.9.3 — push adaptativo por variação de temperatura.
+  // Em REPOUSO a telemetria vai a cada 15s pra poupar tráfego, mas se a
+  // temperatura mudar mais que TEMP_DELTA_PUSH desde o último envio, força
+  // telemetria imediata pra que o dashboard reflita a mudança sem esperar.
+  if (!isnan(g_temperatura_planta)) {
+    if (isnan(g_temperatura_publicada) ||
+        fabsf(g_temperatura_planta - g_temperatura_publicada) >= TEMP_DELTA_PUSH) {
+      lastTelem = 0; // força push no próximo loop
+    }
+  }
 }
 
 void loop() {
@@ -958,14 +971,19 @@ void loop() {
   // v1.9.0 — intervalos adaptativos p/ suportar 100+ bancadas na mesma
   // instância Supabase. Em REPOUSO (>99% do tempo) reduz drasticamente
   // requisições; durante ciclo ativo / manual mantém responsividade.
+  // v1.9.3 — leitura de temperatura sobe pra 3s e há push imediato por delta.
   bool ativo = (fase != REPOUSO) || pausado_manual;
-  unsigned long intervaloTelem = ativo ? 2000UL  : 15000UL;  // 2s ativo / 15s parado
+  unsigned long intervaloTelem = ativo ? 2000UL  : 15000UL;  // 2s ativo / 15s parado (delta força push)
   unsigned long intervaloCmd   = ativo ? 1500UL  : 5000UL;   // 1.5s ativo / 5s parado
 
   if (now - lastTick > 1000)          { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); sincronizarNtpParaRtc(); }
-  if (now - lastTemp > 5000)          { lastTemp  = now; lerTemperatura(); }  // temperatura muda devagar
+  if (now - lastTemp > 3000)          { lastTemp  = now; lerTemperatura(); }  // 3s p/ detectar variação rápido
   if (now - lastCmd  > intervaloCmd)  { lastCmd   = now; puxarComandos(); }
-  if (now - lastTelem > intervaloTelem) { lastTelem = now; enviarTelemetria(); }
+  if (now - lastTelem > intervaloTelem) {
+    lastTelem = now;
+    enviarTelemetria();
+    g_temperatura_publicada = g_temperatura_planta; // marca o que foi publicado
+  }
 
   static unsigned long btn_pressed_since = 0;
   if (digitalRead(PIN_RESET_BTN) == LOW) {
