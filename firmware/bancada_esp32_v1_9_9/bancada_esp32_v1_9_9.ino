@@ -61,7 +61,7 @@ static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
 
-static const char* FIRMWARE_VERSION = "1.9.8";
+static const char* FIRMWARE_VERSION = "1.9.9";
 
 // -------- Polaridade dos relés (v1.9.5+) --------
 // v1.9.5: mudado para ACTIVE_HIGH para uso com SSR industrial tipo Fotek
@@ -89,11 +89,11 @@ float g_temperatura_publicada = NAN;   // último valor efetivamente enviado
 bool  g_temperatura_valida = false;    // informa ao backend se a leitura atual é válida
 const float TEMP_DELTA_PUSH = 0.2f;    // °C — variação que força telemetria imediata
 
-// v1.9.4 — detecção de "sensor travado" (leitura idêntica por muito tempo)
+// v1.9.9 — falha do sensor é leitura inválida real, não temperatura estável.
+// DS18B20 pode ficar vários minutos com o mesmo valor em bancada estável; isso
+// não deve apagar a temperatura nem reiniciar o barramento.
 float         g_temp_ultimo_valor    = NAN;
-unsigned long g_temp_ultima_mudanca  = 0;      // millis() da última variação detectada
 bool          g_sensor_travado       = false;  // exposto na telemetria
-const unsigned long TEMP_STUCK_MS    = 120000UL; // 2 min sem qualquer variação => trava
 uint32_t      g_temp_reinicios       = 0;      // contador de re-inits do barramento 1-Wire
 uint8_t       g_temp_falhas_seguidas = 0;      // leituras inválidas consecutivas
 uint8_t       g_temp_invalidas_consecutivas = 0; // v1.9.8 — falhas acumuladas até uma leitura boa
@@ -982,11 +982,10 @@ void setup() {
 
 // (timers movidos para antes de tratarComando)
 
-// v1.9.4 — reinicia o barramento 1-Wire e re-inicializa o DS18B20.
-// Chamado quando detectamos leitura "travada" (mesmo valor exato por >2 min),
-// sintoma clássico de pull-up marginal, contato ruim ou glitch no barramento.
+// Reinicia o barramento 1-Wire e re-inicializa o DS18B20 somente após leituras
+// inválidas consecutivas. Valor estável não é tratado como erro.
 void reiniciarBarramento1Wire() {
-  Serial.printf("[TEMP] sensor travado em %.4f °C — reiniciando 1-Wire (reinit #%u)\n",
+  Serial.printf("[TEMP] falhas consecutivas no sensor em %.4f °C — reiniciando 1-Wire (reinit #%u)\n",
                 g_temp_ultimo_valor, (unsigned)(g_temp_reinicios + 1));
   oneWire.reset();
   dsSensor.begin();
@@ -997,7 +996,6 @@ void reiniciarBarramento1Wire() {
                 (unsigned)dsSensor.getDeviceCount(),
                 g_tem_ds18b20 ? "OK" : "NAO encontrado");
   g_temp_reinicios++;
-  g_temp_ultima_mudanca = millis();   // dá mais 2 min antes do próximo retry
 }
 
 void lerTemperatura() {
@@ -1046,27 +1044,10 @@ void lerTemperatura() {
     }
   }
 
-  // v1.9.4 — detecção de travamento. DS18B20 tem resolução de 0.0625°C;
-  // mesmo em ambiente estável a leitura oscila naturalmente ao longo de 2 min.
-  // Se o valor não mudou NEM 1 LSB nesse período, algo está errado.
-  unsigned long agora = millis();
+  // v1.9.9 — temperatura estável é uma leitura válida. Mantemos apenas o
+  // último valor observado para diagnóstico/Serial, sem transformar em falha.
   if (!isnan(g_temperatura_planta)) {
-    if (isnan(g_temp_ultimo_valor) || g_temperatura_planta != g_temp_ultimo_valor) {
-      g_temp_ultimo_valor   = g_temperatura_planta;
-      g_temp_ultima_mudanca = agora;
-      if (g_sensor_travado) {
-        g_sensor_travado = false;
-        lastTelem = 0; // força push pra dashboard atualizar
-      }
-    } else if (agora - g_temp_ultima_mudanca > TEMP_STUCK_MS) {
-      if (!g_sensor_travado) {
-        g_sensor_travado = true;
-        lastTelem = 0; // força push pra sinalizar no dashboard
-      }
-      g_temperatura_planta = NAN;
-      g_temperatura_valida = false;
-      reiniciarBarramento1Wire();
-    }
+    g_temp_ultimo_valor = g_temperatura_planta;
   }
 
   // v1.9.3 — push adaptativo por variação de temperatura.
