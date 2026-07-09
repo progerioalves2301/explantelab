@@ -170,6 +170,59 @@ export type Database = {
           },
         ]
       }
+      bancada_telemetry_debug: {
+        Row: {
+          bancada_id: string
+          firmware_version: string | null
+          id: string
+          ip_local: string | null
+          proximo_ciclo_segundos: number | null
+          received_at: string
+          sensor_reinicios: number | null
+          sensor_travado: boolean | null
+          status: string | null
+          temperatura_planta: number | null
+          temperatura_valida: boolean | null
+          valvulas: Json | null
+        }
+        Insert: {
+          bancada_id: string
+          firmware_version?: string | null
+          id?: string
+          ip_local?: string | null
+          proximo_ciclo_segundos?: number | null
+          received_at?: string
+          sensor_reinicios?: number | null
+          sensor_travado?: boolean | null
+          status?: string | null
+          temperatura_planta?: number | null
+          temperatura_valida?: boolean | null
+          valvulas?: Json | null
+        }
+        Update: {
+          bancada_id?: string
+          firmware_version?: string | null
+          id?: string
+          ip_local?: string | null
+          proximo_ciclo_segundos?: number | null
+          received_at?: string
+          sensor_reinicios?: number | null
+          sensor_travado?: boolean | null
+          status?: string | null
+          temperatura_planta?: number | null
+          temperatura_valida?: boolean | null
+          valvulas?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bancada_telemetry_debug_bancada_id_fkey"
+            columns: ["bancada_id"]
+            isOneToOne: false
+            referencedRelation: "bancadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bancadas: {
         Row: {
           config: Json
