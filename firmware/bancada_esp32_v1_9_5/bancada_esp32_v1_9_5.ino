@@ -61,10 +61,11 @@ static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
 
-// -------- Polaridade dos relés (v1.9.1) --------
-// Módulo SSR "Low Level Trigger" (4 canais): CH em LOW  = relé LIGA.
-// Módulo mecânico comum (High Level Trigger): CH em HIGH = relé LIGA.
-// Deixe true se sua placa tem "Low Level Trigger" escrito na serigrafia.
+// -------- Polaridade dos relés (v1.9.5) --------
+// v1.9.5: mudado para ACTIVE_HIGH para uso com SSR industrial tipo Fotek
+// SSR-xxDA (entrada 3–32 VDC) acionado direto pelo GPIO do ESP32 (3.3V).
+// GPIO HIGH => corrente pelo LED do opto do SSR => carga LIGA.
+// Se voltar a usar módulo "Low Level Trigger" de 4 canais, troque para true.
 static const bool RELAY_ACTIVE_LOW = false;
 
 // Macros (não geram protótipo automático no Arduino IDE — evita ordem de tipo).
