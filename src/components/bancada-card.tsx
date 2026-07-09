@@ -485,6 +485,17 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             <Square className="mr-1 h-3 w-3 shrink-0 fill-current" />
             {stopping ? "…" : "STOP"}
           </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={abrirPareamento}
+            disabled={pairing}
+            aria-label="Gerar código de pareamento"
+            title="Gerar código de pareamento"
+          >
+            <KeyRound className="h-3.5 w-3.5" />
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
