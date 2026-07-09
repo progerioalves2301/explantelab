@@ -61,7 +61,9 @@ static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
 
-// -------- Polaridade dos relés (v1.9.5) --------
+static const char* FIRMWARE_VERSION = "1.9.6";
+
+// -------- Polaridade dos relés (v1.9.5+) --------
 // v1.9.5: mudado para ACTIVE_HIGH para uso com SSR industrial tipo Fotek
 // SSR-xxDA (entrada 3–32 VDC) acionado direto pelo GPIO do ESP32 (3.3V).
 // GPIO HIGH => corrente pelo LED do opto do SSR => carga LIGA.
@@ -79,6 +81,8 @@ static const bool RELAY_ACTIVE_LOW = false;
 // -------- Sensor DS18B20 (temperatura da planta) --------
 OneWire oneWire(PIN_DS18B20);
 DallasTemperature dsSensor(&oneWire);
+DeviceAddress g_ds18b20_addr;
+bool g_tem_ds18b20 = false;
 float g_temperatura_planta = NAN;
 float g_temperatura_publicada = NAN;   // último valor efetivamente enviado
 const float TEMP_DELTA_PUSH = 0.2f;    // °C — variação que força telemetria imediata
@@ -89,6 +93,7 @@ unsigned long g_temp_ultima_mudanca  = 0;      // millis() da última variação
 bool          g_sensor_travado       = false;  // exposto na telemetria
 const unsigned long TEMP_STUCK_MS    = 120000UL; // 2 min sem qualquer variação => trava
 uint32_t      g_temp_reinicios       = 0;      // contador de re-inits do barramento 1-Wire
+uint8_t       g_temp_falhas_seguidas = 0;      // leituras inválidas consecutivas
 
 // -------- RTC DS3231 (opcional — v1.8.0) --------
 // Ligação I²C padrão do ESP32: SDA=GPIO 21, SCL=GPIO 22, VCC=3.3V, GND=GND.
