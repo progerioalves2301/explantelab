@@ -530,6 +530,43 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           </AlertDialog>
         </div>
       </CardContent>
+      </CardContent>
+
+      <AlertDialog open={pairOpen} onOpenChange={setPairOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Código de pareamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Digite este código no portal Wi-Fi do ESP32 da bancada{" "}
+              <span className="font-semibold">{bancada.nome}</span> para
+              re-conectá-la à conta. Válido por 24 horas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4 flex flex-col items-center gap-3">
+            {pairing || !pairCode ? (
+              <div className="text-sm text-muted-foreground">Gerando…</div>
+            ) : (
+              <>
+                <div className="rounded-lg border bg-muted px-6 py-4 font-mono text-4xl font-bold tracking-[0.4em] tabular-nums">
+                  {pairCode}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copiarCodigo}
+                  className="h-8 text-xs"
+                >
+                  <Copy className="mr-1 h-3.5 w-3.5" />
+                  Copiar
+                </Button>
+              </>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Fechar</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
