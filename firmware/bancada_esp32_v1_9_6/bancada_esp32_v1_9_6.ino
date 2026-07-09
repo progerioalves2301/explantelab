@@ -637,7 +637,7 @@ void enviarTelemetria() {
   v["v4"] = relayRead(PIN_V4);
   v["v5"] = false;   // V5 removida do projeto (v1.9.2+)
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = "1.9.5";
+  doc["_firmware_version"]       = FIRMWARE_VERSION;
 
 
   doc["_tem_rtc"]                = g_tem_rtc;
@@ -889,15 +889,18 @@ void setup() {
 
   Serial.begin(115200);
   delay(200);
-  Serial.println("\n== GeneLab Bancada ESP32 (direct-Supabase) ==");
+  Serial.printf("\n== GeneLab Bancada ESP32 v%s (direct-Supabase) ==\n", FIRMWARE_VERSION);
   Serial.printf("[RELAY] polaridade: ACTIVE_%s\n", RELAY_ACTIVE_LOW ? "LOW" : "HIGH");
 
   pinMode(PIN_RESET_BTN, INPUT_PULLUP);
 
-
   dsSensor.begin();
-  dsSensor.setWaitForConversion(false);
-  dsSensor.requestTemperatures();
+  dsSensor.setResolution(12);
+  dsSensor.setWaitForConversion(true);  // v1.9.6: leitura bloqueante evita valor cacheado/antigo
+  g_tem_ds18b20 = dsSensor.getAddress(g_ds18b20_addr, 0);
+  Serial.printf("[TEMP] DS18B20 %s — sensores encontrados: %u\n",
+                g_tem_ds18b20 ? "detectado" : "NAO detectado",
+                (unsigned)dsSensor.getDeviceCount());
 
   // DS3231 opcional (I²C em SDA=21 / SCL=22). Se não responder, seguimos sem ele.
   Wire.begin();
