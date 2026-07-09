@@ -89,12 +89,10 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
   const comandar = useServerFn(enviarComando);
   const gerarCodigo = useServerFn(regenerarPairingCode);
   const sensorReinicios = bancada.sensor_reinicios ?? 0;
-  const sensorComFalha =
-    Boolean(bancada.sensor_travado) ||
-    bancada.temperatura_planta == null;
-  const textoTemperaturaIndisponivel = bancada.sensor_travado
-    ? "Sensor sem leitura"
-    : "Sem temperatura recebida";
+  const temTemperatura = bancada.temperatura_planta != null;
+  const sensorComFalha = !temTemperatura;
+  const sensorComAviso = temTemperatura && Boolean(bancada.sensor_travado);
+  const textoTemperaturaIndisponivel = "Sem temperatura recebida";
 
   const abrirPareamento = async () => {
     setPairOpen(true);
@@ -338,10 +336,13 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                 className={cn(
                   "col-span-2 flex items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-2 text-muted-foreground",
                   sensorComFalha && "border-destructive/40 bg-destructive/5",
+                  sensorComAviso && "border-amber-500/40 bg-amber-500/5",
                 )}
               >
                 {sensorComFalha ? (
                   <AlertTriangle className="h-4 w-4 text-destructive" />
+                ) : sensorComAviso ? (
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
                 ) : (
                   <Sprout className="h-4 w-4 text-emerald-500" />
                 )}
@@ -354,6 +355,11 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                       ? textoTemperaturaIndisponivel
                       : `${bancada.temperatura_planta!.toFixed(1)} °C`}
                   </div>
+                  {sensorComAviso && (
+                    <div className="text-[10px] text-amber-600 dark:text-amber-400">
+                      Leitura recebida; aviso anterior do sensor
+                    </div>
+                  )}
                   {sensorReinicios > 0 && (
                     <div className="text-[10px] text-muted-foreground">
                       Reinícios do sensor: {sensorReinicios}
