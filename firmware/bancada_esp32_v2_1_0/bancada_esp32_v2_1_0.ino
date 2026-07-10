@@ -790,6 +790,99 @@ void tratarComando(JsonObject cmd) {
 
 
     lastTelem = 0; // publica novo estado das válvulas imediatamente
+  } else if (strcmp(tipo, "AC_CONTROL") == 0) {
+    // Payload: { acao: "on"|"off", modo: "cool", setpoint: 22, protocolo: "LG"|"SAMSUNG"|"FUJITSU"|"MIDEA"|"ELECTRA" }
+    JsonVariantConst pv = cmd["payload"];
+    JsonDocument tmpDoc;
+    JsonObjectConst p;
+    if (pv.is<const char*>()) {
+      if (deserializeJson(tmpDoc, pv.as<const char*>()) == DeserializationError::Ok) {
+        p = tmpDoc.as<JsonObjectConst>();
+      }
+    } else {
+      p = pv.as<JsonObjectConst>();
+    }
+    const char* acao = p["acao"] | "off";
+    const char* protocolo = p["protocolo"] | "LG";
+    float setpoint = p["setpoint"] | 24.0f;
+    bool ligar = (strcmp(acao, "on") == 0);
+
+    Serial.printf("[AC] %s protocolo=%s setpoint=%.1f\n",
+                  ligar ? "LIGAR" : "DESLIGAR", protocolo, setpoint);
+
+    // Envia comando IR de acordo com o protocolo.
+    // Cada fabricante tem seu próprio "state" — usamos os presets mais comuns
+    // para modo COOL, fan auto, swing auto.
+    if (strcasecmp(protocolo, "LG") == 0) {
+      IRLgAc ac(PIN_IR_LED);
+      ac.begin();
+      ac.setModel(lg_ac_remote_model_t::GE6711AR2853M);
+      if (ligar) {
+        ac.on();
+        ac.setMode(kLgAcCool);
+        ac.setTemp((uint8_t)roundf(setpoint));
+        ac.setFan(kLgAcFanAuto);
+      } else {
+        ac.off();
+      }
+      ac.send();
+    } else if (strcasecmp(protocolo, "SAMSUNG") == 0) {
+      IRSamsungAc ac(PIN_IR_LED);
+      ac.begin();
+      if (ligar) {
+        ac.on();
+        ac.setMode(kSamsungAcCool);
+        ac.setTemp((uint8_t)roundf(setpoint));
+        ac.setFan(kSamsungAcFanAuto);
+      } else {
+        ac.off();
+      }
+      ac.send();
+    } else if (strcasecmp(protocolo, "FUJITSU") == 0) {
+      IRFujitsuAC ac(PIN_IR_LED);
+      ac.begin();
+      if (ligar) {
+        ac.setMode(kFujitsuAcModeCool);
+        ac.setTemp((uint8_t)roundf(setpoint));
+        ac.setFanSpeed(kFujitsuAcFanAuto);
+        ac.setCmd(kFujitsuAcCmdTurnOn);
+      } else {
+        ac.setCmd(kFujitsuAcCmdTurnOff);
+      }
+      ac.send();
+    } else if (strcasecmp(protocolo, "MIDEA") == 0 ||
+               strcasecmp(protocolo, "ELECTROLUX") == 0) {
+      IRMideaAC ac(PIN_IR_LED);
+      ac.begin();
+      if (ligar) {
+        ac.on();
+        ac.setMode(kMideaACCool);
+        ac.setTemp((uint8_t)roundf(setpoint), true);
+        ac.setFan(kMideaACFanAuto);
+      } else {
+        ac.off();
+      }
+      ac.send();
+    } else if (strcasecmp(protocolo, "ELECTRA") == 0) {
+      IRElectraAc ac(PIN_IR_LED);
+      ac.begin();
+      if (ligar) {
+        ac.on();
+        ac.setMode(kElectraAcCool);
+        ac.setTemp((uint8_t)roundf(setpoint));
+        ac.setFan(kElectraAcFanAuto);
+      } else {
+        ac.off();
+      }
+      ac.send();
+    } else {
+      Serial.printf("[AC] protocolo desconhecido: %s\n", protocolo);
+    }
+
+    ac_ligado_local = ligar;
+    ac_setpoint_local = setpoint;
+    ac_protocolo_local = String(protocolo);
+    lastTelem = 0; // reporta estado na próxima telemetria
   } else if (strcmp(tipo, "OTA_UPDATE") == 0) {
     // Payload: { "url": "<https signed url>", "filename": "..." }
     JsonVariantConst pv = cmd["payload"];
