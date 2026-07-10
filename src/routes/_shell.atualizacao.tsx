@@ -346,11 +346,14 @@ function AtualizacaoPage() {
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
         <div className="space-y-1 text-amber-900 dark:text-amber-100">
           <p className="font-medium">
-            v2.0.1 — correção da leitura DS18B20 enviada ao painel
+            v2.1.0 — controle de ar-condicionado por IR (GPIO 32)
           </p>
           <p className="text-xs leading-relaxed text-amber-900/90 dark:text-amber-100/90">
-            Use <code>bancada_esp32_v2_0_1.ino.bin</code>. A bancada só estará
-            atualizada quando o card reportar firmware <strong>2.0.1</strong> após reiniciar.
+            Use <code>bancada_esp32_v2_1_0.ino.bin</code>. Adiciona suporte a{" "}
+            <strong>LG, Samsung, Fujitsu, Midea/Electrolux, Electra</strong> via
+            comando <code>AC_CONTROL</code>. Só a bancada marcada como
+            controladora IR emite comandos (config em <em>Ar-condicionado</em>).
+            Requer biblioteca <code>IRremoteESP8266 ≥ 2.8</code>.
           </p>
         </div>
       </div>
@@ -376,7 +379,7 @@ function AtualizacaoPage() {
             className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground hover:file:bg-primary/90"
           />
           <p className="text-xs text-muted-foreground">
-            Compile o sketch <code>bancada_esp32_v2_0_1.ino</code> em{" "}
+            Compile o sketch <code>bancada_esp32_v2_1_0.ino</code> em{" "}
             <em>Sketch → Export Compiled Binary</em> e envie o{" "}
             <code>.bin</code> gerado.
           </p>
