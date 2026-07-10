@@ -386,9 +386,9 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               aria-live="polite"
               aria-label={
                 isPlanta
-                  ? "Fluxo do Meio para a Planta"
+                  ? "Fluxo da Planta para o Meio"
                   : isMeio
-                    ? "Fluxo da Planta para o Meio"
+                    ? "Fluxo do Meio para a Planta"
                     : "Sem fluxo ativo"
               }
             >
@@ -398,7 +398,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               </span>
 
               <div
-                className={cn("flow-track", isMeio && "flow-track-reverse")}
+                className={cn("flow-track", isPlanta && "flow-track-reverse")}
               >
                 {(isPlanta || isMeio) && (
                   <>
