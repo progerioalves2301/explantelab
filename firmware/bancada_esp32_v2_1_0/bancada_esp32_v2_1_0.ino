@@ -911,6 +911,11 @@ void setup() {
   digitalWrite(PIN_LED, LOW);
   g_luz_ligada = false;
 
+  // IR: inicializa LED em nível baixo (transistor bloqueado).
+  irsend.begin();
+  pinMode(PIN_IR_LED, OUTPUT);
+  digitalWrite(PIN_IR_LED, LOW);
+
   Serial.begin(115200);
   delay(200);
   Serial.printf("\n== GeneLab Bancada ESP32 v%s (direct-Supabase) ==\n", FIRMWARE_VERSION);
