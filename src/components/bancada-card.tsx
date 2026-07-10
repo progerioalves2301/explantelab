@@ -467,7 +467,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                 )}
                 variant={isPlanta ? "default" : "outline"}
               >
-                <Leaf className="h-3 w-3 shrink-0" />
+                <FlaskConical className="h-3 w-3 shrink-0" />
                 <span className="min-w-0 flex flex-col leading-tight">
                   <span>Bio Reator</span>
                   <span>Planta</span>
@@ -485,7 +485,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                 )}
                 variant={isMeio ? "default" : "outline"}
               >
-                <FlaskConical className="h-3 w-3 shrink-0" />
+                <Leaf className="h-3 w-3 shrink-0" />
                 <span className="min-w-0 flex flex-col leading-tight">
                   <span>Bio Reator</span>
                   <span>Meio</span>
