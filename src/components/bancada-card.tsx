@@ -212,8 +212,13 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
       });
       toast.success(`Bancada ${bancada.nome} parada`);
     } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // Ignora aborts (ex.: HMR/re-render cancela o fetch antes do body ser enviado)
+      if (/abort/i.test(msg) || (e as { name?: string })?.name === "AbortError") {
+        return;
+      }
       setOptimistic(null);
-      toast.error(e instanceof Error ? e.message : "Falha ao parar bancada");
+      toast.error(msg || "Falha ao parar bancada");
     } finally {
       setStopping(false);
     }
