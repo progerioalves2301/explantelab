@@ -80,7 +80,8 @@ export type ComandoTipo =
   | "PAUSE"
   | "RESUME"
   | "SET_VALVE"
-  | "OTA_UPDATE";
+  | "OTA_UPDATE"
+  | "AC_CONTROL";
 
 export interface Comando {
   id: string;
