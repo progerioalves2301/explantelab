@@ -10,6 +10,7 @@ import {
   Bell,
   FileText,
   DownloadCloud,
+  AirVent,
 } from "lucide-react";
 import {
   Sidebar,
