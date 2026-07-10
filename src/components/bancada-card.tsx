@@ -8,6 +8,7 @@ import {
   Leaf,
   Lightbulb,
   Settings2,
+  Clock3,
   SlidersHorizontal,
   Sprout,
   Square,
@@ -292,6 +293,25 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               />
               {bancada.luz_ligada ? "ON" : "OFF"}
             </span>
+            {bancada.tem_rtc != null && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                  bancada.tem_rtc
+                    ? "border-emerald-500/60 bg-emerald-400/15 text-emerald-700 dark:text-emerald-300"
+                    : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
+                )}
+                title={
+                  bancada.tem_rtc
+                    ? "DS3231 detectado — hora local independente de internet"
+                    : "Sem DS3231 — hora vem do NTP + millis()"
+                }
+                aria-label={bancada.tem_rtc ? "RTC físico ativo" : "Sem RTC físico"}
+              >
+                <Clock3 className="h-3 w-3" />
+                RTC
+              </span>
+            )}
             <StatusBadge status={bancada.status} />
           </div>
           <span className="text-[10px] tabular-nums text-muted-foreground">
