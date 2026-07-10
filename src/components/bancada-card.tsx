@@ -129,17 +129,27 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
 
 
   // ----- Estado otimista das válvulas -----
-  // Assim que o usuário clica em Bio Reator Planta/Meio, a UI já reflete o
-  // preset sem esperar o round-trip ESP32 → banco → realtime (2–7 s).
-  // Quando a telemetria real chega (ultima_sync muda), o valor otimista é descartado.
+  // Assim que o usuário clica, a UI já reflete o preset sem esperar o
+  // round-trip ESP32 → banco → realtime (2–7 s). O otimista só é descartado
+  // quando a telemetria real bate com ele (ESP32 confirmou o comando) ou
+  // após um timeout de segurança (10 s), evitando "pisca" quando a telemetria
+  // chega antes do ESP aplicar o PAUSE/SET_VALVE.
   const [optimistic, setOptimistic] = useState<ValvulasEstado | null>(null);
   useEffect(() => {
-    setOptimistic(null);
-  }, [bancada.ultima_sync]);
+    if (optimistic && eq(optimistic, bancada.valvulas)) {
+      setOptimistic(null);
+    }
+  }, [bancada.ultima_sync, bancada.valvulas, optimistic]);
+  useEffect(() => {
+    if (!optimistic) return;
+    const t = setTimeout(() => setOptimistic(null), 10000);
+    return () => clearTimeout(t);
+  }, [optimistic]);
 
   const valvulas = optimistic ?? bancada.valvulas;
   const isPlanta = eq(valvulas, PRESET_PLANTA);
   const isMeio = eq(valvulas, PRESET_MEIO);
+
 
   const sendValves = async (v: ValvulasEstado, label: string) => {
     setOptimistic(v); // feedback imediato
