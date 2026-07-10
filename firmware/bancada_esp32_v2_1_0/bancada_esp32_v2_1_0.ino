@@ -67,8 +67,16 @@ static const int PIN_LUZ       = 27;   // relé das luzes da bancada (timer HH:M
 static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
+static const int PIN_IR_LED = 32;   // LED IR p/ ar-condicionado (v2.1.0)
 
-static const char* FIRMWARE_VERSION = "2.0.1";
+static const char* FIRMWARE_VERSION = "2.1.0";
+
+// -------- IR (ar-condicionado) --------
+// Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
+IRsend irsend(PIN_IR_LED);
+static bool ac_ligado_local = false;
+static float ac_setpoint_local = 24.0;
+static String ac_protocolo_local = "";
 
 // -------- Polaridade dos relés (v1.9.5+) --------
 // v1.9.5: mudado para ACTIVE_HIGH para uso com SSR industrial tipo Fotek
