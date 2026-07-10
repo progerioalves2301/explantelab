@@ -460,30 +460,30 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                 onClick={togglePlanta}
                 disabled={sending}
                 className={cn(
-                  "h-9 w-full px-2 text-xs whitespace-nowrap",
+                  "flex h-auto min-h-9 w-full items-center justify-center gap-1 px-2 py-1.5 text-center text-[11px] leading-tight",
                   isPlanta
                     ? "bg-emerald-700 text-white hover:bg-emerald-800"
                     : "bg-emerald-200 text-emerald-900 hover:bg-emerald-300 border-emerald-300",
                 )}
                 variant={isPlanta ? "default" : "outline"}
               >
-                <Leaf className="mr-1 h-3.5 w-3.5 shrink-0" />
-                Bio Reator Planta
+                <Leaf className="h-3.5 w-3.5 shrink-0" />
+                <span className="min-w-0 break-words">Bio Reator Planta</span>
               </Button>
               <Button
                 size="sm"
                 onClick={toggleMeio}
                 disabled={sending}
                 className={cn(
-                  "h-9 w-full px-2 text-xs whitespace-nowrap",
+                  "flex h-auto min-h-9 w-full items-center justify-center gap-1 px-2 py-1.5 text-center text-[11px] leading-tight",
                   isMeio
                     ? "bg-sky-700 text-white hover:bg-sky-800"
                     : "bg-sky-200 text-sky-900 hover:bg-sky-300 border-sky-300",
                 )}
                 variant={isMeio ? "default" : "outline"}
               >
-                <FlaskConical className="mr-1 h-3.5 w-3.5 shrink-0" />
-                Bio Reator Meio
+                <FlaskConical className="h-3.5 w-3.5 shrink-0" />
+                <span className="min-w-0 break-words">Bio Reator Meio</span>
               </Button>
             </div>
 
