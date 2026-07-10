@@ -34,6 +34,13 @@
 #include <HTTPUpdate.h>      // OTA via HTTPS (v1.6.0)
 #include <Wire.h>            // I2C p/ DS3231 (v1.8.0)
 #include <RTClib.h>          // DS3231 opcional (v1.8.0)
+#include <IRremoteESP8266.h> // Controle de ar-condicionado via IR (v2.1.0)
+#include <IRsend.h>
+#include <ir_LG.h>
+#include <ir_Samsung.h>
+#include <ir_Fujitsu.h>
+#include <ir_Midea.h>
+#include <ir_Electra.h>
 
 
 // -------- Config Supabase (fixa no binário) --------
