@@ -460,32 +460,39 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                 onClick={togglePlanta}
                 disabled={sending}
                 className={cn(
-                  "flex h-auto min-h-9 w-full items-center justify-center gap-1 px-2 py-1.5 text-center text-[11px] leading-tight",
+                  "flex h-auto min-h-9 w-full min-w-0 items-center justify-center gap-1 px-1.5 py-1.5 text-center text-[10px] leading-tight",
                   isPlanta
                     ? "bg-emerald-700 text-white hover:bg-emerald-800"
                     : "bg-emerald-200 text-emerald-900 hover:bg-emerald-300 border-emerald-300",
                 )}
                 variant={isPlanta ? "default" : "outline"}
               >
-                <Leaf className="h-3.5 w-3.5 shrink-0" />
-                <span className="min-w-0 break-words">Bio Reator Planta</span>
+                <Leaf className="h-3 w-3 shrink-0" />
+                <span className="min-w-0 flex flex-col leading-tight">
+                  <span>Bio Reator</span>
+                  <span>Planta</span>
+                </span>
               </Button>
               <Button
                 size="sm"
                 onClick={toggleMeio}
                 disabled={sending}
                 className={cn(
-                  "flex h-auto min-h-9 w-full items-center justify-center gap-1 px-2 py-1.5 text-center text-[11px] leading-tight",
+                  "flex h-auto min-h-9 w-full min-w-0 items-center justify-center gap-1 px-1.5 py-1.5 text-center text-[10px] leading-tight",
                   isMeio
                     ? "bg-sky-700 text-white hover:bg-sky-800"
                     : "bg-sky-200 text-sky-900 hover:bg-sky-300 border-sky-300",
                 )}
                 variant={isMeio ? "default" : "outline"}
               >
-                <FlaskConical className="h-3.5 w-3.5 shrink-0" />
-                <span className="min-w-0 break-words">Bio Reator Meio</span>
+                <FlaskConical className="h-3 w-3 shrink-0" />
+                <span className="min-w-0 flex flex-col leading-tight">
+                  <span>Bio Reator</span>
+                  <span>Meio</span>
+                </span>
               </Button>
             </div>
+
 
             <p className="text-[11px] text-muted-foreground">
               O modo manual pausa o ciclo automático. Clique em{" "}
