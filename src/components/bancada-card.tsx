@@ -457,24 +457,6 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             <div className="grid grid-cols-2 gap-2">
               <Button
                 size="sm"
-                onClick={togglePlanta}
-                disabled={sending}
-                className={cn(
-                  "flex h-auto min-h-9 w-full min-w-0 items-center justify-center gap-1 px-1.5 py-1.5 text-center text-[10px] leading-tight",
-                  isPlanta
-                    ? "bg-emerald-700 text-white hover:bg-emerald-800"
-                    : "bg-emerald-200 text-emerald-900 hover:bg-emerald-300 border-emerald-300",
-                )}
-                variant={isPlanta ? "default" : "outline"}
-              >
-                <FlaskConical className="h-3 w-3 shrink-0" />
-                <span className="min-w-0 flex flex-col leading-tight">
-                  <span>Bio Reator</span>
-                  <span>Planta</span>
-                </span>
-              </Button>
-              <Button
-                size="sm"
                 onClick={toggleMeio}
                 disabled={sending}
                 className={cn(
@@ -485,10 +467,28 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                 )}
                 variant={isMeio ? "default" : "outline"}
               >
-                <Leaf className="h-3 w-3 shrink-0" />
+                <FlaskConical className="h-3 w-3 shrink-0" />
                 <span className="min-w-0 flex flex-col leading-tight">
                   <span>Bio Reator</span>
                   <span>Meio</span>
+                </span>
+              </Button>
+              <Button
+                size="sm"
+                onClick={togglePlanta}
+                disabled={sending}
+                className={cn(
+                  "flex h-auto min-h-9 w-full min-w-0 items-center justify-center gap-1 px-1.5 py-1.5 text-center text-[10px] leading-tight",
+                  isPlanta
+                    ? "bg-emerald-700 text-white hover:bg-emerald-800"
+                    : "bg-emerald-200 text-emerald-900 hover:bg-emerald-300 border-emerald-300",
+                )}
+                variant={isPlanta ? "default" : "outline"}
+              >
+                <Leaf className="h-3 w-3 shrink-0" />
+                <span className="min-w-0 flex flex-col leading-tight">
+                  <span>Bio Reator</span>
+                  <span>Planta</span>
                 </span>
               </Button>
             </div>
