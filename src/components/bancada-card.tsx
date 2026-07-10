@@ -205,12 +205,14 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
 
   const handleStop = async () => {
     setStopping(true);
+    setOptimistic(PRESET_OFF); // para a animação imediatamente na UI
     try {
       await comandar({
         data: { bancada_id: bancada.id, tipo: "PAUSE" },
       });
       toast.success(`Bancada ${bancada.nome} parada`);
     } catch (e) {
+      setOptimistic(null);
       toast.error(e instanceof Error ? e.message : "Falha ao parar bancada");
     } finally {
       setStopping(false);
