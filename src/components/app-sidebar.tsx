@@ -35,6 +35,7 @@ const items: readonly Item[] = [
   { title: "Salas Bioreator", url: "/laboratorios", icon: FlaskConical },
   { title: "Nova bancada", url: "/bancadas/nova", icon: PlusCircle },
   { title: "Alertas", url: "/alertas", icon: Bell },
+  { title: "Ar-condicionado", url: "/ar-condicionado", icon: AirVent },
   { title: "Relatórios", url: "/relatorios", icon: FileText },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
   { title: "Usuários", url: "/usuarios", icon: Users },
