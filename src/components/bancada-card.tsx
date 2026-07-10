@@ -8,6 +8,7 @@ import {
   Leaf,
   Lightbulb,
   Settings2,
+  Clock3,
   SlidersHorizontal,
   Sprout,
   Square,
