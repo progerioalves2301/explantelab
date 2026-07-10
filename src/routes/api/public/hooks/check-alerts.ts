@@ -15,6 +15,12 @@ export const Route = createFileRoute("/api/public/hooks/check-alerts")({
           return Response.json({ error: detErr.message }, { status: 500 });
         }
 
+        // 1b. rodar controle automático dos ar-condicionados (enfileira comandos AC_CONTROL)
+        const { error: acErr } = await supabaseAdmin.rpc("decidir_ar_condicionado");
+        if (acErr) {
+          console.error("decidir_ar_condicionado falhou", acErr.message);
+        }
+
         // 2. pegar alertas ainda não notificados
         const { data: pendentes, error: pendErr } = await supabaseAdmin
           .from("alertas")

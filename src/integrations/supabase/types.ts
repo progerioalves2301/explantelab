@@ -106,6 +106,84 @@ export type Database = {
         }
         Relationships: []
       }
+      ar_condicionados: {
+        Row: {
+          agregacao: string
+          ativo: boolean
+          bancada_controladora_id: string | null
+          created_at: string
+          histerese: number
+          id: string
+          intervalo_min_comando_s: number
+          ir_protocol: string
+          laboratorio_id: string
+          ligado: boolean
+          marca: string
+          modelo: string | null
+          setpoint_atual: number | null
+          setpoint_max: number
+          setpoint_min: number
+          ultimo_comando_em: string | null
+          ultimo_temp_lida: number | null
+          updated_at: string
+        }
+        Insert: {
+          agregacao?: string
+          ativo?: boolean
+          bancada_controladora_id?: string | null
+          created_at?: string
+          histerese?: number
+          id?: string
+          intervalo_min_comando_s?: number
+          ir_protocol?: string
+          laboratorio_id: string
+          ligado?: boolean
+          marca?: string
+          modelo?: string | null
+          setpoint_atual?: number | null
+          setpoint_max?: number
+          setpoint_min?: number
+          ultimo_comando_em?: string | null
+          ultimo_temp_lida?: number | null
+          updated_at?: string
+        }
+        Update: {
+          agregacao?: string
+          ativo?: boolean
+          bancada_controladora_id?: string | null
+          created_at?: string
+          histerese?: number
+          id?: string
+          intervalo_min_comando_s?: number
+          ir_protocol?: string
+          laboratorio_id?: string
+          ligado?: boolean
+          marca?: string
+          modelo?: string | null
+          setpoint_atual?: number | null
+          setpoint_max?: number
+          setpoint_min?: number
+          ultimo_comando_em?: string | null
+          ultimo_temp_lida?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ar_condicionados_bancada_controladora_id_fkey"
+            columns: ["bancada_controladora_id"]
+            isOneToOne: false
+            referencedRelation: "bancadas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ar_condicionados_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: true
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bancada_secrets: {
         Row: {
           bancada_id: string
@@ -417,6 +495,7 @@ export type Database = {
         }
         Returns: Json
       }
+      decidir_ar_condicionado: { Args: never; Returns: number }
       detectar_alertas: { Args: never; Returns: number }
       has_role: {
         Args: {
