@@ -1175,6 +1175,54 @@ void lerTemperatura() {
   }
 }
 
+// v2.1.2 — Watchdog Wi-Fi: quando o roteador volta depois de uma queda de
+// energia/link, `WiFi.setAutoReconnect(true)` pode demorar vários minutos
+// pra reengatar (o rádio fica preso em estado "sem AP"). Forçamos um ciclo
+// disconnect()/begin() a cada 20 s enquanto estiver caído e, se passar de
+// 5 min offline, reiniciamos o subsistema Wi-Fi.
+void tickWifiWatchdog(unsigned long now) {
+  static unsigned long lastTry = 0;
+  static unsigned long downSince = 0;
+  static uint8_t tentativas = 0;
+
+  if (WiFi.status() == WL_CONNECTED) {
+    downSince = 0;
+    tentativas = 0;
+    return;
+  }
+  if (downSince == 0) {
+    downSince = now;
+    Serial.println("[WIFI] link caiu — watchdog ativo");
+  }
+
+  if (now - lastTry < 20000UL) return;
+  lastTry = now;
+  tentativas++;
+
+  Serial.printf("[WIFI] tentativa %u de reconexão (%.1fs offline)\n",
+                tentativas, (now - downSince) / 1000.0);
+
+  // A cada ~5 min offline reinicia o rádio inteiro (mode OFF/STA + begin).
+  if (now - downSince > 300000UL) {
+    Serial.println("[WIFI] 5 min sem link — reiniciando rádio Wi-Fi");
+    WiFi.disconnect(true, false); // limpa estado, mantém credenciais
+    delay(200);
+    WiFi.mode(WIFI_OFF);
+    delay(300);
+    WiFi.mode(WIFI_STA);
+    WiFi.setSleep(false);
+    WiFi.setAutoReconnect(true);
+    WiFi.begin();
+    downSince = now; // reinicia janela de 5 min
+    return;
+  }
+
+  // Reconexão rápida: força um novo ciclo do stack
+  WiFi.disconnect(false, false);
+  delay(100);
+  WiFi.reconnect();
+}
+
 void loop() {
   unsigned long now = millis();
 
@@ -1186,10 +1234,12 @@ void loop() {
   unsigned long intervaloTelem = ativo ? 2000UL  : 15000UL;  // 2s ativo / 15s parado (delta força push)
   unsigned long intervaloCmd   = ativo ? 1500UL  : 5000UL;   // 1.5s ativo / 5s parado
 
+  tickWifiWatchdog(now); // v2.1.2 — reengata rápido quando o Wi-Fi/roteador volta
+
   if (now - lastTick > 1000)          { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); sincronizarNtpParaRtc(); }
   if (now - lastTemp > 3000)          { lastTemp  = now; lerTemperatura(); }  // 3s p/ detectar variação rápido
-  if (now - lastCmd  > intervaloCmd)  { lastCmd   = now; puxarComandos(); }
-  if (now - lastTelem > intervaloTelem) {
+  if (now - lastCmd  > intervaloCmd && WiFi.status() == WL_CONNECTED) { lastCmd = now; puxarComandos(); }
+  if (now - lastTelem > intervaloTelem && WiFi.status() == WL_CONNECTED) {
     lastTelem = now;
     if (enviarTelemetria() && !isnan(g_temperatura_planta)) {
       g_temperatura_publicada = g_temperatura_planta; // marca somente o que foi publicado com sucesso
