@@ -41,6 +41,7 @@
 #include <ir_Fujitsu.h>
 #include <ir_Midea.h>
 #include <ir_Electra.h>
+#include <ir_Whirlpool.h>    // Consul (grupo Whirlpool) — v2.1.3
 
 
 // -------- Config Supabase (fixa no binário) --------
