@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/public/hooks/check-alerts")({
         // 2. pegar alertas ainda não notificados
         const { data: pendentes, error: pendErr } = await supabaseAdmin
           .from("alertas")
-          .select("id, tipo, severidade, mensagem, created_at, bancada_id, prateleiras(nome)")
+          .select("id, tipo, severidade, mensagem, created_at, bancada_id, bancadas(nome)")
           .is("notificado_em", null)
           .is("resolvido_em", null)
           .order("created_at", { ascending: true })
@@ -92,7 +92,7 @@ export const Route = createFileRoute("/api/public/hooks/check-alerts")({
         // 5. alertas RESOLVIDOS que ainda não notificaram recuperação
         const { data: resolvidos } = await supabaseAdmin
           .from("alertas")
-          .select("id, tipo, mensagem, bancada_id, prateleiras(nome)")
+          .select("id, tipo, mensagem, bancada_id, bancadas(nome)")
           .not("resolvido_em", "is", null)
           .not("notificado_em", "is", null)
           .is("notificado_resolucao_em", null)
