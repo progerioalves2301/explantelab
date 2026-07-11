@@ -891,6 +891,21 @@ void tratarComando(JsonObject cmd) {
         ac.off();
       }
       ac.send();
+    } else if (strcasecmp(protocolo, "CONSUL") == 0 ||
+               strcasecmp(protocolo, "WHIRLPOOL") == 0) {
+      // Consul é do grupo Whirlpool — usa o mesmo protocolo IR Whirlpool DG11J1-3A
+      IRWhirlpoolAc ac(PIN_IR_LED);
+      ac.begin();
+      ac.setModel(DG11J13A);
+      if (ligar) {
+        ac.on();
+        ac.setMode(kWhirlpoolAcCool);
+        ac.setTemp((uint8_t)roundf(setpoint));
+        ac.setFan(kWhirlpoolAcFanAuto);
+      } else {
+        ac.off();
+      }
+      ac.send();
     } else {
       Serial.printf("[AC] protocolo desconhecido: %s\n", protocolo);
     }
