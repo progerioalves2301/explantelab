@@ -11,7 +11,6 @@ import {
   FileText,
   DownloadCloud,
   AirVent,
-  Leaf,
 } from "lucide-react";
 import {
   Sidebar,
@@ -83,7 +82,7 @@ export function AppSidebar() {
         {collapsed ? (
           <div className="flex items-center justify-center p-2">
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white ring-1 ring-border">
-              <Leaf className="h-5 w-5 text-primary" />
+              <FlaskConical className="h-5 w-5 text-primary" />
             </div>
           </div>
         ) : (
