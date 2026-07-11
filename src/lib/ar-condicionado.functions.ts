@@ -29,6 +29,7 @@ export const PROTOCOLOS_IR = [
   { value: "MIDEA", label: "Midea" },
   { value: "ELECTROLUX", label: "Electrolux (Midea-compat)" },
   { value: "ELECTRA", label: "Electra" },
+  { value: "CONSUL", label: "Consul (Whirlpool)" },
 ] as const;
 
 const arSchema = z.object({
@@ -36,7 +37,7 @@ const arSchema = z.object({
   bancada_controladora_id: z.string().uuid().nullable(),
   marca: z.string().min(1).max(40),
   modelo: z.string().max(60).nullable().optional(),
-  ir_protocol: z.enum(["LG", "SAMSUNG", "FUJITSU", "MIDEA", "ELECTROLUX", "ELECTRA"]),
+  ir_protocol: z.enum(["LG", "SAMSUNG", "FUJITSU", "MIDEA", "ELECTROLUX", "ELECTRA", "CONSUL"]),
   ativo: z.boolean(),
   setpoint_min: z.number().min(16).max(30),
   setpoint_max: z.number().min(16).max(30),
