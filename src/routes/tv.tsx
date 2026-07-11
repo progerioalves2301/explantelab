@@ -14,7 +14,7 @@ export const Route = createFileRoute("/tv")({
       { title: "Modo TV — GeneLab IoT" },
       {
         name: "description",
-        content: "Painel fullscreen das bancadas para exibição em TV/monitor de parede.",
+        content: "Painel fullscreen das prateleiras para exibição em TV/monitor de parede.",
       },
     ],
   }),
@@ -137,7 +137,7 @@ function TvPage() {
             <ArrowLeft className="h-3.5 w-3.5" />
             Sair
           </Link>
-          <h1 className="text-lg font-bold tracking-tight">Painel Bancadas</h1>
+          <h1 className="text-lg font-bold tracking-tight">Painel Prateleiras</h1>
         </div>
         <div className="flex items-center gap-4 text-sm">
           <Chip icon={<Cpu className="h-3.5 w-3.5" />} label="Total" value={stats.total} />
@@ -155,7 +155,7 @@ function TvPage() {
       <main className="p-4">
         {items.length === 0 ? (
           <p className="p-10 text-center text-muted-foreground">
-            Nenhuma bancada cadastrada.
+            Nenhuma prateleira cadastrada.
           </p>
         ) : (
           <div className={cn("grid gap-3", cols)}>

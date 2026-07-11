@@ -165,7 +165,7 @@ export function BancadaConfigDialog({
   const handleStop = async () => {
     try {
       await cmd({ data: { bancada_id: bancada.id, tipo: "PAUSE" } });
-      toast.info(`Bancada ${bancada.nome} parada`);
+      toast.info(`Prateleira ${bancada.nome} parada`);
     } catch (e) {
       toast.error("Falha ao enviar comando", { description: String(e) });
     }
@@ -219,7 +219,7 @@ export function BancadaConfigDialog({
                 onChange={(e) => setNome(e.target.value)}
                 minLength={2}
                 maxLength={60}
-                placeholder="Bancada 01"
+                placeholder="Prateleira 01"
               />
             </div>
             <div className="grid grid-cols-[1fr_100px] gap-2">

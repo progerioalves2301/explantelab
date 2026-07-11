@@ -110,7 +110,7 @@ export const Route = createFileRoute("/api/public/hooks/check-alerts")({
               alerta.tipo === "offline" ? "voltou ONLINE" :
               alerta.tipo === "temperatura" ? "TEMPERATURA normalizada" :
               "CICLO recuperado";
-            const nome = alerta.bancadas?.nome ?? "Bancada";
+            const nome = alerta.bancadas?.nome ?? "Prateleira";
             const text = `✅ <b>Explante Lab — Recuperado</b>\nBancada "${nome}" ${tipoLabel}.`;
 
             for (const d of destinos!) {

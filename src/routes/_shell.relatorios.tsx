@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_shell/relatorios")({
       {
         name: "description",
         content:
-          "Relatório de programação de ciclos das bancadas, agrupado por sala bioreator.",
+          "Relatório de programação de ciclos das prateleiras, agrupado por sala bioreator.",
       },
     ],
   }),
@@ -87,7 +87,7 @@ function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(90, 90, 90);
-  doc.text("Programação atual das bancadas de cada sala bioreator.", margin, y);
+  doc.text("Programação atual das prateleiras de cada sala bioreator.", margin, y);
   y += 9;
   doc.setTextColor(0, 0, 0);
 
@@ -101,7 +101,7 @@ function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
     y += 6;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
-    doc.text(`${lab.nome} — ${bancadas.length} bancada${bancadas.length === 1 ? "" : "s"}`, margin, y);
+    doc.text(`${lab.nome} — ${bancadas.length} prateleira${bancadas.length === 1 ? "" : "s"}`, margin, y);
     y += 7;
     if (lab.descricao) {
       doc.setFont("helvetica", "normal");
@@ -227,9 +227,9 @@ function RelatoriosPage() {
       <Card className="card-elevated">
         <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
           <FlaskConical className="h-8 w-8 text-muted-foreground" />
-          <div className="font-semibold">Nenhuma sala com bancadas</div>
+          <div className="font-semibold">Nenhuma sala com prateleiras</div>
           <p className="text-sm text-muted-foreground">
-            Cadastre salas bioreator e vincule bancadas para ver os relatórios.
+            Cadastre salas bioreator e vincule prateleiras para ver os relatórios.
           </p>
         </CardContent>
       </Card>
@@ -259,7 +259,7 @@ function RelatoriosPage() {
             <FileText className="h-6 w-6" /> Relatórios de Ciclos
           </h1>
           <p className="text-sm text-muted-foreground">
-            Programação atual das bancadas de cada sala bioreator.
+            Programação atual das prateleiras de cada sala bioreator.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

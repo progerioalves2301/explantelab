@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_shell/atualizacao")({
       {
         name: "description",
         content:
-          "Faça upload de firmware e dispare atualizações OTA para as bancadas ESP32.",
+          "Faça upload de firmware e dispare atualizações OTA para as prateleiras ESP32.",
       },
     ],
   }),
@@ -75,7 +75,7 @@ function AtualizacaoPage() {
   const [dispatchingId, setDispatchingId] = useState<string | null>(null);
   const [dispatchingAll, setDispatchingAll] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  // Guarda "versão esperada" por bancada após disparar OTA.
+  // Guarda "versão esperada" por prateleira após disparar OTA.
   // Quando a telemetria trouxer essa versão, exibe toast de sucesso.
   const [aguardando, setAguardando] = useState<Record<string, string>>({});
   const aguardandoRef = useRef<Record<string, string>>({});
@@ -250,8 +250,8 @@ function AtualizacaoPage() {
       }
       toast.success(
         versao
-          ? `Comando OTA enviado. Aguardando bancada reportar v${versao}…`
-          : "Comando OTA enviado. A bancada baixará em segundos.",
+          ? `Comando OTA enviado. Aguardando prateleira reportar v${versao}…`
+          : "Comando OTA enviado. A prateleira baixará em segundos.",
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao disparar OTA");
@@ -271,7 +271,7 @@ function AtualizacaoPage() {
     }
     if (
       !confirm(
-        `Disparar OTA (${selecionado}) para TODAS as ${bancadas.length} bancadas?`,
+        `Disparar OTA (${selecionado}) para TODAS as ${bancadas.length} prateleiras?`,
       )
     )
       return;
@@ -286,8 +286,8 @@ function AtualizacaoPage() {
       }
       toast.success(
         versao
-          ? `OTA enviado para ${r.total} bancada(s). Aguardando reportarem v${versao}…`
-          : `OTA enviado para ${r.total} bancada(s).`,
+          ? `OTA enviado para ${r.total} prateleira(s). Aguardando reportarem v${versao}…`
+          : `OTA enviado para ${r.total} prateleira(s).`,
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao disparar OTA");
@@ -337,7 +337,7 @@ function AtualizacaoPage() {
       <div>
         <h1 className="font-display text-2xl font-bold">Atualização OTA</h1>
         <p className="text-sm text-muted-foreground">
-          Envie firmwares <code>.bin</code> e dispare OTA para as bancadas
+          Envie firmwares <code>.bin</code> e dispare OTA para as prateleiras
           ESP32. O dispositivo baixa via URL assinada (válida 1 h) e reinicia.
         </p>
       </div>
@@ -351,7 +351,7 @@ function AtualizacaoPage() {
           <p className="text-xs leading-relaxed text-amber-900/90 dark:text-amber-100/90">
             Use <code>bancada_esp32_v2_1_0.ino.bin</code>. Adiciona suporte a{" "}
             <strong>LG, Samsung, Fujitsu, Midea/Electrolux, Electra</strong> via
-            comando <code>AC_CONTROL</code>. Só a bancada marcada como
+            comando <code>AC_CONTROL</code>. Só a prateleira marcada como
             controladora IR emite comandos (config em <em>Ar-condicionado</em>).
             Requer biblioteca <code>IRremoteESP8266 ≥ 2.8</code>.
           </p>
@@ -479,14 +479,14 @@ function AtualizacaoPage() {
 
           <div className="rounded-md border">
             <div className="grid grid-cols-[1fr_120px_120px_140px] gap-2 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground">
-              <span>Bancada</span>
+              <span>Prateleira</span>
               <span>Firmware</span>
               <span>Status</span>
               <span className="text-right">Ação</span>
             </div>
             {bancadas.length === 0 ? (
               <div className="p-4 text-sm text-muted-foreground">
-                Nenhuma bancada cadastrada.
+                Nenhuma prateleira cadastrada.
               </div>
             ) : (
               bancadas.map((b) => {

@@ -221,7 +221,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
       await comandar({
         data: { bancada_id: bancada.id, tipo: "PAUSE" },
       });
-      toast.success(`Bancada ${bancada.nome} parada`);
+      toast.success(`Prateleira ${bancada.nome} parada`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       // Ignora aborts (ex.: HMR/re-render cancela o fetch antes do body ser enviado)
@@ -229,7 +229,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
         return;
       }
       setOptimistic(null);
-      toast.error(msg || "Falha ao parar bancada");
+      toast.error(msg || "Falha ao parar prateleira");
     } finally {
       setStopping(false);
     }
@@ -552,7 +552,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             onClick={handleStop}
             disabled={stopping}
             className="h-8 px-2 text-xs bg-red-600 text-white hover:bg-red-700"
-            aria-label="Parar bancada"
+            aria-label="Parar prateleira"
           >
             <Square className="mr-1 h-3 w-3 shrink-0 fill-current" />
             {stopping ? "…" : "STOP"}
@@ -575,7 +575,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                 size="icon"
                 className="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 disabled={deleting}
-                aria-label="Excluir bancada"
+                aria-label="Excluir prateleira"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
@@ -584,7 +584,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               <AlertDialogHeader>
                 <AlertDialogTitle>Excluir {bancada.nome}?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Isso remove a bancada, seu token e todos os comandos
+                  Isso remove a prateleira, seu token e todos os comandos
                   pendentes. O ESP32 deixará de conseguir enviar telemetria.
                   Ação irreversível.
                 </AlertDialogDescription>

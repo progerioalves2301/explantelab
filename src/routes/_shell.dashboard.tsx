@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_shell/dashboard")({
       {
         name: "description",
         content:
-          "Monitoramento em tempo real das bancadas ESP32, válvulas pneumáticas e ciclos de injeção.",
+          "Monitoramento em tempo real das prateleiras ESP32, válvulas pneumáticas e ciclos de injeção.",
       },
     ],
   }),
@@ -214,7 +214,7 @@ function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground">
-            Monitoramento em tempo real das bancadas ESP32.
+            Monitoramento em tempo real das prateleiras ESP32.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -227,14 +227,14 @@ function DashboardPage() {
           <Button asChild>
             <Link to="/bancadas/nova">
               <Plus className="mr-1.5 h-4 w-4" />
-              Nova bancada
+              Nova prateleira
             </Link>
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard icon={<Cpu className="h-4 w-4" />} label="Bancadas" value={stats.total} tone="fluid" />
+        <StatCard icon={<Cpu className="h-4 w-4" />} label="Prateleiras" value={stats.total} tone="fluid" />
         <StatCard icon={<Droplets className="h-4 w-4" />} label="Em ciclo" value={stats.active} tone="leaf" />
         <StatCard icon={<Leaf className="h-4 w-4" />} label="Repouso" value={stats.idle} tone="idle" />
         <StatCard icon={<Activity className="h-4 w-4" />} label="Offline" value={stats.offline} tone="destructive" />
@@ -281,19 +281,19 @@ function DashboardPage() {
             <div>
               <div className="font-semibold">
                 {bancadasComStatus.length === 0
-                  ? "Nenhuma bancada cadastrada"
-                  : "Nenhuma bancada neste filtro"}
+                  ? "Nenhuma prateleira cadastrada"
+                  : "Nenhuma prateleira neste filtro"}
               </div>
               <p className="text-sm text-muted-foreground">
                 {bancadasComStatus.length === 0
                   ? "Crie a primeira e receba o token para colar no portal AP do ESP32."
-                  : "Selecione outro sala bioreator ou cadastre uma bancada aqui."}
+                  : "Selecione outro sala bioreator ou cadastre uma prateleira aqui."}
               </p>
             </div>
             <Button asChild size="sm">
               <Link to="/bancadas/nova">
                 <Plus className="mr-1.5 h-4 w-4" />
-                Nova bancada
+                Nova prateleira
               </Link>
             </Button>
           </CardContent>

@@ -82,13 +82,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "VitroCeres OS by Explante Biotecnologia: monitoramento em tempo real de bio reatores e bancadas de micropropagação in vitro.",
+          "VitroCeres OS by Explante Biotecnologia: monitoramento em tempo real de bio reatores e prateleiras de micropropagação in vitro.",
       },
       { property: "og:title", content: "VitroCeres OS — Monitoramento de Bio Reatores" },
       {
         property: "og:description",
         content:
-          "Automação e telemetria das bancadas ESP32 dos salas bioreator Explante Biotecnologia.",
+          "Automação e telemetria das prateleiras ESP32 dos salas bioreator Explante Biotecnologia.",
       },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "VitroCeres OS" },
@@ -97,7 +97,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "twitter:description",
         content:
-          "Automação e telemetria das bancadas ESP32 dos salas bioreator Explante Biotecnologia.",
+          "Automação e telemetria das prateleiras ESP32 dos salas bioreator Explante Biotecnologia.",
       },
     ],
     links: [

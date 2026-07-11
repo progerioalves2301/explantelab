@@ -140,7 +140,7 @@ function ConfigPage() {
     setSaving(true);
     try {
       await salvarPadrao({ data: { config } });
-      toast.success("Ciclo padrão salvo — novas bancadas nascem com essa config");
+      toast.success("Ciclo padrão salvo — novas prateleiras nascem com essa config");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao salvar padrão");
     } finally {
@@ -159,7 +159,7 @@ function ConfigPage() {
         },
       });
       toast.success(
-        `Config aplicada a ${res.atualizadas} bancada(s) — ESP32 recebe no próximo poll`,
+        `Config aplicada a ${res.atualizadas} prateleira(s) — ESP32 recebe no próximo poll`,
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao aplicar");
@@ -170,15 +170,15 @@ function ConfigPage() {
 
   const escopoLabel =
     escopo === ESCOPO_TODAS
-      ? "TODAS as bancadas da instalação"
-      : `todas as bancadas do sala bioreator "${labs.find((l) => l.id === escopo)?.nome ?? "?"}"`;
+      ? "TODAS as prateleiras da instalação"
+      : `todas as prateleiras do sala bioreator "${labs.find((l) => l.id === escopo)?.nome ?? "?"}"`;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Configurações</h1>
         <p className="text-sm text-muted-foreground">
-          Ciclo padrão da instalação. Serve de base para novas bancadas e pode
+          Ciclo padrão da instalação. Serve de base para novas prateleiras e pode
           ser aplicado em massa a um sala bioreator inteiro.
         </p>
       </div>
@@ -265,7 +265,7 @@ function ConfigPage() {
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-1.5 text-xs font-semibold text-yellow-700 dark:text-yellow-400">
                   <Clock className="h-3.5 w-3.5" />
-                  Timer das luzes da bancada (GPIO 27)
+                  Timer das luzes da prateleira (GPIO 27)
                 </Label>
                 <Button
                   type="button"
@@ -322,8 +322,8 @@ function ConfigPage() {
 
             <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-muted-foreground">
-                Salvar padrão só afeta bancadas <em>novas</em>. Para atualizar
-                bancadas existentes, use "Aplicar em massa" abaixo.
+                Salvar padrão só afeta prateleiras <em>novas</em>. Para atualizar
+                prateleiras existentes, use "Aplicar em massa" abaixo.
               </p>
               <Button onClick={handleSavePadrao} disabled={saving}>
                 <Save className="mr-1.5 h-4 w-4" />
@@ -338,7 +338,7 @@ function ConfigPage() {
         <CardHeader>
           <CardTitle className="text-base">Aplicar em massa</CardTitle>
           <CardDescription>
-            Sobrescreve a config de todas as bancadas do escopo escolhido com o
+            Sobrescreve a config de todas as prateleiras do escopo escolhido com o
             ciclo acima e envia UPDATE_CONFIG para cada ESP32.
           </CardDescription>
         </CardHeader>
@@ -351,7 +351,7 @@ function ConfigPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ESCOPO_TODAS}>
-                  Todas as bancadas (instalação inteira)
+                  Todas as prateleiras (instalação inteira)
                 </SelectItem>
                 {labs.map((l) => (
                   <SelectItem key={l.id} value={l.id}>
