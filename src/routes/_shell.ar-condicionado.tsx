@@ -149,7 +149,8 @@ function ArCondicionadoPage() {
             | "FUJITSU"
             | "MIDEA"
             | "ELECTROLUX"
-            | "ELECTRA",
+            | "ELECTRA"
+            | "CONSUL",
           ativo: editing.ativo,
           setpoint_min: editing.setpoint_min,
           setpoint_max: editing.setpoint_max,
