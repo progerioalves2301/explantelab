@@ -526,7 +526,7 @@ static const char PORTAL_HEAD[] PROGMEM =
   "</div><div class=\"card\">";
 
 static const char PORTAL_FOOT[] PROGMEM =
-  "</div><div class=\"footer\">ESP32 • Firmware 2.0.1</div></div>";
+  "</div><div class=\"footer\">ESP32 • Firmware 2.1.1</div></div>";
 
 void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
@@ -548,24 +548,39 @@ void abrirPortalWifi(bool forcar) {
   const char* apName = "BancadaSetup";
   const char* apPass = "1234567890";
 
-  bool ok;
   if (forcar) {
+    // Primeiro boot / reset manual — precisa abrir portal p/ receber SSID+código.
     wm.resetSettings();
-    ok = wm.startConfigPortal(apName, apPass);
+    bool ok = wm.startConfigPortal(apName, apPass);
+    if (!ok) {
+      Serial.println("[WM] falha no portal; reiniciando…");
+      delay(3000);
+      ESP.restart();
+    }
+    strncpy(pairing_code_buf, param_pair.getValue(), sizeof(pairing_code_buf) - 1);
+    pairing_code_buf[sizeof(pairing_code_buf) - 1] = 0;
+    Serial.println("[WM] Wi-Fi conectado");
+    return;
+  }
+
+  // Já pareado — NUNCA bloquear o boot. Se o Wi-Fi/internet estiver fora,
+  // seguimos direto pro loop() e o firmware continua rodando ciclos + luz
+  // offline usando o RTC/DS3231 (v2.1.1).
+  WiFi.mode(WIFI_STA);
+  WiFi.begin();   // usa SSID/senha salvos na NVS pelo WiFiManager
+  Serial.print("[WM] tentando Wi-Fi salvo");
+  uint32_t t0 = millis();
+  while (WiFi.status() != WL_CONNECTED && (millis() - t0) < 15000UL) {
+    delay(250);
+    Serial.print('.');
+  }
+  Serial.println();
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("[WM] Wi-Fi conectado");
   } else {
-    ok = wm.autoConnect(apName, apPass);
+    Serial.println("[WM] SEM Wi-Fi — seguindo offline (RTC + agenda local)");
+    // AutoReconnect fica ligado no setup(); assim que a rede voltar, conecta sozinho.
   }
-
-  if (!ok) {
-    Serial.println("[WM] falha no portal; reiniciando…");
-    delay(3000);
-    ESP.restart();
-  }
-
-  strncpy(pairing_code_buf, param_pair.getValue(), sizeof(pairing_code_buf) - 1);
-  pairing_code_buf[sizeof(pairing_code_buf) - 1] = 0;
-
-  Serial.println("[WM] Wi-Fi conectado");
 }
 
 // -------- HTTPS (keep-alive, cliente global) --------
