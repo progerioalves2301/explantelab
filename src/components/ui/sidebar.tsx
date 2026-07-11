@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import { PanelLeft } from "lucide-react";
+import { AlignJustify } from "lucide-react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -269,14 +269,14 @@ const SidebarTrigger = React.forwardRef<
       data-sidebar="trigger"
       variant="ghost"
       size="icon"
-      className={cn("inline-flex h-9 w-9 items-center justify-center rounded-md p-0 [&_svg]:size-[18px]", className)}
+      className={cn("inline-flex h-9 w-9 items-center justify-center rounded-md p-0 [&_svg]:size-[19px]", className)}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();
       }}
       {...props}
     >
-      <PanelLeft className="shrink-0" style={{ transform: "translateX(5px)" }} />
+      <AlignJustify className="shrink-0" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );
