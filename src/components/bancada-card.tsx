@@ -2,12 +2,12 @@ import {
   ArrowLeft,
   AlertTriangle,
   Clock,
+  Cog,
   Copy,
   FlaskConical,
   KeyRound,
   Leaf,
   Lightbulb,
-  Settings2,
   Clock3,
   SlidersHorizontal,
   Sprout,
@@ -505,12 +505,13 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
         <div className="flex items-center gap-1.5">
           <Button
             variant="outline"
-            size="sm"
-            className="h-8 flex-1 min-w-0 px-2 text-xs"
+            size="icon"
+            className="h-8 w-8 shrink-0"
             onClick={() => onConfigure(bancada)}
+            aria-label="Configurar prateleira"
+            title="Configurar prateleira"
           >
-            <Settings2 className="mr-1 h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">Configurar</span>
+            <Cog className="h-4 w-4" />
           </Button>
           {tab === "manual" ? (
             <Button
