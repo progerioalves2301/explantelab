@@ -69,7 +69,7 @@ static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
 static const int PIN_IR_LED = 32;   // LED IR p/ ar-condicionado (v2.1.0)
 
-static const char* FIRMWARE_VERSION = "2.1.0";
+static const char* FIRMWARE_VERSION = "2.1.1";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
