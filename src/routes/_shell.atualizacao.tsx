@@ -68,7 +68,7 @@ function AtualizacaoPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [semSessao, setSemSessao] = useState(false);
   const [firmwares, setFirmwares] = useState<FirmwareItem[]>([]);
-  const [prateleiras, setBancadas] = useState<BancadaFirmwareInfo[]>([]);
+  const [bancadas, setBancadas] = useState<BancadaFirmwareInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selecionado, setSelecionado] = useState<string>("");

@@ -79,7 +79,7 @@ function ArCondicionadoPage() {
 
   const [ars, setArs] = useState<ArCondicionado[]>([]);
   const [labs, setLabs] = useState<Laboratorio[]>([]);
-  const [prateleiras, setBancadas] = useState<Bancada[]>([]);
+  const [bancadas, setBancadas] = useState<Bancada[]>([]);
   const [editing, setEditing] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [testingId, setTestingId] = useState<string | null>(null);

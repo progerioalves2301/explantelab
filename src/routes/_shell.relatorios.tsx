@@ -160,7 +160,7 @@ function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
 
 function RelatoriosPage() {
   const [labs, setLabs] = useState<Laboratorio[]>([]);
-  const [prateleiras, setBancadas] = useState<Bancada[]>([]);
+  const [bancadas, setBancadas] = useState<Bancada[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

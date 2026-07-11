@@ -60,7 +60,7 @@ export const Route = createFileRoute("/_shell/laboratorios")({
 
 function LaboratoriosPage() {
   const [labs, setLabs] = useState<Laboratorio[]>([]);
-  const [prateleiras, setBancadas] = useState<Bancada[]>([]);
+  const [bancadas, setBancadas] = useState<Bancada[]>([]);
   const [loading, setLoading] = useState(true);
   const [nome, setNome] = useState("");
   const [descricao, setDescricao] = useState("");
