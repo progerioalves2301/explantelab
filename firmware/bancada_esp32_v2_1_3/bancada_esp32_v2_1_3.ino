@@ -807,7 +807,7 @@ void tratarComando(JsonObject cmd) {
 
     lastTelem = 0; // publica novo estado das válvulas imediatamente
   } else if (strcmp(tipo, "AC_CONTROL") == 0) {
-    // Payload: { acao: "on"|"off", modo: "cool", setpoint: 22, protocolo: "LG"|"SAMSUNG"|"FUJITSU"|"MIDEA"|"ELECTRA" }
+    // Payload: { acao: "on"|"off", modo: "cool", setpoint: 22, protocolo: "LG"|"SAMSUNG"|"FUJITSU"|"MIDEA"|"ELECTRA"|"CONSUL" }
     JsonVariantConst pv = cmd["payload"];
     JsonDocument tmpDoc;
     JsonObjectConst p;
