@@ -336,17 +336,31 @@ function ArCondicionadoPage() {
                 </Select>
               </div>
               <div className="grid gap-1.5">
-                <Label>Bancada controladora (LED IR no GPIO 32)</Label>
+                <Label>
+                  Bancada controladora <span className="text-red-600">*</span>
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">
+                    (LED IR no GPIO 32)
+                  </span>
+                </Label>
                 <Select
                   value={editing.bancada_controladora_id ?? ""}
                   onValueChange={(v) =>
                     setEditing({ ...editing, bancada_controladora_id: v || null })
                   }
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Escolha uma bancada da sala" />
+                  <SelectTrigger
+                    className={
+                      editing.bancada_controladora_id ? "" : "border-red-500 ring-1 ring-red-500/40"
+                    }
+                  >
+                    <SelectValue placeholder="Escolha uma bancada da sala (ex.: 0102)" />
                   </SelectTrigger>
                   <SelectContent>
+                    {bancadasDaSala(editing.laboratorio_id).length === 0 && (
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                        Nenhuma bancada cadastrada nesta sala
+                      </div>
+                    )}
                     {bancadasDaSala(editing.laboratorio_id).map((b) => (
                       <SelectItem key={b.id} value={b.id}>
                         {b.nome}
@@ -354,6 +368,9 @@ function ArCondicionadoPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Essa bancada recebe os comandos IR e dispara o ar pra sala inteira.
+                </p>
               </div>
             </div>
 
