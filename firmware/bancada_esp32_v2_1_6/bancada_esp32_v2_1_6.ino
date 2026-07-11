@@ -70,7 +70,7 @@ static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
 static const int PIN_IR_LED = 32;   // LED IR p/ ar-condicionado (v2.1.0)
 
-static const char* FIRMWARE_VERSION = "2.1.5";
+static const char* FIRMWARE_VERSION = "2.1.6";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -786,11 +786,24 @@ bool enviarTelemetria() {
 // -------- Loop timers (declarados aqui p/ tratarComando poder forçar telemetria) --------
 unsigned long lastTelem = 0, lastCmd = 0, lastTick = 0, lastTemp = 0;
 
+// v2.1.6 — Proteção contra comando antigo após reconexão.
+// Se a prateleira ficou sem internet, ela pode ter iniciado/retomado o ciclo
+// localmente pelo RTC. Quando a internet volta, um FORCE_CYCLE antigo que ficou
+// pendente no backend não pode reiniciar a fase do zero.
+bool cicloEmAndamento() {
+  return fase == INJETANDO || fase == PAUSADO || fase == RETORNANDO || fase == MANUAL;
+}
+
 // -------- Comandos --------
 void tratarComando(JsonObject cmd) {
   const char* tipo = cmd["tipo"] | "";
   Serial.printf("[CMD] %s\n", tipo);
   if (strcmp(tipo, "FORCE_CYCLE") == 0) {
+    if (cicloEmAndamento()) {
+      Serial.printf("[CMD] FORCE_CYCLE ignorado: ciclo já em andamento (%s)\n", faseNome(fase));
+      lastTelem = 0;
+      return;
+    }
     pausado_manual = false;
     aplicarFase(INJETANDO);
     lastTelem = 0; // força telemetria no próximo loop
