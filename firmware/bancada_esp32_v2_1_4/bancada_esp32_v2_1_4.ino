@@ -834,24 +834,24 @@ void tratarComando(JsonObject cmd) {
       ac.begin();
       ac.setModel(lg_ac_remote_model_t::GE6711AR2853M);
       if (ligar) {
-        ac.setPowerToggle(true); ac.setPower(true);
+        ac.on();
         ac.setMode(kLgAcCool);
         ac.setTemp((uint8_t)roundf(setpoint));
         ac.setFan(kLgAcFanAuto);
       } else {
-        ac.setPower(false);
+        ac.off();
       }
       ac.send();
     } else if (strcasecmp(protocolo, "SAMSUNG") == 0) {
       IRSamsungAc ac(PIN_IR_LED);
       ac.begin();
       if (ligar) {
-        ac.setPowerToggle(true); ac.setPower(true);
+        ac.on();
         ac.setMode(kSamsungAcCool);
         ac.setTemp((uint8_t)roundf(setpoint));
         ac.setFan(kSamsungAcFanAuto);
       } else {
-        ac.setPower(false);
+        ac.off();
       }
       ac.send();
     } else if (strcasecmp(protocolo, "FUJITSU") == 0) {
@@ -871,24 +871,24 @@ void tratarComando(JsonObject cmd) {
       IRMideaAC ac(PIN_IR_LED);
       ac.begin();
       if (ligar) {
-        ac.setPowerToggle(true); ac.setPower(true);
+        ac.on();
         ac.setMode(kMideaACCool);
         ac.setTemp((uint8_t)roundf(setpoint), true);
         ac.setFan(kMideaACFanAuto);
       } else {
-        ac.setPower(false);
+        ac.off();
       }
       ac.send();
     } else if (strcasecmp(protocolo, "ELECTRA") == 0) {
       IRElectraAc ac(PIN_IR_LED);
       ac.begin();
       if (ligar) {
-        ac.setPowerToggle(true); ac.setPower(true);
+        ac.on();
         ac.setMode(kElectraAcCool);
         ac.setTemp((uint8_t)roundf(setpoint));
         ac.setFan(kElectraAcFanAuto);
       } else {
-        ac.setPower(false);
+        ac.off();
       }
       ac.send();
     } else if (strcasecmp(protocolo, "CONSUL") == 0 ||
@@ -898,12 +898,12 @@ void tratarComando(JsonObject cmd) {
       ac.begin();
       ac.setModel(DG11J13A);
       if (ligar) {
-        ac.setPowerToggle(true); ac.setPower(true);
+        ac.setPowerToggle(true);
         ac.setMode(kWhirlpoolAcCool);
         ac.setTemp((uint8_t)roundf(setpoint));
         ac.setFan(kWhirlpoolAcFanAuto);
       } else {
-        ac.setPower(false);
+        ac.setPowerToggle(false);
       }
       ac.send();
     } else {
