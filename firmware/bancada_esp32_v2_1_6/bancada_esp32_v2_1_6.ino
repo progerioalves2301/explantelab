@@ -791,7 +791,7 @@ unsigned long lastTelem = 0, lastCmd = 0, lastTick = 0, lastTemp = 0;
 // localmente pelo RTC. Quando a internet volta, um FORCE_CYCLE antigo que ficou
 // pendente no backend não pode reiniciar a fase do zero.
 bool cicloEmAndamento() {
-  return fase == INJETANDO || fase == PAUSADO || fase == RETORNANDO || fase == MANUAL;
+  return fase == INJETANDO || fase == PAUSADO || fase == RETORNANDO;
 }
 
 // -------- Comandos --------
