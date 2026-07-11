@@ -70,7 +70,7 @@ static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
 static const int PIN_IR_LED = 32;   // LED IR p/ ar-condicionado (v2.1.0)
 
-static const char* FIRMWARE_VERSION = "2.1.4";
+static const char* FIRMWARE_VERSION = "2.1.5";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -197,6 +197,19 @@ void escreverValvulas(bool v1, bool v2, bool v3, bool v4, bool /*v5*/) {
 }
 
 
+// Persistência do estado do ciclo em NVS (namespace "ciclo") — sobrevive a
+// quedas de energia mesmo no meio da Injeção/Pausa/Retorno.
+void persistirCiclo(FaseCiclo f) {
+  Preferences p;
+  p.begin("ciclo", false);
+  p.putUChar("fase", (uint8_t)f);
+  // Epoch UTC do início da fase (0 se relógio ainda não sincronizou).
+  time_t nowEpoch = time(nullptr);
+  if (nowEpoch < 1700000000) nowEpoch = 0;
+  p.putULong("ini_epoch", (uint32_t)nowEpoch);
+  p.end();
+}
+
 void aplicarFase(FaseCiclo f) {
   fase = f;
   fase_inicio_ms = millis();
@@ -206,7 +219,52 @@ void aplicarFase(FaseCiclo f) {
     // ALIVIO mantido no enum para compat, mas sem fase ativa (V5 removida)
     default:         escreverValvulas(false, false, false, false, false); break;
   }
+  persistirCiclo(f);
   Serial.printf("[FASE] %s\n", faseNome(f));
+}
+
+// Retoma o ciclo salvo em NVS após reboot. Se ainda estiver dentro da duração
+// da fase (com base no relógio real), continua de onde parou; se já passou,
+// avança fases até chegar em REPOUSO. Sem relógio válido, reinicia a fase.
+void restaurarCiclo() {
+  Preferences p;
+  p.begin("ciclo", true);
+  uint8_t  fsalva = p.getUChar("fase", (uint8_t)REPOUSO);
+  uint32_t iniEp  = p.getULong("ini_epoch", 0);
+  p.end();
+
+  FaseCiclo f = (FaseCiclo)fsalva;
+  if (f == REPOUSO || f == MANUAL || f == OFFLINE) { aplicarFase(REPOUSO); return; }
+
+  time_t nowEp = time(nullptr);
+  uint32_t decorrido = 0;
+  if (iniEp > 0 && nowEp > 1700000000 && (uint32_t)nowEp > iniEp) {
+    decorrido = (uint32_t)nowEp - iniEp;
+  }
+  Serial.printf("[CICLO] retomando %s (decorrido=%us)\n", faseNome(f), (unsigned)decorrido);
+
+  // Avança fases consumindo o tempo decorrido
+  while (true) {
+    uint32_t dur = 0;
+    switch (f) {
+      case INJETANDO:  dur = cfg.tempo_injecao_segundos; break;
+      case PAUSADO:    dur = cfg.tempo_pausa_segundos;   break;
+      case RETORNANDO: dur = cfg.tempo_retorno_segundos; break;
+      default:         aplicarFase(REPOUSO); return;
+    }
+    if (decorrido < dur) {
+      // Retoma no meio da fase: ajusta fase_inicio_ms para refletir o decorrido.
+      aplicarFase(f);
+      fase_inicio_ms = millis() - (uint32_t)decorrido * 1000UL;
+      return;
+    }
+    decorrido -= dur;
+    // Próxima fase da máquina de estados
+    if (f == INJETANDO)       f = PAUSADO;
+    else if (f == PAUSADO)    f = RETORNANDO;
+    else if (f == RETORNANDO) { aplicarFase(REPOUSO); return; }
+    else                      { aplicarFase(REPOUSO); return; }
+  }
 }
 
 
@@ -1115,7 +1173,7 @@ void setup() {
     }
   }
 
-  aplicarFase(REPOUSO);
+  restaurarCiclo();
 }
 
 // (timers movidos para antes de tratarComando)
