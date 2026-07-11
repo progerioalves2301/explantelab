@@ -132,6 +132,8 @@ function ArCondicionadoPage() {
   const handleSave = async () => {
     if (!editing) return;
     if (!editing.laboratorio_id) return toast.error("Escolha uma sala");
+    if (!editing.bancada_controladora_id)
+      return toast.error("Escolha a bancada que vai controlar o ar (emissor IR no GPIO 32)");
     if (editing.setpoint_min >= editing.setpoint_max)
       return toast.error("Setpoint mín deve ser menor que máx");
     setSaving(true);
