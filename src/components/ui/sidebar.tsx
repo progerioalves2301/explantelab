@@ -276,7 +276,7 @@ const SidebarTrigger = React.forwardRef<
       }}
       {...props}
     >
-      <PanelLeft className="shrink-0 translate-x-[5px]" />
+      <PanelLeft className="shrink-0" style={{ transform: "translateX(5px)" }} />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );
