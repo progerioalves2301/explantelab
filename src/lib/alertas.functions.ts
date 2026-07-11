@@ -32,7 +32,7 @@ export const listarAlertas = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<Alerta[]> => {
     const { data, error } = await context.supabase
       .from("alertas")
-      .select("*, prateleiras(nome)")
+      .select("*, bancadas(nome)")
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error(error.message);
