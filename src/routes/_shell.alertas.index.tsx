@@ -69,7 +69,7 @@ function AlertasPage() {
         <div>
           <h1 className="font-display text-2xl font-bold text-primary">Alertas</h1>
           <p className="text-sm text-muted-foreground">
-            Monitoramento contínuo de bancadas offline, temperatura e ciclos.
+            Monitoramento contínuo de prateleiras offline, temperatura e ciclos.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -112,7 +112,7 @@ function AlertasPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium">{a.bancada_nome ?? "Bancada"}</span>
+                    <span className="text-sm font-medium">{a.bancada_nome ?? "Prateleira"}</span>
                     <Badge variant="outline" className="text-[10px] uppercase">{a.tipo}</Badge>
                     <Badge variant={a.severidade === "critical" ? "destructive" : "secondary"} className="text-[10px]">
                       {a.severidade}

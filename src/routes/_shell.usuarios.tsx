@@ -134,7 +134,7 @@ function UsersPage() {
               <ShieldCheck className="h-4 w-4 text-primary" /> Administrador
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Gerencia salas bioreator, bancadas, usuários e configurações globais.
+              Gerencia salas bioreator, prateleiras, usuários e configurações globais.
             </p>
           </div>
           <div className="rounded-md border p-3">
@@ -142,7 +142,7 @@ function UsersPage() {
               <Shield className="h-4 w-4 text-primary" /> Operador
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Controla ciclos manuais e monitora bancadas do dia a dia.
+              Controla ciclos manuais e monitora prateleiras do dia a dia.
             </p>
           </div>
           <div className="rounded-md border p-3">

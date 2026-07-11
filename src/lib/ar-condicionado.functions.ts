@@ -114,7 +114,7 @@ export const testarArCondicionado = createServerFn({ method: "POST" })
     if (error || !ar) throw new Error(error?.message ?? "Ar não encontrado");
     const arRow = ar as unknown as ArCondicionado;
     if (!arRow.bancada_controladora_id) {
-      throw new Error("Defina a bancada controladora antes de testar");
+      throw new Error("Defina a prateleira controladora antes de testar");
     }
     const setpoint = data.acao === "on"
       ? Math.max(16, Math.min(30, Number(arRow.setpoint_min) + 1))

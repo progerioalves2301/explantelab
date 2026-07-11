@@ -51,7 +51,7 @@ export const Route = createFileRoute("/_shell/laboratorios")({
       {
         name: "description",
         content:
-          "Gestão das salas de sala bioreator e agrupamento das bancadas ESP32.",
+          "Gestão das salas de sala bioreator e agrupamento das prateleiras ESP32.",
       },
     ],
   }),
@@ -60,7 +60,7 @@ export const Route = createFileRoute("/_shell/laboratorios")({
 
 function LaboratoriosPage() {
   const [labs, setLabs] = useState<Laboratorio[]>([]);
-  const [bancadas, setBancadas] = useState<Bancada[]>([]);
+  const [prateleiras, setBancadas] = useState<Bancada[]>([]);
   const [loading, setLoading] = useState(true);
   const [nome, setNome] = useState("");
   const [descricao, setDescricao] = useState("");
@@ -153,7 +153,7 @@ function LaboratoriosPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Salas Bioreator</h1>
         <p className="text-sm text-muted-foreground">
-          Agrupe as bancadas por sala. Sugerimos até 8 bancadas por sala bioreator.
+          Agrupe as prateleiras por sala. Sugerimos até 8 prateleiras por sala bioreator.
         </p>
       </div>
 
@@ -186,7 +186,7 @@ function LaboratoriosPage() {
               </Label>
               <Input
                 id="descricao"
-                placeholder="Sala refrigerada, 8 bancadas"
+                placeholder="Sala refrigerada, 8 prateleiras"
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
                 maxLength={200}
@@ -222,7 +222,7 @@ function LaboratoriosPage() {
             <FlaskConical className="h-8 w-8 text-muted-foreground" />
             <div className="font-semibold">Nenhum sala bioreator cadastrado</div>
             <p className="text-sm text-muted-foreground">
-              Crie a primeira sala acima. Depois vincule as bancadas.
+              Crie a primeira sala acima. Depois vincule as prateleiras.
             </p>
           </CardContent>
         </Card>
@@ -378,7 +378,7 @@ function LabRow({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Excluir {lab.nome}?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      As bancadas vinculadas ficarão sem sala bioreator (não serão
+                      As prateleiras vinculadas ficarão sem sala bioreator (não serão
                       apagadas). Você pode reatribuí-las depois.
                     </AlertDialogDescription>
                   </AlertDialogHeader>

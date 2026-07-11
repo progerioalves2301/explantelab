@@ -27,11 +27,11 @@ import type { Bancada, Laboratorio } from "@/lib/types";
 export const Route = createFileRoute("/_shell/bancadas/nova")({
   head: () => ({
     meta: [
-      { title: "Nova bancada — GeneLab IoT" },
+      { title: "Nova prateleira — GeneLab IoT" },
       {
         name: "description",
         content:
-          "Cadastro de uma nova bancada ESP32 — pareamento por código de 6 dígitos.",
+          "Cadastro de uma nova prateleira ESP32 — pareamento por código de 6 dígitos.",
       },
     ],
   }),
@@ -70,7 +70,7 @@ function NovaBancadaPage() {
         },
       });
       setResult(r);
-      toast.success("Bancada criada. Use o código de 6 dígitos no ESP32.");
+      toast.success("Prateleira criada. Use o código de 6 dígitos no ESP32.");
     } catch (err) {
       toast.error("Falha ao criar", { description: String(err) });
     } finally {
@@ -87,9 +87,9 @@ function NovaBancadaPage() {
             Voltar
           </Link>
         </Button>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight">Nova bancada</h1>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight">Nova prateleira</h1>
         <p className="text-sm text-muted-foreground">
-          Cadastre a bancada e digite o código de 6 dígitos no portal Wi-Fi do ESP32.
+          Cadastre a prateleira e digite o código de 6 dígitos no portal Wi-Fi do ESP32.
         </p>
       </div>
 
@@ -107,7 +107,7 @@ function NovaBancadaPage() {
                 <Label htmlFor="nome">Nome</Label>
                 <Input
                   id="nome"
-                  placeholder="Bancada 01 — Estufa A"
+                  placeholder="Prateleira 01 — Estufa A"
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
                   minLength={2}
@@ -157,7 +157,7 @@ function NovaBancadaPage() {
               </div>
 
               <Button type="submit" disabled={loading}>
-                {loading ? "Criando…" : "Criar bancada e gerar código"}
+                {loading ? "Criando…" : "Criar prateleira e gerar código"}
               </Button>
             </form>
           </CardContent>
@@ -206,7 +206,7 @@ function Provisioning({
 
           <div>
             <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Bancada
+              Prateleira
             </Label>
             <p className="mt-1 text-sm">{result.bancada.nome}</p>
           </div>
