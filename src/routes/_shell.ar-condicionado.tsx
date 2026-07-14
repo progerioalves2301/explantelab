@@ -269,8 +269,26 @@ function ArCondicionadoPage() {
                     INATIVO
                   </span>
                 )}
+                {ar.codigo_ir_raw && ar.codigo_ir_raw.length > 0 && (
+                  <span
+                    className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-400"
+                    title={`${ar.codigo_ir_raw.length} pulsos aprendidos`}
+                  >
+                    IR APRENDIDO
+                  </span>
+                )}
               </CardTitle>
               <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={testingId === ar.id}
+                  onClick={() => handleAprender(ar.id)}
+                  title="Coloca a prateleira em modo aprender por 30s; aperte LIGAR no controle real apontando para o receptor"
+                >
+                  <Radio className="mr-1 h-3.5 w-3.5" />
+                  Aprender IR
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
