@@ -911,6 +911,7 @@ void tratarComando(JsonObject cmd) {
 
     // v2.2.0 — se o payload trouxer "raw":[...] (código IR aprendido do controle
     // real via IR_LEARN), dispara direto por sendRaw() e ignora a lib de protocolo.
+    bool enviadoRaw = false;
     JsonArrayConst rawArr = p["raw"].as<JsonArrayConst>();
     if (!rawArr.isNull() && rawArr.size() >= IR_MIN_UNKNOWN_SIZE) {
       size_t n = rawArr.size();
@@ -918,7 +919,6 @@ void tratarComando(JsonObject cmd) {
       if (buf) {
         size_t i = 0;
         for (JsonVariantConst v : rawArr) buf[i++] = (uint16_t)(v.as<uint32_t>());
-        // Se estamos aprendendo, pausa a recepção pra não escutar o próprio TX.
         if (ir_learn_ativo) irrecv.disableIRIn();
         irsend.sendRaw(buf, n, 38);  // 38 kHz portadora padrão AC
         if (ir_learn_ativo) irrecv.enableIRIn();
@@ -928,10 +928,11 @@ void tratarComando(JsonObject cmd) {
         ac_setpoint_local = setpoint;
         ac_protocolo_local = "RAW";
         lastTelem = 0;
-        continue;  // pula a árvore de protocolos
+        enviadoRaw = true;
       }
     }
 
+    if (!enviadoRaw) {
     // Envia comando IR de acordo com o protocolo.
     // Cada fabricante tem seu próprio "state" — usamos os presets mais comuns
     // para modo COOL, fan auto, swing auto.
