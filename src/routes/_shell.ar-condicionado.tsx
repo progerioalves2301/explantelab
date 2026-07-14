@@ -197,6 +197,23 @@ function ArCondicionadoPage() {
     }
   };
 
+  const handleAprender = async (id: string) => {
+    setTestingId(id);
+    try {
+      const r = await aprender({ data: { id, timeout_s: 30 } });
+      toast.success("Modo aprender IR ativado", {
+        description: `Aponte o controle para a prateleira e aperte LIGAR nos próximos ${r.timeout_s}s.`,
+      });
+      // Recarrega depois da janela para pegar o código gravado.
+      setTimeout(() => { void reload(); }, (r.timeout_s + 3) * 1000);
+    } catch (e) {
+      toast.error("Falha ao aprender IR", { description: String(e) });
+    } finally {
+      setTestingId(null);
+    }
+  };
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
