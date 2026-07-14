@@ -71,8 +71,9 @@ static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
 static const int PIN_IR_LED = 32;   // LED IR p/ ar-condicionado (v2.1.0)
+static const int PIN_IR_RX  = 33;   // Receptor IR VS1838B/TL1838 (v2.2.0)
 
-static const char* FIRMWARE_VERSION = "2.1.6";
+static const char* FIRMWARE_VERSION = "2.2.0";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -80,6 +81,15 @@ IRsend irsend(PIN_IR_LED);
 static bool ac_ligado_local = false;
 static float ac_setpoint_local = 24.0;
 static String ac_protocolo_local = "";
+
+// -------- IR RX (aprendizado — v2.2.0) --------
+static const uint16_t IR_CAPTURE_BUFFER = 1024;   // ACs mandam ~200 pulsos
+static const uint8_t  IR_CAPTURE_TIMEOUT_MS = 50; // gap p/ fechar frame
+static const uint16_t IR_MIN_UNKNOWN_SIZE = 12;
+IRrecv irrecv(PIN_IR_RX, IR_CAPTURE_BUFFER, IR_CAPTURE_TIMEOUT_MS, true);
+static bool          ir_learn_ativo = false;
+static String        ir_learn_ar_id = "";
+static unsigned long ir_learn_deadline_ms = 0;
 
 // -------- Polaridade dos relés (v1.9.5+) --------
 // v1.9.5: mudado para ACTIVE_HIGH para uso com SSR industrial tipo Fotek
