@@ -36,6 +36,8 @@
 #include <RTClib.h>          // DS3231 opcional (v1.8.0)
 #include <IRremoteESP8266.h> // Controle de ar-condicionado via IR (v2.1.0)
 #include <IRsend.h>
+#include <IRrecv.h>          // Aprendizado IR (v2.2.0)
+#include <IRutils.h>
 #include <ir_LG.h>
 #include <ir_Samsung.h>
 #include <ir_Fujitsu.h>
