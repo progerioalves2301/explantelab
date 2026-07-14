@@ -1174,6 +1174,10 @@ void setup() {
   pinMode(PIN_IR_LED, OUTPUT);
   digitalWrite(PIN_IR_LED, LOW);
 
+  // IR RX (v2.2.0): receptor VS1838B/TL1838 no GPIO 33.
+  // enableIRIn é chamado sob demanda em IR_LEARN — mantém CPU livre pro resto.
+  pinMode(PIN_IR_RX, INPUT);
+
   Serial.begin(115200);
   delay(200);
   Serial.printf("\n== GeneLab Bancada ESP32 v%s (direct-Supabase) ==\n", FIRMWARE_VERSION);
