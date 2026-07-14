@@ -798,6 +798,64 @@ bool enviarTelemetria() {
 // -------- Loop timers (declarados aqui p/ tratarComando poder forçar telemetria) --------
 unsigned long lastTelem = 0, lastCmd = 0, lastTick = 0, lastTemp = 0;
 
+// v2.2.0 — Captura IR e envia array raw pro backend via RPC bench_ir_save_raw.
+void tickIrLearn() {
+  if (!ir_learn_ativo) return;
+
+  // Timeout — desiste da captura e libera receptor.
+  if ((long)(millis() - ir_learn_deadline_ms) >= 0) {
+    Serial.println("[IR_LEARN] timeout — nenhum código recebido");
+    irrecv.disableIRIn();
+    ir_learn_ativo = false;
+    ir_learn_ar_id = "";
+    return;
+  }
+
+  decode_results results;
+  if (!irrecv.decode(&results)) return;
+
+  // rawlen inclui o primeiro "gap" (índice 0) que descartamos.
+  uint16_t n = results.rawlen > 1 ? results.rawlen - 1 : 0;
+  Serial.printf("[IR_LEARN] recebido: %u pulsos, protocolo=%d\n",
+                (unsigned)n, (int)results.decode_type);
+
+  if (n < IR_MIN_UNKNOWN_SIZE) {
+    Serial.println("[IR_LEARN] frame muito curto — descartado, aguardando outro");
+    irrecv.resume();
+    return;
+  }
+
+  // Serializa como array de microsegundos (rawbuf está em ticks de 50us).
+  String rawJson = "[";
+  for (uint16_t i = 1; i <= n; i++) {
+    if (i > 1) rawJson += ",";
+    rawJson += String((uint32_t)results.rawbuf[i] * kRawTick);
+  }
+  rawJson += "]";
+
+  JsonDocument body;
+  body["_ar_id"] = ir_learn_ar_id;
+  body["_bancada_id"] = creds.bancada_id;
+  body["_device_token"] = creds.device_token;
+  JsonDocument rawDoc;
+  deserializeJson(rawDoc, rawJson);
+  body["_raw"] = rawDoc.as<JsonArray>();
+  String bodyStr; serializeJson(body, bodyStr);
+
+  String resp;
+  if (supabaseRpc("bench_ir_save_raw", bodyStr, resp)) {
+    Serial.printf("[IR_LEARN] gravado com sucesso (%u pulsos)\n", (unsigned)n);
+  } else {
+    Serial.println("[IR_LEARN] falha ao gravar no backend — tentará no próximo boot");
+  }
+
+  irrecv.disableIRIn();
+  ir_learn_ativo = false;
+  ir_learn_ar_id = "";
+}
+
+
+
 // v2.1.6 — Proteção contra comando antigo após reconexão.
 // Se a prateleira ficou sem internet, ela pode ter iniciado/retomado o ciclo
 // localmente pelo RTC. Quando a internet volta, um FORCE_CYCLE antigo que ficou
