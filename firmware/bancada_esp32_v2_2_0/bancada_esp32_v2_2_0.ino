@@ -1447,6 +1447,7 @@ void loop() {
   unsigned long intervaloCmd   = ativo ? 1500UL  : 5000UL;   // 1.5s ativo / 5s parado
 
   tickWifiWatchdog(now); // v2.1.2 — reengata rápido quando o Wi-Fi/roteador volta
+  tickIrLearn();          // v2.2.0 — captura IR do controle quando ativo
 
   if (now - lastTick > 1000)          { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); sincronizarNtpParaRtc(); }
   if (now - lastTemp > 3000)          { lastTemp  = now; lerTemperatura(); }  // 3s p/ detectar variação rápido
