@@ -146,3 +146,35 @@ export const testarArCondicionado = createServerFn({ method: "POST" })
       .eq("id", arRow.id);
     return { ok: true };
   });
+
+// v2.2.0 — Coloca a bancada controladora em modo "aprender IR": ela liga o
+// receptor VS1838B por `timeout_s` segundos e, ao capturar um frame do controle
+// real, chama a RPC bench_ir_save_raw que grava em ar_condicionados.codigo_ir_raw.
+export const aprenderIr = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string; timeout_s?: number }) =>
+    z.object({
+      id: z.string().uuid(),
+      timeout_s: z.number().int().min(5).max(120).optional(),
+    }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: ar, error } = await supabaseAdmin
+      .from("ar_condicionados")
+      .select("id, bancada_controladora_id")
+      .eq("id", data.id)
+      .single();
+    if (error || !ar) throw new Error(error?.message ?? "Ar não encontrado");
+    const arRow = ar as { id: string; bancada_controladora_id: string | null };
+    if (!arRow.bancada_controladora_id) {
+      throw new Error("Defina a prateleira controladora antes de aprender IR");
+    }
+    const timeout_s = data.timeout_s ?? 30;
+    const { error: cmdErr } = await supabaseAdmin.from("comandos").insert({
+      bancada_id: arRow.bancada_controladora_id,
+      tipo: "IR_LEARN",
+      payload: { ar_id: arRow.id, timeout_s } as never,
+    });
+    if (cmdErr) throw new Error(cmdErr.message);
+    return { ok: true, timeout_s };
+  });
