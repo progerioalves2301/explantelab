@@ -1021,6 +1021,33 @@ void tratarComando(JsonObject cmd) {
     ac_setpoint_local = setpoint;
     ac_protocolo_local = String(protocolo);
     lastTelem = 0; // reporta estado na próxima telemetria
+    } // fecha if (!enviadoRaw)
+  } else if (strcmp(tipo, "IR_LEARN") == 0) {
+    // v2.2.0 — Modo aprender IR: escuta o receptor VS1838B por até timeout_s
+    // segundos. Ao capturar um frame válido, POSTa o array raw pra RPC
+    // bench_ir_save_raw(ar_id, raw[]) e o dashboard associa ao ar_condicionado.
+    JsonVariantConst pv = cmd["payload"];
+    JsonDocument tmpDoc;
+    JsonObjectConst p;
+    if (pv.is<const char*>()) {
+      if (deserializeJson(tmpDoc, pv.as<const char*>()) == DeserializationError::Ok) {
+        p = tmpDoc.as<JsonObjectConst>();
+      }
+    } else {
+      p = pv.as<JsonObjectConst>();
+    }
+    const char* ar_id = p["ar_id"] | "";
+    uint32_t timeout_s = p["timeout_s"] | 30;
+    if (!*ar_id) {
+      Serial.println("[IR_LEARN] ar_id ausente — ignorado");
+    } else {
+      ir_learn_ar_id = String(ar_id);
+      ir_learn_deadline_ms = millis() + timeout_s * 1000UL;
+      irrecv.enableIRIn();
+      ir_learn_ativo = true;
+      Serial.printf("[IR_LEARN] aguardando código do controle por %us (ar=%s)\n",
+                    (unsigned)timeout_s, ar_id);
+    }
   } else if (strcmp(tipo, "OTA_UPDATE") == 0) {
     // Payload: { "url": "<https signed url>", "filename": "..." }
     JsonVariantConst pv = cmd["payload"];
