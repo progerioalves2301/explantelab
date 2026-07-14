@@ -20,6 +20,7 @@ import {
   salvarArCondicionado,
   excluirArCondicionado,
   testarArCondicionado,
+  aprenderIr,
   PROTOCOLOS_IR,
   type ArCondicionado,
 } from "@/lib/ar-condicionado.functions";
