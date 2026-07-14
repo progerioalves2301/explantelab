@@ -909,6 +909,29 @@ void tratarComando(JsonObject cmd) {
     Serial.printf("[AC] %s protocolo=%s setpoint=%.1f\n",
                   ligar ? "LIGAR" : "DESLIGAR", protocolo, setpoint);
 
+    // v2.2.0 — se o payload trouxer "raw":[...] (código IR aprendido do controle
+    // real via IR_LEARN), dispara direto por sendRaw() e ignora a lib de protocolo.
+    JsonArrayConst rawArr = p["raw"].as<JsonArrayConst>();
+    if (!rawArr.isNull() && rawArr.size() >= IR_MIN_UNKNOWN_SIZE) {
+      size_t n = rawArr.size();
+      uint16_t* buf = (uint16_t*)malloc(sizeof(uint16_t) * n);
+      if (buf) {
+        size_t i = 0;
+        for (JsonVariantConst v : rawArr) buf[i++] = (uint16_t)(v.as<uint32_t>());
+        // Se estamos aprendendo, pausa a recepção pra não escutar o próprio TX.
+        if (ir_learn_ativo) irrecv.disableIRIn();
+        irsend.sendRaw(buf, n, 38);  // 38 kHz portadora padrão AC
+        if (ir_learn_ativo) irrecv.enableIRIn();
+        free(buf);
+        Serial.printf("[AC] IR RAW enviado (%u pulsos)\n", (unsigned)n);
+        ac_ligado_local = ligar;
+        ac_setpoint_local = setpoint;
+        ac_protocolo_local = "RAW";
+        lastTelem = 0;
+        continue;  // pula a árvore de protocolos
+      }
+    }
+
     // Envia comando IR de acordo com o protocolo.
     // Cada fabricante tem seu próprio "state" — usamos os presets mais comuns
     // para modo COOL, fan auto, swing auto.
