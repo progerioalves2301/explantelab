@@ -130,6 +130,9 @@ export const testarArCondicionado = createServerFn({ method: "POST" })
         protocolo: arRow.ir_protocol,
         ar_id: arRow.id,
         teste: true,
+        // Se o ar já teve o controle "aprendido", envia o array cru — o firmware
+        // faz sendRaw() e ignora a lib de protocolo (mais confiável).
+        raw: arRow.codigo_ir_raw ?? undefined,
       } as never,
     });
     if (cmdErr) throw new Error(cmdErr.message);
