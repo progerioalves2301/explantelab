@@ -36,6 +36,8 @@
 #include <RTClib.h>          // DS3231 opcional (v1.8.0)
 #include <IRremoteESP8266.h> // Controle de ar-condicionado via IR (v2.1.0)
 #include <IRsend.h>
+#include <IRrecv.h>          // Aprendizado IR (v2.2.0)
+#include <IRutils.h>
 #include <ir_LG.h>
 #include <ir_Samsung.h>
 #include <ir_Fujitsu.h>
@@ -69,8 +71,9 @@ static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
 static const int PIN_DS18B20 = 4;
 static const int PIN_IR_LED = 32;   // LED IR p/ ar-condicionado (v2.1.0)
+static const int PIN_IR_RX  = 33;   // Receptor IR VS1838B/TL1838 (v2.2.0)
 
-static const char* FIRMWARE_VERSION = "2.1.6";
+static const char* FIRMWARE_VERSION = "2.2.0";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -78,6 +81,15 @@ IRsend irsend(PIN_IR_LED);
 static bool ac_ligado_local = false;
 static float ac_setpoint_local = 24.0;
 static String ac_protocolo_local = "";
+
+// -------- IR RX (aprendizado — v2.2.0) --------
+static const uint16_t IR_CAPTURE_BUFFER = 1024;   // ACs mandam ~200 pulsos
+static const uint8_t  IR_CAPTURE_TIMEOUT_MS = 50; // gap p/ fechar frame
+static const uint16_t IR_MIN_UNKNOWN_SIZE = 12;
+IRrecv irrecv(PIN_IR_RX, IR_CAPTURE_BUFFER, IR_CAPTURE_TIMEOUT_MS, true);
+static bool          ir_learn_ativo = false;
+static String        ir_learn_ar_id = "";
+static unsigned long ir_learn_deadline_ms = 0;
 
 // -------- Polaridade dos relés (v1.9.5+) --------
 // v1.9.5: mudado para ACTIVE_HIGH para uso com SSR industrial tipo Fotek
@@ -786,6 +798,64 @@ bool enviarTelemetria() {
 // -------- Loop timers (declarados aqui p/ tratarComando poder forçar telemetria) --------
 unsigned long lastTelem = 0, lastCmd = 0, lastTick = 0, lastTemp = 0;
 
+// v2.2.0 — Captura IR e envia array raw pro backend via RPC bench_ir_save_raw.
+void tickIrLearn() {
+  if (!ir_learn_ativo) return;
+
+  // Timeout — desiste da captura e libera receptor.
+  if ((long)(millis() - ir_learn_deadline_ms) >= 0) {
+    Serial.println("[IR_LEARN] timeout — nenhum código recebido");
+    irrecv.disableIRIn();
+    ir_learn_ativo = false;
+    ir_learn_ar_id = "";
+    return;
+  }
+
+  decode_results results;
+  if (!irrecv.decode(&results)) return;
+
+  // rawlen inclui o primeiro "gap" (índice 0) que descartamos.
+  uint16_t n = results.rawlen > 1 ? results.rawlen - 1 : 0;
+  Serial.printf("[IR_LEARN] recebido: %u pulsos, protocolo=%d\n",
+                (unsigned)n, (int)results.decode_type);
+
+  if (n < IR_MIN_UNKNOWN_SIZE) {
+    Serial.println("[IR_LEARN] frame muito curto — descartado, aguardando outro");
+    irrecv.resume();
+    return;
+  }
+
+  // Serializa como array de microsegundos (rawbuf está em ticks de 50us).
+  String rawJson = "[";
+  for (uint16_t i = 1; i <= n; i++) {
+    if (i > 1) rawJson += ",";
+    rawJson += String((uint32_t)results.rawbuf[i] * kRawTick);
+  }
+  rawJson += "]";
+
+  JsonDocument body;
+  body["_ar_id"] = ir_learn_ar_id;
+  body["_bancada_id"] = creds.bancada_id;
+  body["_device_token"] = creds.device_token;
+  JsonDocument rawDoc;
+  deserializeJson(rawDoc, rawJson);
+  body["_raw"] = rawDoc.as<JsonArray>();
+  String bodyStr; serializeJson(body, bodyStr);
+
+  String resp;
+  if (supabaseRpc("bench_ir_save_raw", bodyStr, resp)) {
+    Serial.printf("[IR_LEARN] gravado com sucesso (%u pulsos)\n", (unsigned)n);
+  } else {
+    Serial.println("[IR_LEARN] falha ao gravar no backend — tentará no próximo boot");
+  }
+
+  irrecv.disableIRIn();
+  ir_learn_ativo = false;
+  ir_learn_ar_id = "";
+}
+
+
+
 // v2.1.6 — Proteção contra comando antigo após reconexão.
 // Se a prateleira ficou sem internet, ela pode ter iniciado/retomado o ciclo
 // localmente pelo RTC. Quando a internet volta, um FORCE_CYCLE antigo que ficou
@@ -897,6 +967,30 @@ void tratarComando(JsonObject cmd) {
     Serial.printf("[AC] %s protocolo=%s setpoint=%.1f\n",
                   ligar ? "LIGAR" : "DESLIGAR", protocolo, setpoint);
 
+    // v2.2.0 — se o payload trouxer "raw":[...] (código IR aprendido do controle
+    // real via IR_LEARN), dispara direto por sendRaw() e ignora a lib de protocolo.
+    bool enviadoRaw = false;
+    JsonArrayConst rawArr = p["raw"].as<JsonArrayConst>();
+    if (!rawArr.isNull() && rawArr.size() >= IR_MIN_UNKNOWN_SIZE) {
+      size_t n = rawArr.size();
+      uint16_t* buf = (uint16_t*)malloc(sizeof(uint16_t) * n);
+      if (buf) {
+        size_t i = 0;
+        for (JsonVariantConst v : rawArr) buf[i++] = (uint16_t)(v.as<uint32_t>());
+        if (ir_learn_ativo) irrecv.disableIRIn();
+        irsend.sendRaw(buf, n, 38);  // 38 kHz portadora padrão AC
+        if (ir_learn_ativo) irrecv.enableIRIn();
+        free(buf);
+        Serial.printf("[AC] IR RAW enviado (%u pulsos)\n", (unsigned)n);
+        ac_ligado_local = ligar;
+        ac_setpoint_local = setpoint;
+        ac_protocolo_local = "RAW";
+        lastTelem = 0;
+        enviadoRaw = true;
+      }
+    }
+
+    if (!enviadoRaw) {
     // Envia comando IR de acordo com o protocolo.
     // Cada fabricante tem seu próprio "state" — usamos os presets mais comuns
     // para modo COOL, fan auto, swing auto.
@@ -985,6 +1079,33 @@ void tratarComando(JsonObject cmd) {
     ac_setpoint_local = setpoint;
     ac_protocolo_local = String(protocolo);
     lastTelem = 0; // reporta estado na próxima telemetria
+    } // fecha if (!enviadoRaw)
+  } else if (strcmp(tipo, "IR_LEARN") == 0) {
+    // v2.2.0 — Modo aprender IR: escuta o receptor VS1838B por até timeout_s
+    // segundos. Ao capturar um frame válido, POSTa o array raw pra RPC
+    // bench_ir_save_raw(ar_id, raw[]) e o dashboard associa ao ar_condicionado.
+    JsonVariantConst pv = cmd["payload"];
+    JsonDocument tmpDoc;
+    JsonObjectConst p;
+    if (pv.is<const char*>()) {
+      if (deserializeJson(tmpDoc, pv.as<const char*>()) == DeserializationError::Ok) {
+        p = tmpDoc.as<JsonObjectConst>();
+      }
+    } else {
+      p = pv.as<JsonObjectConst>();
+    }
+    const char* ar_id = p["ar_id"] | "";
+    uint32_t timeout_s = p["timeout_s"] | 30;
+    if (!*ar_id) {
+      Serial.println("[IR_LEARN] ar_id ausente — ignorado");
+    } else {
+      ir_learn_ar_id = String(ar_id);
+      ir_learn_deadline_ms = millis() + timeout_s * 1000UL;
+      irrecv.enableIRIn();
+      ir_learn_ativo = true;
+      Serial.printf("[IR_LEARN] aguardando código do controle por %us (ar=%s)\n",
+                    (unsigned)timeout_s, ar_id);
+    }
   } else if (strcmp(tipo, "OTA_UPDATE") == 0) {
     // Payload: { "url": "<https signed url>", "filename": "..." }
     JsonVariantConst pv = cmd["payload"];
@@ -1110,6 +1231,10 @@ void setup() {
   irsend.begin();
   pinMode(PIN_IR_LED, OUTPUT);
   digitalWrite(PIN_IR_LED, LOW);
+
+  // IR RX (v2.2.0): receptor VS1838B/TL1838 no GPIO 33.
+  // enableIRIn é chamado sob demanda em IR_LEARN — mantém CPU livre pro resto.
+  pinMode(PIN_IR_RX, INPUT);
 
   Serial.begin(115200);
   delay(200);
@@ -1322,6 +1447,7 @@ void loop() {
   unsigned long intervaloCmd   = ativo ? 1500UL  : 5000UL;   // 1.5s ativo / 5s parado
 
   tickWifiWatchdog(now); // v2.1.2 — reengata rápido quando o Wi-Fi/roteador volta
+  tickIrLearn();          // v2.2.0 — captura IR do controle quando ativo
 
   if (now - lastTick > 1000)          { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); sincronizarNtpParaRtc(); }
   if (now - lastTemp > 3000)          { lastTemp  = now; lerTemperatura(); }  // 3s p/ detectar variação rápido

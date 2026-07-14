@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { AirVent, Plus, Power, Save, Trash2, Wind } from "lucide-react";
+import { AirVent, Plus, Power, Radio, Save, Trash2, Wind } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,7 @@ import {
   salvarArCondicionado,
   excluirArCondicionado,
   testarArCondicionado,
+  aprenderIr,
   PROTOCOLOS_IR,
   type ArCondicionado,
 } from "@/lib/ar-condicionado.functions";
@@ -76,6 +77,7 @@ function ArCondicionadoPage() {
   const salvar = useServerFn(salvarArCondicionado);
   const excluir = useServerFn(excluirArCondicionado);
   const testar = useServerFn(testarArCondicionado);
+  const aprender = useServerFn(aprenderIr);
 
   const [ars, setArs] = useState<ArCondicionado[]>([]);
   const [labs, setLabs] = useState<Laboratorio[]>([]);
@@ -195,6 +197,23 @@ function ArCondicionadoPage() {
     }
   };
 
+  const handleAprender = async (id: string) => {
+    setTestingId(id);
+    try {
+      const r = await aprender({ data: { id, timeout_s: 30 } });
+      toast.success("Modo aprender IR ativado", {
+        description: `Aponte o controle para a prateleira e aperte LIGAR nos próximos ${r.timeout_s}s.`,
+      });
+      // Recarrega depois da janela para pegar o código gravado.
+      setTimeout(() => { void reload(); }, (r.timeout_s + 3) * 1000);
+    } catch (e) {
+      toast.error("Falha ao aprender IR", { description: String(e) });
+    } finally {
+      setTestingId(null);
+    }
+  };
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -250,8 +269,26 @@ function ArCondicionadoPage() {
                     INATIVO
                   </span>
                 )}
+                {ar.codigo_ir_raw && ar.codigo_ir_raw.length > 0 && (
+                  <span
+                    className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-400"
+                    title={`${ar.codigo_ir_raw.length} pulsos aprendidos`}
+                  >
+                    IR APRENDIDO
+                  </span>
+                )}
               </CardTitle>
               <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={testingId === ar.id}
+                  onClick={() => handleAprender(ar.id)}
+                  title="Coloca a prateleira em modo aprender por 30s; aperte LIGAR no controle real apontando para o receptor"
+                >
+                  <Radio className="mr-1 h-3.5 w-3.5" />
+                  Aprender IR
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"

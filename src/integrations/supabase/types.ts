@@ -111,6 +111,7 @@ export type Database = {
           agregacao: string
           ativo: boolean
           bancada_controladora_id: string | null
+          codigo_ir_raw: Json | null
           created_at: string
           histerese: number
           id: string
@@ -131,6 +132,7 @@ export type Database = {
           agregacao?: string
           ativo?: boolean
           bancada_controladora_id?: string | null
+          codigo_ir_raw?: Json | null
           created_at?: string
           histerese?: number
           id?: string
@@ -151,6 +153,7 @@ export type Database = {
           agregacao?: string
           ativo?: boolean
           bancada_controladora_id?: string | null
+          codigo_ir_raw?: Json | null
           created_at?: string
           histerese?: number
           id?: string
@@ -472,6 +475,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bench_ir_save_raw: {
+        Args: {
+          _ar_id: string
+          _bancada_id: string
+          _device_token: string
+          _raw: Json
+        }
+        Returns: Json
+      }
       bench_pair: { Args: { _pairing_code: string }; Returns: Json }
       bench_pull_commands: {
         Args: { _bancada_id: string; _device_token: string }
