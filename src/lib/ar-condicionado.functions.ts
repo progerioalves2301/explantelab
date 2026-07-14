@@ -18,6 +18,7 @@ export interface ArCondicionado {
   setpoint_atual: number | null;
   ultimo_comando_em: string | null;
   ultimo_temp_lida: number | null;
+  codigo_ir_raw: number[] | null;
   created_at: string;
   updated_at: string;
 }
