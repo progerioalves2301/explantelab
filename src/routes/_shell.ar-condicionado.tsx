@@ -77,6 +77,7 @@ function ArCondicionadoPage() {
   const salvar = useServerFn(salvarArCondicionado);
   const excluir = useServerFn(excluirArCondicionado);
   const testar = useServerFn(testarArCondicionado);
+  const aprender = useServerFn(aprenderIr);
 
   const [ars, setArs] = useState<ArCondicionado[]>([]);
   const [labs, setLabs] = useState<Laboratorio[]>([]);
