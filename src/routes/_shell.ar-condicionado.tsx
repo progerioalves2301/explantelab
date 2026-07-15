@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AirVent, Plus, Power, Radio, Save, Trash2, Wind } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -98,20 +98,15 @@ function ArCondicionadoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const salasSemAr = useMemo(
-    () => labs.filter((l) => !ars.some((a) => a.laboratorio_id === l.id)),
-    [labs, ars],
-  );
-
   const bancadasDaSala = (labId: string) =>
     bancadas.filter((b) => b.laboratorio_id === labId);
 
   const startNew = () => {
-    if (salasSemAr.length === 0) {
-      toast.error("Todas as salas já têm ar cadastrado");
+    if (labs.length === 0) {
+      toast.error("Cadastre uma sala primeiro");
       return;
     }
-    setEditing({ ...emptyForm(labs), laboratorio_id: salasSemAr[0].id });
+    setEditing({ ...emptyForm(labs), laboratorio_id: labs[0].id });
   };
 
   const startEdit = (ar: ArCondicionado) => {
@@ -225,12 +220,12 @@ function ArCondicionadoPage() {
             Ar-condicionado
           </h1>
           <p className="text-sm text-muted-foreground">
-            Um ar por sala bioreator. A prateleira controladora emite os comandos
-            IR pelo <strong>GPIO 32</strong> e mantém a temperatura das plantas
-            dentro da faixa definida.
+            Múltiplos ares por sala são suportados. Qualquer prateleira da sala
+            pode ser controladora — o LED IR fica no <strong>GPIO 32</strong> dela
+            e ela emite os comandos para o ar atrelado.
           </p>
         </div>
-        <Button onClick={startNew} disabled={salasSemAr.length === 0}>
+        <Button onClick={startNew} disabled={labs.length === 0}>
           <Plus className="mr-1.5 h-4 w-4" />
           Novo ar
         </Button>
@@ -361,16 +356,11 @@ function ArCondicionadoPage() {
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {labs.map((l) => {
-                      const jaTem = ars.some(
-                        (a) => a.laboratorio_id === l.id && a.id !== editing.id,
-                      );
-                      return (
-                        <SelectItem key={l.id} value={l.id} disabled={jaTem}>
-                          {l.nome}{jaTem ? " (já tem ar)" : ""}
-                        </SelectItem>
-                      );
-                    })}
+                    {labs.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.nome}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
