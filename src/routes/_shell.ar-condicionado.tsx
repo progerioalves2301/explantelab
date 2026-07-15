@@ -98,20 +98,15 @@ function ArCondicionadoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const salasSemAr = useMemo(
-    () => labs.filter((l) => !ars.some((a) => a.laboratorio_id === l.id)),
-    [labs, ars],
-  );
-
   const bancadasDaSala = (labId: string) =>
     bancadas.filter((b) => b.laboratorio_id === labId);
 
   const startNew = () => {
-    if (salasSemAr.length === 0) {
-      toast.error("Todas as salas já têm ar cadastrado");
+    if (labs.length === 0) {
+      toast.error("Cadastre uma sala primeiro");
       return;
     }
-    setEditing({ ...emptyForm(labs), laboratorio_id: salasSemAr[0].id });
+    setEditing({ ...emptyForm(labs), laboratorio_id: labs[0].id });
   };
 
   const startEdit = (ar: ArCondicionado) => {
