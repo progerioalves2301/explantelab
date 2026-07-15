@@ -244,81 +244,80 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           aria-hidden
         />
       )}
-      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 p-4 pb-3 sm:p-6 sm:pb-3">
-        <div className="min-w-0">
-          <CardTitle className="truncate text-base font-semibold">
+      <CardHeader className="flex flex-col gap-2 space-y-0 p-4 pb-3 sm:p-6 sm:pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="min-w-0 flex-1 break-words text-base font-semibold leading-tight">
             {bancada.nome}
           </CardTitle>
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-            {laboratorio ? (
-              <span
-                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium"
-                style={{ borderColor: laboratorio.cor, color: laboratorio.cor }}
-                title={`Sala Bioreator: ${laboratorio.nome}`}
-              >
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: laboratorio.cor }}
-                />
-                {laboratorio.nome}
-                {bancada.posicao != null && ` · #${bancada.posicao}`}
-              </span>
-            ) : (
-              <span className="rounded-full border border-dashed px-2 py-0.5 text-[10px] text-muted-foreground">
-                Sem sala bioreator
-              </span>
-            )}
-            <p className="font-mono text-[10px] text-muted-foreground">
-              NODE-ESP32-{String(bancada.id).slice(0, 6)}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-1.5">
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors",
-                bancada.luz_ligada
-                  ? "border-yellow-500/60 bg-yellow-400/15 text-yellow-700 dark:text-yellow-300"
-                  : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
-              )}
-              title={bancada.luz_ligada ? "Luzes ligadas" : "Luzes desligadas"}
-              aria-label={bancada.luz_ligada ? "Luzes ligadas" : "Luzes desligadas"}
-            >
-              <Lightbulb
-                className={cn(
-                  "h-3 w-3",
-                  bancada.luz_ligada && "fill-current",
-                )}
-              />
-              {bancada.luz_ligada ? "ON" : "OFF"}
-            </span>
-            {bancada.tem_rtc != null && (
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
-                  bancada.tem_rtc
-                    ? "border-emerald-500/60 bg-emerald-400/15 text-emerald-700 dark:text-emerald-300"
-                    : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
-                )}
-                title={
-                  bancada.tem_rtc
-                    ? "DS3231 detectado — hora local independente de internet"
-                    : "Sem DS3231 — hora vem do NTP + millis()"
-                }
-                aria-label={bancada.tem_rtc ? "RTC físico ativo" : "Sem RTC físico"}
-              >
-                <Clock3 className="h-3 w-3" />
-                RTC
-              </span>
-            )}
-            <StatusBadge status={bancada.status} />
-          </div>
-          <span className="text-[10px] tabular-nums text-muted-foreground">
+          <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
             há {formatShortDuration(tempoNoEstado(bancada, clock))}
           </span>
         </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          {laboratorio ? (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium"
+              style={{ borderColor: laboratorio.cor, color: laboratorio.cor }}
+              title={`Sala Bioreator: ${laboratorio.nome}`}
+            >
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ background: laboratorio.cor }}
+              />
+              {laboratorio.nome}
+              {bancada.posicao != null && ` · #${bancada.posicao}`}
+            </span>
+          ) : (
+            <span className="rounded-full border border-dashed px-2 py-0.5 text-[10px] text-muted-foreground">
+              Sem sala bioreator
+            </span>
+          )}
+          <p className="font-mono text-[10px] text-muted-foreground">
+            NODE-ESP32-{String(bancada.id).slice(0, 6)}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors",
+              bancada.luz_ligada
+                ? "border-yellow-500/60 bg-yellow-400/15 text-yellow-700 dark:text-yellow-300"
+                : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
+            )}
+            title={bancada.luz_ligada ? "Luzes ligadas" : "Luzes desligadas"}
+            aria-label={bancada.luz_ligada ? "Luzes ligadas" : "Luzes desligadas"}
+          >
+            <Lightbulb
+              className={cn(
+                "h-3 w-3",
+                bancada.luz_ligada && "fill-current",
+              )}
+            />
+            {bancada.luz_ligada ? "ON" : "OFF"}
+          </span>
+          {bancada.tem_rtc != null && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                bancada.tem_rtc
+                  ? "border-emerald-500/60 bg-emerald-400/15 text-emerald-700 dark:text-emerald-300"
+                  : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
+              )}
+              title={
+                bancada.tem_rtc
+                  ? "DS3231 detectado — hora local independente de internet"
+                  : "Sem DS3231 — hora vem do NTP + millis()"
+              }
+              aria-label={bancada.tem_rtc ? "RTC físico ativo" : "Sem RTC físico"}
+            >
+              <Clock3 className="h-3 w-3" />
+              RTC
+            </span>
+          )}
+          <StatusBadge status={bancada.status} />
+        </div>
       </CardHeader>
+
 
 
       <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
