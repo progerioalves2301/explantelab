@@ -356,16 +356,11 @@ function ArCondicionadoPage() {
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {labs.map((l) => {
-                      const jaTem = ars.some(
-                        (a) => a.laboratorio_id === l.id && a.id !== editing.id,
-                      );
-                      return (
-                        <SelectItem key={l.id} value={l.id} disabled={jaTem}>
-                          {l.nome}{jaTem ? " (já tem ar)" : ""}
-                        </SelectItem>
-                      );
-                    })}
+                    {labs.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.nome}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
