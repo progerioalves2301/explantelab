@@ -181,7 +181,7 @@ export type Database = {
           {
             foreignKeyName: "ar_condicionados_laboratorio_id_fkey"
             columns: ["laboratorio_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "laboratorios"
             referencedColumns: ["id"]
           },

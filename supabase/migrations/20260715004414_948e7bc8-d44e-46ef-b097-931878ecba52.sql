@@ -1,0 +1,1 @@
+ALTER TABLE public.ar_condicionados DROP CONSTRAINT IF EXISTS ar_condicionados_laboratorio_id_key;
