@@ -24,11 +24,13 @@ export interface ArCondicionado {
 }
 
 export const PROTOCOLOS_IR = [
+  { value: "RAW", label: "RAW (aprendido do controle original) — recomendado" },
   { value: "LG", label: "LG" },
   { value: "SAMSUNG", label: "Samsung" },
   { value: "FUJITSU", label: "Fujitsu" },
-  { value: "MIDEA", label: "Midea" },
+  { value: "MIDEA", label: "Midea / Springer (Midea-compat)" },
   { value: "ELECTROLUX", label: "Electrolux (Midea-compat)" },
+  { value: "ELGIN", label: "Elgin (Midea-compat)" },
   { value: "ELECTRA", label: "Electra" },
   { value: "CONSUL", label: "Consul (Whirlpool)" },
 ] as const;
@@ -38,7 +40,7 @@ const arSchema = z.object({
   bancada_controladora_id: z.string().uuid().nullable(),
   marca: z.string().min(1).max(40),
   modelo: z.string().max(60).nullable().optional(),
-  ir_protocol: z.enum(["LG", "SAMSUNG", "FUJITSU", "MIDEA", "ELECTROLUX", "ELECTRA", "CONSUL"]),
+  ir_protocol: z.enum(["RAW", "LG", "SAMSUNG", "FUJITSU", "MIDEA", "ELECTROLUX", "ELGIN", "ELECTRA", "CONSUL"]),
   ativo: z.boolean(),
   setpoint_min: z.number().min(16).max(30),
   setpoint_max: z.number().min(16).max(30),
