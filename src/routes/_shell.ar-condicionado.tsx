@@ -148,11 +148,13 @@ function ArCondicionadoPage() {
           marca: editing.marca,
           modelo: editing.modelo || null,
           ir_protocol: editing.ir_protocol as
+            | "RAW"
             | "LG"
             | "SAMSUNG"
             | "FUJITSU"
             | "MIDEA"
             | "ELECTROLUX"
+            | "ELGIN"
             | "ELECTRA"
             | "CONSUL",
           ativo: editing.ativo,
