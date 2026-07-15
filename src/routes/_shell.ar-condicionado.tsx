@@ -220,12 +220,12 @@ function ArCondicionadoPage() {
             Ar-condicionado
           </h1>
           <p className="text-sm text-muted-foreground">
-            Um ar por sala bioreator. A prateleira controladora emite os comandos
-            IR pelo <strong>GPIO 32</strong> e mantém a temperatura das plantas
-            dentro da faixa definida.
+            Múltiplos ares por sala são suportados. Qualquer prateleira da sala
+            pode ser controladora — o LED IR fica no <strong>GPIO 32</strong> dela
+            e ela emite os comandos para o ar atrelado.
           </p>
         </div>
-        <Button onClick={startNew} disabled={salasSemAr.length === 0}>
+        <Button onClick={startNew} disabled={labs.length === 0}>
           <Plus className="mr-1.5 h-4 w-4" />
           Novo ar
         </Button>
