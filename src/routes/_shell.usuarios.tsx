@@ -1,12 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { UserPlus, Shield, ShieldCheck, Eye, Trash2, Loader2 } from "lucide-react";
+import { UserPlus, Shield, ShieldCheck, Eye, Trash2, Loader2, UserX } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -16,13 +36,16 @@ import {
 } from "@/components/ui/select";
 import {
   concederPapel,
+  criarUsuario,
   listarUsuarios,
   removerPapel,
+  removerUsuario,
   type AppRole,
   type UsuarioComPapeis,
 } from "@/lib/roles.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "@tanstack/react-router";
+
 
 export const Route = createFileRoute("/_shell/usuarios")({
   head: () => ({
@@ -54,10 +77,19 @@ function UsersPage() {
   const listar = useServerFn(listarUsuarios);
   const conceder = useServerFn(concederPapel);
   const remover = useServerFn(removerPapel);
+  const criar = useServerFn(criarUsuario);
+  const excluir = useServerFn(removerUsuario);
   const [usuarios, setUsuarios] = useState<UsuarioComPapeis[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [semSessao, setSemSessao] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [novoOpen, setNovoOpen] = useState(false);
+  const [novoEmail, setNovoEmail] = useState("");
+  const [novoSenha, setNovoSenha] = useState("");
+  const [novoRole, setNovoRole] = useState<AppRole>("operador");
+  const [criando, setCriando] = useState(false);
+  const [confirmarRemocao, setConfirmarRemocao] = useState<UsuarioComPapeis | null>(null);
 
   const carregar = async () => {
     try {
@@ -70,6 +102,7 @@ function UsersPage() {
         return;
       }
       setSemSessao(false);
+      setCurrentUserId(sess.session.user.id);
       const dados = await listar();
       setUsuarios(dados);
       setErro(null);
@@ -109,6 +142,38 @@ function UsersPage() {
     }
   };
 
+  const handleCriar = async () => {
+    if (!novoEmail || !novoSenha) {
+      toast.error("Informe email e senha");
+      return;
+    }
+    try {
+      setCriando(true);
+      await criar({ data: { email: novoEmail, password: novoSenha, role: novoRole } });
+      toast.success(`Usuário ${novoEmail} criado`);
+      setNovoOpen(false);
+      setNovoEmail("");
+      setNovoSenha("");
+      setNovoRole("operador");
+      await carregar();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao criar usuário");
+    } finally {
+      setCriando(false);
+    }
+  };
+
+  const handleExcluir = async (user_id: string) => {
+    try {
+      await excluir({ data: { user_id } });
+      toast.success("Usuário removido");
+      setConfirmarRemocao(null);
+      await carregar();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao remover usuário");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -118,11 +183,12 @@ function UsersPage() {
             Administradores, operadores e visualizadores com acesso ao painel.
           </p>
         </div>
-        <Button variant="outline" disabled title="Envie o link /login para o técnico se cadastrar">
+        <Button onClick={() => setNovoOpen(true)} disabled={semSessao}>
           <UserPlus className="mr-1.5 h-4 w-4" />
-          Convidar (em breve)
+          Novo usuário
         </Button>
       </div>
+
 
       <Card className="card-elevated">
         <CardHeader>
@@ -183,26 +249,114 @@ function UsersPage() {
               <UsuarioRow
                 key={u.user_id}
                 usuario={u}
+                isSelf={u.user_id === currentUserId}
                 onConceder={(role) => handleConceder(u.user_id, role)}
                 onRemover={(role) => handleRemover(u.user_id, role)}
+                onExcluir={() => setConfirmarRemocao(u)}
               />
             ))
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={novoOpen} onOpenChange={setNovoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo usuário</DialogTitle>
+            <DialogDescription>
+              Crie a conta com email e senha. O usuário poderá entrar imediatamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="novo-email">Email</Label>
+              <Input
+                id="novo-email"
+                type="email"
+                value={novoEmail}
+                onChange={(e) => setNovoEmail(e.target.value)}
+                placeholder="tecnico@empresa.com"
+                autoComplete="off"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="novo-senha">Senha</Label>
+              <Input
+                id="novo-senha"
+                type="password"
+                value={novoSenha}
+                onChange={(e) => setNovoSenha(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Papel inicial</Label>
+              <Select value={novoRole} onValueChange={(v) => setNovoRole(v as AppRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                  <SelectItem value="operador">Operador</SelectItem>
+                  <SelectItem value="visualizador">Visualizador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNovoOpen(false)} disabled={criando}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCriar} disabled={criando}>
+              {criando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+              Criar usuário
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={confirmarRemocao !== null}
+        onOpenChange={(o) => !o && setConfirmarRemocao(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação exclui permanentemente <strong>{confirmarRemocao?.email}</strong> e todos os seus papéis. Não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmarRemocao && handleExcluir(confirmarRemocao.user_id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
+
 }
 
 function UsuarioRow({
   usuario,
+  isSelf,
   onConceder,
   onRemover,
+  onExcluir,
 }: {
   usuario: UsuarioComPapeis;
+  isSelf: boolean;
   onConceder: (role: AppRole) => void;
   onRemover: (role: AppRole) => void;
+  onExcluir: () => void;
 }) {
+
   const iniciais = (usuario.email ?? "?")
     .split(/[@.]/)[0]
     .slice(0, 2)
@@ -266,6 +420,18 @@ function UsuarioRow({
             ))}
         </SelectContent>
       </Select>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        onClick={onExcluir}
+        disabled={isSelf}
+        title={isSelf ? "Não é possível remover seu próprio usuário" : "Remover usuário"}
+        aria-label="Remover usuário"
+      >
+        <UserX className="h-4 w-4" />
+      </Button>
     </div>
   );
 }
+
