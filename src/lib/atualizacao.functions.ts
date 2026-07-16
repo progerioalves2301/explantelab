@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdmin } from "@/lib/role-middleware";
 
 const BUCKET = "firmware";
 const SIGNED_URL_TTL_SEC = 3600; // 1h
@@ -54,7 +55,7 @@ export const listarFirmwares = createServerFn({ method: "GET" })
 
 /** Faz upload de um firmware .bin (base64). Apenas admin. */
 export const uploadFirmware = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .inputValidator(
     (d: { filename: string; base64: string; contentType?: string }) =>
       z
@@ -87,7 +88,7 @@ export const uploadFirmware = createServerFn({ method: "POST" })
 
 /** Apaga um firmware do bucket. Apenas admin. */
 export const deletarFirmware = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .inputValidator((d: { filename: string }) =>
     z.object({ filename: z.string().min(1) }).parse(d),
   )
@@ -134,7 +135,7 @@ async function assinarUrlOta(filename: string): Promise<string> {
 
 /** Dispara OTA_UPDATE para uma bancada. Apenas admin. */
 export const disparaOtaBancada = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .inputValidator((d: { bancada_id: string; filename: string }) =>
     z
       .object({
@@ -160,7 +161,7 @@ export const disparaOtaBancada = createServerFn({ method: "POST" })
 
 /** Dispara OTA_UPDATE para todas as bancadas. Apenas admin. */
 export const disparaOtaTodas = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .inputValidator((d: { filename: string }) =>
     z.object({ filename: z.string().min(1) }).parse(d),
   )

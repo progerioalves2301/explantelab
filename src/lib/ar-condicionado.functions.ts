@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireOperador } from "@/lib/role-middleware";
 
 export interface ArCondicionado {
   id: string;
@@ -62,6 +63,7 @@ export const listArCondicionados = createServerFn({ method: "GET" }).handler(
 );
 
 export const salvarArCondicionado = createServerFn({ method: "POST" })
+  .middleware([requireOperador])
   .inputValidator((data: z.infer<typeof arSchema> & { id?: string | null }) =>
     arSchema.extend({ id: z.string().uuid().nullable().optional() }).parse(data),
   )
@@ -89,6 +91,7 @@ export const salvarArCondicionado = createServerFn({ method: "POST" })
   });
 
 export const excluirArCondicionado = createServerFn({ method: "POST" })
+  .middleware([requireOperador])
   .inputValidator((data: { id: string }) =>
     z.object({ id: z.string().uuid() }).parse(data),
   )
@@ -104,6 +107,7 @@ export const excluirArCondicionado = createServerFn({ method: "POST" })
 
 // Envia um comando IR manual para teste (liga ou desliga o ar imediatamente).
 export const testarArCondicionado = createServerFn({ method: "POST" })
+  .middleware([requireOperador])
   .inputValidator((data: { id: string; acao: "on" | "off" }) =>
     z.object({ id: z.string().uuid(), acao: z.enum(["on", "off"]) }).parse(data),
   )
@@ -153,6 +157,7 @@ export const testarArCondicionado = createServerFn({ method: "POST" })
 // receptor VS1838B por `timeout_s` segundos e, ao capturar um frame do controle
 // real, chama a RPC bench_ir_save_raw que grava em ar_condicionados.codigo_ir_raw.
 export const aprenderIr = createServerFn({ method: "POST" })
+  .middleware([requireOperador])
   .inputValidator((data: { id: string; timeout_s?: number }) =>
     z.object({
       id: z.string().uuid(),
