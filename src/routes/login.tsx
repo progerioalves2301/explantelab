@@ -24,20 +24,11 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/dashboard` },
-        });
-        if (error) throw error;
-      }
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       toast.success("Bem-vindo(a)");
@@ -95,17 +86,11 @@ function LoginPage() {
               </div>
               <Button type="submit" disabled={loading}>
                 {loading && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-                {mode === "signup" ? "Criar conta e entrar" : "Entrar"}
+                Entrar
               </Button>
-              <button
-                type="button"
-                onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-                className="text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
-              >
-                {mode === "signin"
-                  ? "Primeiro acesso? Criar conta"
-                  : "Já tenho conta — entrar"}
-              </button>
+              <p className="text-center text-xs text-muted-foreground">
+                Contas são criadas pelo administrador.
+              </p>
             </form>
           </CardContent>
         </Card>
