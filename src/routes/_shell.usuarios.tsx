@@ -249,15 +249,98 @@ function UsersPage() {
               <UsuarioRow
                 key={u.user_id}
                 usuario={u}
+                isSelf={u.user_id === currentUserId}
                 onConceder={(role) => handleConceder(u.user_id, role)}
                 onRemover={(role) => handleRemover(u.user_id, role)}
+                onExcluir={() => setConfirmarRemocao(u)}
               />
             ))
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={novoOpen} onOpenChange={setNovoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo usuário</DialogTitle>
+            <DialogDescription>
+              Crie a conta com email e senha. O usuário poderá entrar imediatamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="novo-email">Email</Label>
+              <Input
+                id="novo-email"
+                type="email"
+                value={novoEmail}
+                onChange={(e) => setNovoEmail(e.target.value)}
+                placeholder="tecnico@empresa.com"
+                autoComplete="off"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="novo-senha">Senha</Label>
+              <Input
+                id="novo-senha"
+                type="password"
+                value={novoSenha}
+                onChange={(e) => setNovoSenha(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Papel inicial</Label>
+              <Select value={novoRole} onValueChange={(v) => setNovoRole(v as AppRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                  <SelectItem value="operador">Operador</SelectItem>
+                  <SelectItem value="visualizador">Visualizador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNovoOpen(false)} disabled={criando}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCriar} disabled={criando}>
+              {criando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+              Criar usuário
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={confirmarRemocao !== null}
+        onOpenChange={(o) => !o && setConfirmarRemocao(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação exclui permanentemente <strong>{confirmarRemocao?.email}</strong> e todos os seus papéis. Não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmarRemocao && handleExcluir(confirmarRemocao.user_id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
+
 }
 
 function UsuarioRow({
