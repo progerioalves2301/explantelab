@@ -1,12 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { UserPlus, Shield, ShieldCheck, Eye, Trash2, Loader2 } from "lucide-react";
+import { UserPlus, Shield, ShieldCheck, Eye, Trash2, Loader2, UserX } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -16,13 +36,16 @@ import {
 } from "@/components/ui/select";
 import {
   concederPapel,
+  criarUsuario,
   listarUsuarios,
   removerPapel,
+  removerUsuario,
   type AppRole,
   type UsuarioComPapeis,
 } from "@/lib/roles.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "@tanstack/react-router";
+
 
 export const Route = createFileRoute("/_shell/usuarios")({
   head: () => ({
