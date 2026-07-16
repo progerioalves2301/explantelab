@@ -420,6 +420,18 @@ function UsuarioRow({
             ))}
         </SelectContent>
       </Select>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        onClick={onExcluir}
+        disabled={isSelf}
+        title={isSelf ? "Não é possível remover seu próprio usuário" : "Remover usuário"}
+        aria-label="Remover usuário"
+      >
+        <UserX className="h-4 w-4" />
+      </Button>
     </div>
   );
 }
+
