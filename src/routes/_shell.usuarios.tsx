@@ -345,13 +345,18 @@ function UsersPage() {
 
 function UsuarioRow({
   usuario,
+  isSelf,
   onConceder,
   onRemover,
+  onExcluir,
 }: {
   usuario: UsuarioComPapeis;
+  isSelf: boolean;
   onConceder: (role: AppRole) => void;
   onRemover: (role: AppRole) => void;
+  onExcluir: () => void;
 }) {
+
   const iniciais = (usuario.email ?? "?")
     .split(/[@.]/)[0]
     .slice(0, 2)
