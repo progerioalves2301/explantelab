@@ -77,10 +77,19 @@ function UsersPage() {
   const listar = useServerFn(listarUsuarios);
   const conceder = useServerFn(concederPapel);
   const remover = useServerFn(removerPapel);
+  const criar = useServerFn(criarUsuario);
+  const excluir = useServerFn(removerUsuario);
   const [usuarios, setUsuarios] = useState<UsuarioComPapeis[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [semSessao, setSemSessao] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [novoOpen, setNovoOpen] = useState(false);
+  const [novoEmail, setNovoEmail] = useState("");
+  const [novoSenha, setNovoSenha] = useState("");
+  const [novoRole, setNovoRole] = useState<AppRole>("operador");
+  const [criando, setCriando] = useState(false);
+  const [confirmarRemocao, setConfirmarRemocao] = useState<UsuarioComPapeis | null>(null);
 
   const carregar = async () => {
     try {
@@ -93,6 +102,7 @@ function UsersPage() {
         return;
       }
       setSemSessao(false);
+      setCurrentUserId(sess.session.user.id);
       const dados = await listar();
       setUsuarios(dados);
       setErro(null);
@@ -132,6 +142,38 @@ function UsersPage() {
     }
   };
 
+  const handleCriar = async () => {
+    if (!novoEmail || !novoSenha) {
+      toast.error("Informe email e senha");
+      return;
+    }
+    try {
+      setCriando(true);
+      await criar({ data: { email: novoEmail, password: novoSenha, role: novoRole } });
+      toast.success(`Usuário ${novoEmail} criado`);
+      setNovoOpen(false);
+      setNovoEmail("");
+      setNovoSenha("");
+      setNovoRole("operador");
+      await carregar();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao criar usuário");
+    } finally {
+      setCriando(false);
+    }
+  };
+
+  const handleExcluir = async (user_id: string) => {
+    try {
+      await excluir({ data: { user_id } });
+      toast.success("Usuário removido");
+      setConfirmarRemocao(null);
+      await carregar();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao remover usuário");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -141,11 +183,12 @@ function UsersPage() {
             Administradores, operadores e visualizadores com acesso ao painel.
           </p>
         </div>
-        <Button variant="outline" disabled title="Envie o link /login para o técnico se cadastrar">
+        <Button onClick={() => setNovoOpen(true)} disabled={semSessao}>
           <UserPlus className="mr-1.5 h-4 w-4" />
-          Convidar (em breve)
+          Novo usuário
         </Button>
       </div>
+
 
       <Card className="card-elevated">
         <CardHeader>
