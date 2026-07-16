@@ -38,7 +38,7 @@ const items: readonly Item[] = [
   { title: "Ar-condicionado", url: "/ar-condicionado", icon: AirVent },
   { title: "Relatórios", url: "/relatorios", icon: FileText },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
-  { title: "Usuários", url: "/usuarios", icon: Users },
+  { title: "Usuários", url: "/usuarios", icon: Users, adminOnly: true },
   { title: "Atualização", url: "/atualizacao", icon: DownloadCloud, adminOnly: true },
 ] as const;
 
