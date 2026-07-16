@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireOperador } from "@/lib/role-middleware";
 
 export type AlertaTipo = "offline" | "temperatura" | "ciclo";
 export type AlertaSeveridade = "warning" | "critical";
@@ -43,7 +44,7 @@ export const listarAlertas = createServerFn({ method: "GET" })
   });
 
 export const resolverAlerta = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireOperador])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
@@ -66,7 +67,7 @@ export const listarDestinos = createServerFn({ method: "GET" })
   });
 
 export const criarDestino = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireOperador])
   .inputValidator((d: { chat_id: string; nome: string }) =>
     z.object({ chat_id: z.string().min(1).max(40), nome: z.string().min(1).max(80) }).parse(d),
   )
@@ -79,7 +80,7 @@ export const criarDestino = createServerFn({ method: "POST" })
   });
 
 export const toggleDestino = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireOperador])
   .inputValidator((d: { id: string; ativo: boolean }) =>
     z.object({ id: z.string().uuid(), ativo: z.boolean() }).parse(d),
   )
@@ -93,7 +94,7 @@ export const toggleDestino = createServerFn({ method: "POST" })
   });
 
 export const removerDestino = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireOperador])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
@@ -105,7 +106,7 @@ export const removerDestino = createServerFn({ method: "POST" })
   });
 
 export const salvarAlertaConfig = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireOperador])
   .inputValidator(
     (d: {
       bancada_id: string;
@@ -137,7 +138,7 @@ export const salvarAlertaConfig = createServerFn({ method: "POST" })
 
 /** Testa envio de mensagem ao Telegram para um destino específico. Admin. */
 export const testarDestino = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireOperador])
   .inputValidator((d: { chat_id: string }) => z.object({ chat_id: z.string() }).parse(d))
   .handler(async ({ data }) => {
     const lovableKey = process.env.LOVABLE_API_KEY;
