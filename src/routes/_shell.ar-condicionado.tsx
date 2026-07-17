@@ -260,53 +260,95 @@ function ArCondicionadoPage() {
                 <span
                   className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                     ar.ligado
-                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                      ? ar.modo_atual === "heat"
+                        ? "bg-orange-500/15 text-orange-700 dark:text-orange-400"
+                        : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {ar.ligado ? `LIGADO ${ar.setpoint_atual ?? "-"}°C` : "DESLIGADO"}
+                  {ar.ligado
+                    ? `${ar.modo_atual === "heat" ? "QUENTE" : "FRIO"} ${ar.setpoint_atual ?? "-"}°C`
+                    : "DESLIGADO"}
                 </span>
                 {!ar.ativo && (
                   <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
                     INATIVO
                   </span>
                 )}
+                {ar.suporta_aquecimento && (
+                  <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400">
+                    QUENTE/FRIO
+                  </span>
+                )}
                 {ar.codigo_ir_raw && ar.codigo_ir_raw.length > 0 && (
                   <span
                     className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-400"
-                    title={`${ar.codigo_ir_raw.length} pulsos aprendidos`}
+                    title={`${ar.codigo_ir_raw.length} pulsos (frio)`}
                   >
-                    IR APRENDIDO
+                    IR FRIO
+                  </span>
+                )}
+                {ar.codigo_ir_raw_heat && ar.codigo_ir_raw_heat.length > 0 && (
+                  <span
+                    className="rounded-full bg-orange-500/15 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400"
+                    title={`${ar.codigo_ir_raw_heat.length} pulsos (quente)`}
+                  >
+                    IR QUENTE
                   </span>
                 )}
               </CardTitle>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={testingId === ar.id}
-                  onClick={() => handleAprender(ar.id)}
-                  title="Coloca a prateleira em modo aprender por 30s; aperte LIGAR no controle real apontando para o receptor"
+                  onClick={() => handleAprender(ar.id, "cool")}
+                  title="Aprender código de LIGAR FRIO"
                 >
                   <Radio className="mr-1 h-3.5 w-3.5" />
-                  Aprender IR
+                  IR frio
                 </Button>
+                {ar.suporta_aquecimento && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={testingId === ar.id}
+                    onClick={() => handleAprender(ar.id, "heat")}
+                    title="Aprender código de LIGAR QUENTE"
+                    className="border-orange-500/40"
+                  >
+                    <Radio className="mr-1 h-3.5 w-3.5" />
+                    IR quente
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={testingId === ar.id}
-                  onClick={() => handleTestar(ar.id, "on")}
+                  onClick={() => handleTestar(ar.id, "on", "cool")}
                 >
                   <Power className="mr-1 h-3.5 w-3.5" />
-                  Testar ON
+                  Frio ON
                 </Button>
+                {ar.suporta_aquecimento && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={testingId === ar.id}
+                    onClick={() => handleTestar(ar.id, "on", "heat")}
+                    className="border-orange-500/40"
+                  >
+                    <Power className="mr-1 h-3.5 w-3.5" />
+                    Quente ON
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={testingId === ar.id}
                   onClick={() => handleTestar(ar.id, "off")}
                 >
-                  Testar OFF
+                  OFF
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => startEdit(ar)}>
                   Editar
