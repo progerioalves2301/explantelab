@@ -174,7 +174,6 @@ function GraficoTemperaturaPage() {
                   dataKey="ts"
                   type="number"
                   domain={["dataMin", "dataMax"]}
-                  scale="time"
                   tickFormatter={fmtEixoX}
                   minTickGap={40}
                   tick={{ fontSize: 11 }}
