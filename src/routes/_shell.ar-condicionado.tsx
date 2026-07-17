@@ -539,6 +539,21 @@ function ArCondicionadoPage() {
               </div>
             </div>
 
+            <div className="flex items-start gap-3 rounded-md border border-orange-500/30 bg-orange-500/5 px-3 py-2">
+              <Switch
+                checked={editing.suporta_aquecimento}
+                onCheckedChange={(v) => setEditing({ ...editing, suporta_aquecimento: v })}
+              />
+              <div className="grid gap-0.5">
+                <Label className="cursor-pointer">Este ar tem modo QUENTE (aquecimento)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Marque nos ares quente/frio (ex.: Elgin HVFI30). Quando ligado, o sistema aquece
+                  a sala se a temperatura cair abaixo do mínimo. Deixe desmarcado nos ares só-frio
+                  (ex.: Springer 42AFVCI18). Cada modo tem seu próprio código IR aprendido.
+                </p>
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 border-t pt-3">
               <Button variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
               <Button onClick={handleSave} disabled={saving}>
