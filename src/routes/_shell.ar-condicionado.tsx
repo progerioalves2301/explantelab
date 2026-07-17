@@ -185,11 +185,13 @@ function ArCondicionadoPage() {
     }
   };
 
-  const handleTestar = async (id: string, acao: "on" | "off") => {
+  const handleTestar = async (id: string, acao: "on" | "off", modo: "cool" | "heat" = "cool") => {
     setTestingId(id);
     try {
-      await testar({ data: { id, acao } });
-      toast.success(`Comando ${acao === "on" ? "LIGAR" : "DESLIGAR"} enviado`);
+      await testar({ data: { id, acao, modo } });
+      toast.success(
+        `Comando ${acao === "on" ? "LIGAR" : "DESLIGAR"} (${modo === "heat" ? "quente" : "frio"}) enviado`,
+      );
       await reload();
     } catch (e) {
       toast.error("Falha ao testar", { description: String(e) });
@@ -198,14 +200,13 @@ function ArCondicionadoPage() {
     }
   };
 
-  const handleAprender = async (id: string) => {
+  const handleAprender = async (id: string, modo: "cool" | "heat" = "cool") => {
     setTestingId(id);
     try {
-      const r = await aprender({ data: { id, timeout_s: 30 } });
-      toast.success("Modo aprender IR ativado", {
-        description: `Aponte o controle para a prateleira e aperte LIGAR nos próximos ${r.timeout_s}s.`,
+      const r = await aprender({ data: { id, timeout_s: 30, modo } });
+      toast.success(`Aprender IR (${modo === "heat" ? "quente" : "frio"}) ativado`, {
+        description: `Aponte o controle e aperte LIGAR ${modo === "heat" ? "no modo quente" : "no modo frio"} nos próximos ${r.timeout_s}s.`,
       });
-      // Recarrega depois da janela para pegar o código gravado.
       setTimeout(() => { void reload(); }, (r.timeout_s + 3) * 1000);
     } catch (e) {
       toast.error("Falha ao aprender IR", { description: String(e) });
