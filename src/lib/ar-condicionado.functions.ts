@@ -112,8 +112,12 @@ export const excluirArCondicionado = createServerFn({ method: "POST" })
 // Envia um comando IR manual para teste (liga ou desliga o ar imediatamente).
 export const testarArCondicionado = createServerFn({ method: "POST" })
   .middleware([requireOperador])
-  .inputValidator((data: { id: string; acao: "on" | "off" }) =>
-    z.object({ id: z.string().uuid(), acao: z.enum(["on", "off"]) }).parse(data),
+  .inputValidator((data: { id: string; acao: "on" | "off"; modo?: "cool" | "heat" }) =>
+    z.object({
+      id: z.string().uuid(),
+      acao: z.enum(["on", "off"]),
+      modo: z.enum(["cool", "heat"]).optional(),
+    }).parse(data),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -127,22 +131,27 @@ export const testarArCondicionado = createServerFn({ method: "POST" })
     if (!arRow.bancada_controladora_id) {
       throw new Error("Defina a prateleira controladora antes de testar");
     }
+    const modo = data.modo ?? "cool";
+    if (modo === "heat" && !arRow.suporta_aquecimento) {
+      throw new Error("Este ar não está marcado como suporte a aquecimento");
+    }
     const setpoint = data.acao === "on"
-      ? Math.max(16, Math.min(30, Number(arRow.setpoint_min) + 1))
+      ? (modo === "heat"
+          ? Math.max(16, Math.min(30, Number(arRow.setpoint_max) - 1))
+          : Math.max(16, Math.min(30, Number(arRow.setpoint_min) + 1)))
       : null;
+    const raw = modo === "heat" ? arRow.codigo_ir_raw_heat : arRow.codigo_ir_raw;
     const { error: cmdErr } = await supabaseAdmin.from("comandos").insert({
       bancada_id: arRow.bancada_controladora_id,
       tipo: "AC_CONTROL",
       payload: {
         acao: data.acao,
-        modo: "cool",
+        modo,
         setpoint,
         protocolo: arRow.ir_protocol,
         ar_id: arRow.id,
         teste: true,
-        // Se o ar já teve o controle "aprendido", envia o array cru — o firmware
-        // faz sendRaw() e ignora a lib de protocolo (mais confiável).
-        raw: arRow.codigo_ir_raw ?? undefined,
+        raw: raw ?? undefined,
       } as never,
     });
     if (cmdErr) throw new Error(cmdErr.message);
@@ -150,6 +159,7 @@ export const testarArCondicionado = createServerFn({ method: "POST" })
       .from("ar_condicionados")
       .update({
         ligado: data.acao === "on",
+        modo_atual: data.acao === "on" ? modo : "off",
         setpoint_atual: setpoint,
         ultimo_comando_em: new Date().toISOString(),
       })
