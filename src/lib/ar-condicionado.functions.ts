@@ -172,10 +172,11 @@ export const testarArCondicionado = createServerFn({ method: "POST" })
 // real, chama a RPC bench_ir_save_raw que grava em ar_condicionados.codigo_ir_raw.
 export const aprenderIr = createServerFn({ method: "POST" })
   .middleware([requireOperador])
-  .inputValidator((data: { id: string; timeout_s?: number }) =>
+  .inputValidator((data: { id: string; timeout_s?: number; modo?: "cool" | "heat" }) =>
     z.object({
       id: z.string().uuid(),
       timeout_s: z.number().int().min(5).max(120).optional(),
+      modo: z.enum(["cool", "heat"]).optional(),
     }).parse(data),
   )
   .handler(async ({ data }) => {
@@ -191,10 +192,11 @@ export const aprenderIr = createServerFn({ method: "POST" })
       throw new Error("Defina a prateleira controladora antes de aprender IR");
     }
     const timeout_s = data.timeout_s ?? 30;
+    const modo = data.modo ?? "cool";
     const { error: cmdErr } = await supabaseAdmin.from("comandos").insert({
       bancada_id: arRow.bancada_controladora_id,
       tipo: "IR_LEARN",
-      payload: { ar_id: arRow.id, timeout_s } as never,
+      payload: { ar_id: arRow.id, timeout_s, modo } as never,
     });
     if (cmdErr) throw new Error(cmdErr.message);
     return { ok: true, timeout_s };
