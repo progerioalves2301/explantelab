@@ -79,16 +79,9 @@ function GraficoTemperaturaPage() {
 
   const dadosGrafico = pontos.map((p) => ({
     ts: new Date(p.minuto).getTime(),
-    valor: p.valor,
+    label: format(new Date(p.minuto), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm"),
+    valor: Number(p.valor),
   }));
-
-  const fmtEixoX = (ts: number) => {
-    const d = new Date(ts);
-    if (periodo === "6h" || periodo === "24h") {
-      return format(d, "HH:mm");
-    }
-    return format(d, "dd/MM");
-  };
 
   return (
     <div className="space-y-4">
@@ -171,10 +164,7 @@ function GraficoTemperaturaPage() {
               >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis
-                  dataKey="ts"
-                  type="number"
-                  domain={["dataMin", "dataMax"]}
-                  tickFormatter={fmtEixoX}
+                  dataKey="label"
                   minTickGap={40}
                   tick={{ fontSize: 11 }}
                 />
@@ -185,11 +175,6 @@ function GraficoTemperaturaPage() {
                   width={45}
                 />
                 <Tooltip
-                  labelFormatter={(ts) =>
-                    format(new Date(ts as number), "dd/MM/yyyy HH:mm", {
-                      locale: ptBR,
-                    })
-                  }
                   formatter={(v: number) => [`${v.toFixed(2)}°C`, "Temperatura"]}
                   contentStyle={{
                     background: "hsl(var(--popover))",
