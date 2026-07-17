@@ -79,16 +79,9 @@ function GraficoTemperaturaPage() {
 
   const dadosGrafico = pontos.map((p) => ({
     ts: new Date(p.minuto).getTime(),
-    valor: p.valor,
+    label: format(new Date(p.minuto), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm"),
+    valor: Number(p.valor),
   }));
-
-  const fmtEixoX = (ts: number) => {
-    const d = new Date(ts);
-    if (periodo === "6h" || periodo === "24h") {
-      return format(d, "HH:mm");
-    }
-    return format(d, "dd/MM");
-  };
 
   return (
     <div className="space-y-4">
