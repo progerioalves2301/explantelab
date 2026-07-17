@@ -229,8 +229,10 @@ function GraficoTemperaturaPage() {
                   dataKey="valor"
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
-                  dot={false}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
                   isAnimationActive={false}
+                  connectNulls
                 />
               </LineChart>
             </ResponsiveContainer>
