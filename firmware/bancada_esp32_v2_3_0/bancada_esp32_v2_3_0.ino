@@ -1108,15 +1108,17 @@ void tratarComando(JsonObject cmd) {
     }
     const char* ar_id = p["ar_id"] | "";
     uint32_t timeout_s = p["timeout_s"] | 30;
+    const char* modo = p["modo"] | "cool";
     if (!*ar_id) {
       Serial.println("[IR_LEARN] ar_id ausente — ignorado");
     } else {
       ir_learn_ar_id = String(ar_id);
+      ir_learn_modo  = String(modo);
       ir_learn_deadline_ms = millis() + timeout_s * 1000UL;
       irrecv.enableIRIn();
       ir_learn_ativo = true;
-      Serial.printf("[IR_LEARN] aguardando código do controle por %us (ar=%s)\n",
-                    (unsigned)timeout_s, ar_id);
+      Serial.printf("[IR_LEARN] aguardando código do controle por %us (ar=%s, modo=%s)\n",
+                    (unsigned)timeout_s, ar_id, modo);
     }
   } else if (strcmp(tipo, "OTA_UPDATE") == 0) {
     // Payload: { "url": "<https signed url>", "filename": "..." }
