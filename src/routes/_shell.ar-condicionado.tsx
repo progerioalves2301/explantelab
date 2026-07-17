@@ -125,6 +125,7 @@ function ArCondicionadoPage() {
       histerese: Number(ar.histerese),
       intervalo_min_comando_s: ar.intervalo_min_comando_s,
       agregacao: ar.agregacao,
+      suporta_aquecimento: ar.suporta_aquecimento,
     });
   };
 
