@@ -174,7 +174,6 @@ function GraficoTemperaturaPage() {
                   dataKey="ts"
                   type="number"
                   domain={["dataMin", "dataMax"]}
-                  scale="time"
                   tickFormatter={fmtEixoX}
                   minTickGap={40}
                   tick={{ fontSize: 11 }}
@@ -230,8 +229,10 @@ function GraficoTemperaturaPage() {
                   dataKey="valor"
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
-                  dot={false}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
                   isAnimationActive={false}
+                  connectNulls
                 />
               </LineChart>
             </ResponsiveContainer>
