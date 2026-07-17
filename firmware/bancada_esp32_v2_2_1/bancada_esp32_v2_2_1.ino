@@ -73,7 +73,7 @@ static const int PIN_DS18B20 = 4;
 static const int PIN_IR_LED = 32;   // LED IR p/ ar-condicionado (v2.1.0)
 static const int PIN_IR_RX  = 33;   // Receptor IR VS1838B/TL1838 (v2.2.0)
 
-static const char* FIRMWARE_VERSION = "2.2.0";
+static const char* FIRMWARE_VERSION = "2.2.1";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -1058,19 +1058,27 @@ void tratarComando(JsonObject cmd) {
       ac.send();
     } else if (strcasecmp(protocolo, "CONSUL") == 0 ||
                strcasecmp(protocolo, "WHIRLPOOL") == 0) {
-      // Consul é do grupo Whirlpool — usa o mesmo protocolo IR Whirlpool DG11J1-3A
+      // Consul é do grupo Whirlpool (DG11J1-3A). O bit de power é TOGGLE:
+      // cada frame com PowerToggle=true inverte o estado do ar. Portanto só
+      // enviamos o comando quando o estado desejado difere do estado atual
+      // local; caso contrário mandaríamos um "desliga" quando na verdade
+      // queríamos ligar (ou vice-versa). v2.2.1 — corrige "liga mas não desliga".
       IRWhirlpoolAc ac(PIN_IR_LED);
       ac.begin();
       ac.setModel(DG11J13A);
-      if (ligar) {
-        ac.setPowerToggle(true);
-        ac.setMode(kWhirlpoolAcCool);
-        ac.setTemp((uint8_t)roundf(setpoint));
-        ac.setFan(kWhirlpoolAcFanAuto);
+      bool precisaToggle = (ligar != ac_ligado_local);
+      ac.setMode(kWhirlpoolAcCool);
+      ac.setTemp((uint8_t)roundf(ligar ? setpoint : 24));
+      ac.setFan(kWhirlpoolAcFanAuto);
+      ac.setPowerToggle(precisaToggle);
+      if (precisaToggle) {
+        ac.send();
+        Serial.printf("[AC] Consul/Whirlpool: toggle enviado (novo estado=%s)\n",
+                      ligar ? "ON" : "OFF");
       } else {
-        ac.setPowerToggle(false);
+        Serial.printf("[AC] Consul/Whirlpool: estado ja é %s — nenhum frame enviado\n",
+                      ligar ? "ON" : "OFF");
       }
-      ac.send();
     } else {
       Serial.printf("[AC] protocolo desconhecido: %s\n", protocolo);
     }
