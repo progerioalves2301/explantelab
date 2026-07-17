@@ -164,10 +164,7 @@ function GraficoTemperaturaPage() {
               >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis
-                  dataKey="ts"
-                  type="number"
-                  domain={["dataMin", "dataMax"]}
-                  tickFormatter={fmtEixoX}
+                  dataKey="label"
                   minTickGap={40}
                   tick={{ fontSize: 11 }}
                 />
