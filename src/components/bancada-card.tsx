@@ -514,6 +514,18 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           >
             <Cog className="h-4 w-4" />
           </Button>
+          <Button
+            asChild
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            aria-label="Ver gráfico de temperatura"
+            title="Ver gráfico de temperatura"
+          >
+            <Link to="/bancadas/$id/grafico" params={{ id: bancada.id }}>
+              <LineChart className="h-4 w-4" />
+            </Link>
+          </Button>
           {tab === "manual" ? (
             <Button
               size="sm"
