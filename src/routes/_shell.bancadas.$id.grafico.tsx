@@ -177,8 +177,8 @@ function GraficoTemperaturaPage() {
                 <Tooltip
                   formatter={(v: number) => [`${v.toFixed(2)}°C`, "Temperatura"]}
                   contentStyle={{
-                    background: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
+                    background: "var(--popover)",
+                    border: "1px solid var(--border)",
                     borderRadius: 6,
                     fontSize: 12,
                   }}
@@ -212,10 +212,13 @@ function GraficoTemperaturaPage() {
                 <Line
                   type="monotone"
                   dataKey="valor"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
+                  name="Temperatura"
+                  stroke="var(--fluid)"
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  dot={{ r: 4, fill: "var(--fluid)", stroke: "var(--card)", strokeWidth: 2 }}
+                  activeDot={{ r: 6, fill: "var(--fluid)", stroke: "var(--card)", strokeWidth: 2 }}
                   isAnimationActive={false}
                   connectNulls
                 />
