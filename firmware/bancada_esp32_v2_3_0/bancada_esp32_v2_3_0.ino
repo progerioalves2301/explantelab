@@ -844,8 +844,10 @@ void tickIrLearn() {
   String bodyStr; serializeJson(body, bodyStr);
 
   String resp;
-  if (supabaseRpc("bench_ir_save_raw", bodyStr, resp)) {
-    Serial.printf("[IR_LEARN] gravado com sucesso (%u pulsos)\n", (unsigned)n);
+  const char* rpc = (ir_learn_modo == "heat") ? "bench_ir_save_raw_heat" : "bench_ir_save_raw";
+  if (supabaseRpc(rpc, bodyStr, resp)) {
+    Serial.printf("[IR_LEARN] gravado com sucesso (%u pulsos, modo=%s)\n",
+                  (unsigned)n, ir_learn_modo.c_str());
   } else {
     Serial.println("[IR_LEARN] falha ao gravar no backend — tentará no próximo boot");
   }
@@ -853,6 +855,7 @@ void tickIrLearn() {
   irrecv.disableIRIn();
   ir_learn_ativo = false;
   ir_learn_ar_id = "";
+  ir_learn_modo  = "cool";
 }
 
 
