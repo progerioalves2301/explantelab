@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShellUsuariosRouteImport } from './routes/_shell.usuarios'
+import { Route as ShellRelatoriosTemperaturaRouteImport } from './routes/_shell.relatorios-temperatura'
 import { Route as ShellRelatoriosRouteImport } from './routes/_shell.relatorios'
 import { Route as ShellLaboratoriosRouteImport } from './routes/_shell.laboratorios'
 import { Route as ShellDashboardRouteImport } from './routes/_shell.dashboard'
@@ -53,6 +54,12 @@ const ShellUsuariosRoute = ShellUsuariosRouteImport.update({
   path: '/usuarios',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellRelatoriosTemperaturaRoute =
+  ShellRelatoriosTemperaturaRouteImport.update({
+    id: '/relatorios-temperatura',
+    path: '/relatorios-temperatura',
+    getParentRoute: () => ShellRoute,
+  } as any)
 const ShellRelatoriosRoute = ShellRelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
@@ -135,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
   '/relatorios': typeof ShellRelatoriosRoute
+  '/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
@@ -155,6 +163,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
   '/relatorios': typeof ShellRelatoriosRoute
+  '/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
@@ -177,6 +186,7 @@ export interface FileRoutesById {
   '/_shell/dashboard': typeof ShellDashboardRoute
   '/_shell/laboratorios': typeof ShellLaboratoriosRoute
   '/_shell/relatorios': typeof ShellRelatoriosRoute
+  '/_shell/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/_shell/usuarios': typeof ShellUsuariosRoute
   '/_shell/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/_shell/bancadas/nova': typeof ShellBancadasNovaRoute
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/laboratorios'
     | '/relatorios'
+    | '/relatorios-temperatura'
     | '/usuarios'
     | '/alertas/destinos'
     | '/bancadas/nova'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/laboratorios'
     | '/relatorios'
+    | '/relatorios-temperatura'
     | '/usuarios'
     | '/alertas/destinos'
     | '/bancadas/nova'
@@ -240,6 +252,7 @@ export interface FileRouteTypes {
     | '/_shell/dashboard'
     | '/_shell/laboratorios'
     | '/_shell/relatorios'
+    | '/_shell/relatorios-temperatura'
     | '/_shell/usuarios'
     | '/_shell/alertas/destinos'
     | '/_shell/bancadas/nova'
@@ -297,6 +310,13 @@ declare module '@tanstack/react-router' {
       path: '/usuarios'
       fullPath: '/usuarios'
       preLoaderRoute: typeof ShellUsuariosRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/relatorios-temperatura': {
+      id: '/_shell/relatorios-temperatura'
+      path: '/relatorios-temperatura'
+      fullPath: '/relatorios-temperatura'
+      preLoaderRoute: typeof ShellRelatoriosTemperaturaRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/relatorios': {
@@ -407,6 +427,7 @@ interface ShellRouteChildren {
   ShellDashboardRoute: typeof ShellDashboardRoute
   ShellLaboratoriosRoute: typeof ShellLaboratoriosRoute
   ShellRelatoriosRoute: typeof ShellRelatoriosRoute
+  ShellRelatoriosTemperaturaRoute: typeof ShellRelatoriosTemperaturaRoute
   ShellUsuariosRoute: typeof ShellUsuariosRoute
   ShellAlertasDestinosRoute: typeof ShellAlertasDestinosRoute
   ShellBancadasNovaRoute: typeof ShellBancadasNovaRoute
@@ -421,6 +442,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellDashboardRoute: ShellDashboardRoute,
   ShellLaboratoriosRoute: ShellLaboratoriosRoute,
   ShellRelatoriosRoute: ShellRelatoriosRoute,
+  ShellRelatoriosTemperaturaRoute: ShellRelatoriosTemperaturaRoute,
   ShellUsuariosRoute: ShellUsuariosRoute,
   ShellAlertasDestinosRoute: ShellAlertasDestinosRoute,
   ShellBancadasNovaRoute: ShellBancadasNovaRoute,
