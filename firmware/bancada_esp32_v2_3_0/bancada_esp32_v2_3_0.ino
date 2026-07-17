@@ -809,6 +809,7 @@ void tickIrLearn() {
     irrecv.disableIRIn();
     ir_learn_ativo = false;
     ir_learn_ar_id = "";
+    ir_learn_modo  = "cool";
     return;
   }
 
