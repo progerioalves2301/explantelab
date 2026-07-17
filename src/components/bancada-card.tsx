@@ -8,6 +8,7 @@ import {
   KeyRound,
   Leaf,
   Lightbulb,
+  LineChart,
   Clock3,
   SlidersHorizontal,
   Sprout,
@@ -15,6 +16,7 @@ import {
   Timer,
   Trash2,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
