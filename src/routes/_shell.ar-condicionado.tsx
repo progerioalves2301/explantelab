@@ -161,6 +161,7 @@ function ArCondicionadoPage() {
           histerese: editing.histerese,
           intervalo_min_comando_s: editing.intervalo_min_comando_s,
           agregacao: editing.agregacao,
+          suporta_aquecimento: editing.suporta_aquecimento,
         },
       });
       toast.success("Ar-condicionado salvo");
