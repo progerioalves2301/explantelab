@@ -89,6 +89,7 @@ static const uint16_t IR_MIN_UNKNOWN_SIZE = 12;
 IRrecv irrecv(PIN_IR_RX, IR_CAPTURE_BUFFER, IR_CAPTURE_TIMEOUT_MS, true);
 static bool          ir_learn_ativo = false;
 static String        ir_learn_ar_id = "";
+static String        ir_learn_modo  = "cool";  // v2.3.0 — 'cool' ou 'heat'
 static unsigned long ir_learn_deadline_ms = 0;
 
 // -------- Polaridade dos relés (v1.9.5+) --------
