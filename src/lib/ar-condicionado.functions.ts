@@ -16,10 +16,13 @@ export interface ArCondicionado {
   intervalo_min_comando_s: number;
   agregacao: "media" | "maxima";
   ligado: boolean;
+  modo_atual: "off" | "cool" | "heat";
   setpoint_atual: number | null;
   ultimo_comando_em: string | null;
   ultimo_temp_lida: number | null;
   codigo_ir_raw: number[] | null;
+  codigo_ir_raw_heat: number[] | null;
+  suporta_aquecimento: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +51,7 @@ const arSchema = z.object({
   histerese: z.number().min(0.1).max(5),
   intervalo_min_comando_s: z.number().int().min(30).max(3600),
   agregacao: z.enum(["media", "maxima"]),
+  suporta_aquecimento: z.boolean(),
 });
 
 export const listArCondicionados = createServerFn({ method: "GET" }).handler(
