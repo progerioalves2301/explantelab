@@ -175,11 +175,6 @@ function GraficoTemperaturaPage() {
                   width={45}
                 />
                 <Tooltip
-                  labelFormatter={(ts) =>
-                    format(new Date(ts as number), "dd/MM/yyyy HH:mm", {
-                      locale: ptBR,
-                    })
-                  }
                   formatter={(v: number) => [`${v.toFixed(2)}°C`, "Temperatura"]}
                   contentStyle={{
                     background: "hsl(var(--popover))",
