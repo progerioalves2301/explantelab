@@ -51,6 +51,7 @@ type FormState = {
   histerese: number;
   intervalo_min_comando_s: number;
   agregacao: "media" | "maxima";
+  suporta_aquecimento: boolean;
 };
 
 function emptyForm(labs: Laboratorio[]): FormState {
@@ -60,13 +61,14 @@ function emptyForm(labs: Laboratorio[]): FormState {
     bancada_controladora_id: null,
     marca: "LG",
     modelo: "",
-    ir_protocol: "LG",
+    ir_protocol: "RAW",
     ativo: true,
     setpoint_min: 22,
     setpoint_max: 26,
     histerese: 1,
     intervalo_min_comando_s: 180,
     agregacao: "maxima",
+    suporta_aquecimento: false,
   };
 }
 
@@ -123,6 +125,7 @@ function ArCondicionadoPage() {
       histerese: Number(ar.histerese),
       intervalo_min_comando_s: ar.intervalo_min_comando_s,
       agregacao: ar.agregacao,
+      suporta_aquecimento: ar.suporta_aquecimento,
     });
   };
 
@@ -158,6 +161,7 @@ function ArCondicionadoPage() {
           histerese: editing.histerese,
           intervalo_min_comando_s: editing.intervalo_min_comando_s,
           agregacao: editing.agregacao,
+          suporta_aquecimento: editing.suporta_aquecimento,
         },
       });
       toast.success("Ar-condicionado salvo");
@@ -181,11 +185,13 @@ function ArCondicionadoPage() {
     }
   };
 
-  const handleTestar = async (id: string, acao: "on" | "off") => {
+  const handleTestar = async (id: string, acao: "on" | "off", modo: "cool" | "heat" = "cool") => {
     setTestingId(id);
     try {
-      await testar({ data: { id, acao } });
-      toast.success(`Comando ${acao === "on" ? "LIGAR" : "DESLIGAR"} enviado`);
+      await testar({ data: { id, acao, modo } });
+      toast.success(
+        `Comando ${acao === "on" ? "LIGAR" : "DESLIGAR"} (${modo === "heat" ? "quente" : "frio"}) enviado`,
+      );
       await reload();
     } catch (e) {
       toast.error("Falha ao testar", { description: String(e) });
@@ -194,14 +200,13 @@ function ArCondicionadoPage() {
     }
   };
 
-  const handleAprender = async (id: string) => {
+  const handleAprender = async (id: string, modo: "cool" | "heat" = "cool") => {
     setTestingId(id);
     try {
-      const r = await aprender({ data: { id, timeout_s: 30 } });
-      toast.success("Modo aprender IR ativado", {
-        description: `Aponte o controle para a prateleira e aperte LIGAR nos próximos ${r.timeout_s}s.`,
+      const r = await aprender({ data: { id, timeout_s: 30, modo } });
+      toast.success(`Aprender IR (${modo === "heat" ? "quente" : "frio"}) ativado`, {
+        description: `Aponte o controle e aperte LIGAR ${modo === "heat" ? "no modo quente" : "no modo frio"} nos próximos ${r.timeout_s}s.`,
       });
-      // Recarrega depois da janela para pegar o código gravado.
       setTimeout(() => { void reload(); }, (r.timeout_s + 3) * 1000);
     } catch (e) {
       toast.error("Falha ao aprender IR", { description: String(e) });
@@ -255,53 +260,95 @@ function ArCondicionadoPage() {
                 <span
                   className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                     ar.ligado
-                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                      ? ar.modo_atual === "heat"
+                        ? "bg-orange-500/15 text-orange-700 dark:text-orange-400"
+                        : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {ar.ligado ? `LIGADO ${ar.setpoint_atual ?? "-"}°C` : "DESLIGADO"}
+                  {ar.ligado
+                    ? `${ar.modo_atual === "heat" ? "QUENTE" : "FRIO"} ${ar.setpoint_atual ?? "-"}°C`
+                    : "DESLIGADO"}
                 </span>
                 {!ar.ativo && (
                   <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
                     INATIVO
                   </span>
                 )}
+                {ar.suporta_aquecimento && (
+                  <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400">
+                    QUENTE/FRIO
+                  </span>
+                )}
                 {ar.codigo_ir_raw && ar.codigo_ir_raw.length > 0 && (
                   <span
                     className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-400"
-                    title={`${ar.codigo_ir_raw.length} pulsos aprendidos`}
+                    title={`${ar.codigo_ir_raw.length} pulsos (frio)`}
                   >
-                    IR APRENDIDO
+                    IR FRIO
+                  </span>
+                )}
+                {ar.codigo_ir_raw_heat && ar.codigo_ir_raw_heat.length > 0 && (
+                  <span
+                    className="rounded-full bg-orange-500/15 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400"
+                    title={`${ar.codigo_ir_raw_heat.length} pulsos (quente)`}
+                  >
+                    IR QUENTE
                   </span>
                 )}
               </CardTitle>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={testingId === ar.id}
-                  onClick={() => handleAprender(ar.id)}
-                  title="Coloca a prateleira em modo aprender por 30s; aperte LIGAR no controle real apontando para o receptor"
+                  onClick={() => handleAprender(ar.id, "cool")}
+                  title="Aprender código de LIGAR FRIO"
                 >
                   <Radio className="mr-1 h-3.5 w-3.5" />
-                  Aprender IR
+                  IR frio
                 </Button>
+                {ar.suporta_aquecimento && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={testingId === ar.id}
+                    onClick={() => handleAprender(ar.id, "heat")}
+                    title="Aprender código de LIGAR QUENTE"
+                    className="border-orange-500/40"
+                  >
+                    <Radio className="mr-1 h-3.5 w-3.5" />
+                    IR quente
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={testingId === ar.id}
-                  onClick={() => handleTestar(ar.id, "on")}
+                  onClick={() => handleTestar(ar.id, "on", "cool")}
                 >
                   <Power className="mr-1 h-3.5 w-3.5" />
-                  Testar ON
+                  Frio ON
                 </Button>
+                {ar.suporta_aquecimento && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={testingId === ar.id}
+                    onClick={() => handleTestar(ar.id, "on", "heat")}
+                    className="border-orange-500/40"
+                  >
+                    <Power className="mr-1 h-3.5 w-3.5" />
+                    Quente ON
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={testingId === ar.id}
                   onClick={() => handleTestar(ar.id, "off")}
                 >
-                  Testar OFF
+                  OFF
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => startEdit(ar)}>
                   Editar
@@ -489,6 +536,21 @@ function ArCondicionadoPage() {
                   onCheckedChange={(v) => setEditing({ ...editing, ativo: v })}
                 />
                 <Label className="cursor-pointer">Controle automático ativo</Label>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 rounded-md border border-orange-500/30 bg-orange-500/5 px-3 py-2">
+              <Switch
+                checked={editing.suporta_aquecimento}
+                onCheckedChange={(v) => setEditing({ ...editing, suporta_aquecimento: v })}
+              />
+              <div className="grid gap-0.5">
+                <Label className="cursor-pointer">Este ar tem modo QUENTE (aquecimento)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Marque nos ares quente/frio (ex.: Elgin HVFI30). Quando ligado, o sistema aquece
+                  a sala se a temperatura cair abaixo do mínimo. Deixe desmarcado nos ares só-frio
+                  (ex.: Springer 42AFVCI18). Cada modo tem seu próprio código IR aprendido.
+                </p>
               </div>
             </div>
 

@@ -112,6 +112,7 @@ export type Database = {
           ativo: boolean
           bancada_controladora_id: string | null
           codigo_ir_raw: Json | null
+          codigo_ir_raw_heat: Json | null
           created_at: string
           histerese: number
           id: string
@@ -121,9 +122,11 @@ export type Database = {
           ligado: boolean
           marca: string
           modelo: string | null
+          modo_atual: string
           setpoint_atual: number | null
           setpoint_max: number
           setpoint_min: number
+          suporta_aquecimento: boolean
           ultimo_comando_em: string | null
           ultimo_temp_lida: number | null
           updated_at: string
@@ -133,6 +136,7 @@ export type Database = {
           ativo?: boolean
           bancada_controladora_id?: string | null
           codigo_ir_raw?: Json | null
+          codigo_ir_raw_heat?: Json | null
           created_at?: string
           histerese?: number
           id?: string
@@ -142,9 +146,11 @@ export type Database = {
           ligado?: boolean
           marca?: string
           modelo?: string | null
+          modo_atual?: string
           setpoint_atual?: number | null
           setpoint_max?: number
           setpoint_min?: number
+          suporta_aquecimento?: boolean
           ultimo_comando_em?: string | null
           ultimo_temp_lida?: number | null
           updated_at?: string
@@ -154,6 +160,7 @@ export type Database = {
           ativo?: boolean
           bancada_controladora_id?: string | null
           codigo_ir_raw?: Json | null
+          codigo_ir_raw_heat?: Json | null
           created_at?: string
           histerese?: number
           id?: string
@@ -163,9 +170,11 @@ export type Database = {
           ligado?: boolean
           marca?: string
           modelo?: string | null
+          modo_atual?: string
           setpoint_atual?: number | null
           setpoint_max?: number
           setpoint_min?: number
+          suporta_aquecimento?: boolean
           ultimo_comando_em?: string | null
           ultimo_temp_lida?: number | null
           updated_at?: string
@@ -476,6 +485,15 @@ export type Database = {
     }
     Functions: {
       bench_ir_save_raw: {
+        Args: {
+          _ar_id: string
+          _bancada_id: string
+          _device_token: string
+          _raw: Json
+        }
+        Returns: Json
+      }
+      bench_ir_save_raw_heat: {
         Args: {
           _ar_id: string
           _bancada_id: string
