@@ -8,6 +8,7 @@ import {
   KeyRound,
   Leaf,
   Lightbulb,
+  LineChart,
   Clock3,
   SlidersHorizontal,
   Sprout,
@@ -15,6 +16,7 @@ import {
   Timer,
   Trash2,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -511,6 +513,18 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             title="Configurar prateleira"
           >
             <Cog className="h-4 w-4" />
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            aria-label="Ver gráfico de temperatura"
+            title="Ver gráfico de temperatura"
+          >
+            <Link to="/bancadas/$id/grafico" params={{ id: bancada.id }}>
+              <LineChart className="h-4 w-4" />
+            </Link>
           </Button>
           {tab === "manual" ? (
             <Button

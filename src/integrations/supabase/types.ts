@@ -458,6 +458,38 @@ export type Database = {
         }
         Relationships: []
       }
+      medicoes_temperatura: {
+        Row: {
+          bancada_id: string
+          created_at: string
+          id: number
+          minuto: string
+          valor: number
+        }
+        Insert: {
+          bancada_id: string
+          created_at?: string
+          id?: number
+          minuto: string
+          valor: number
+        }
+        Update: {
+          bancada_id?: string
+          created_at?: string
+          id?: number
+          minuto?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicoes_temperatura_bancada_id_fkey"
+            columns: ["bancada_id"]
+            isOneToOne: false
+            referencedRelation: "bancadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string

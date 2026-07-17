@@ -27,6 +27,7 @@ import { Route as ApiPublicHooksCheckAlertsRouteImport } from './routes/api/publ
 import { Route as ApiPublicBenchTelemetryRouteImport } from './routes/api/public/bench.telemetry'
 import { Route as ApiPublicBenchPairRouteImport } from './routes/api/public/bench.pair'
 import { Route as ApiPublicBenchCommandsRouteImport } from './routes/api/public/bench.commands'
+import { Route as ShellBancadasIdGraficoRouteImport } from './routes/_shell.bancadas.$id.grafico'
 
 const TvRoute = TvRouteImport.update({
   id: '/tv',
@@ -118,6 +119,11 @@ const ApiPublicBenchCommandsRoute = ApiPublicBenchCommandsRouteImport.update({
   path: '/api/public/bench/commands',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShellBancadasIdGraficoRoute = ShellBancadasIdGraficoRouteImport.update({
+  id: '/bancadas/$id/grafico',
+  path: '/bancadas/$id/grafico',
+  getParentRoute: () => ShellRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
   '/alertas/': typeof ShellAlertasIndexRoute
+  '/bancadas/$id/grafico': typeof ShellBancadasIdGraficoRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
   '/alertas': typeof ShellAlertasIndexRoute
+  '/bancadas/$id/grafico': typeof ShellBancadasIdGraficoRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/_shell/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/_shell/bancadas/nova': typeof ShellBancadasNovaRoute
   '/_shell/alertas/': typeof ShellAlertasIndexRoute
+  '/_shell/bancadas/$id/grafico': typeof ShellBancadasIdGraficoRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/alertas/destinos'
     | '/bancadas/nova'
     | '/alertas/'
+    | '/bancadas/$id/grafico'
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/alertas/destinos'
     | '/bancadas/nova'
     | '/alertas'
+    | '/bancadas/$id/grafico'
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/_shell/alertas/destinos'
     | '/_shell/bancadas/nova'
     | '/_shell/alertas/'
+    | '/_shell/bancadas/$id/grafico'
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
@@ -378,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBenchCommandsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_shell/bancadas/$id/grafico': {
+      id: '/_shell/bancadas/$id/grafico'
+      path: '/bancadas/$id/grafico'
+      fullPath: '/bancadas/$id/grafico'
+      preLoaderRoute: typeof ShellBancadasIdGraficoRouteImport
+      parentRoute: typeof ShellRoute
+    }
   }
 }
 
@@ -392,6 +411,7 @@ interface ShellRouteChildren {
   ShellAlertasDestinosRoute: typeof ShellAlertasDestinosRoute
   ShellBancadasNovaRoute: typeof ShellBancadasNovaRoute
   ShellAlertasIndexRoute: typeof ShellAlertasIndexRoute
+  ShellBancadasIdGraficoRoute: typeof ShellBancadasIdGraficoRoute
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
@@ -405,6 +425,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellAlertasDestinosRoute: ShellAlertasDestinosRoute,
   ShellBancadasNovaRoute: ShellBancadasNovaRoute,
   ShellAlertasIndexRoute: ShellAlertasIndexRoute,
+  ShellBancadasIdGraficoRoute: ShellBancadasIdGraficoRoute,
 }
 
 const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)
@@ -422,13 +443,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
