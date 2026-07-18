@@ -675,6 +675,17 @@ void abrirPortalWifi(bool forcar) {
     "pattern='\\d{6}' inputmode='numeric' maxlength='6' placeholder='000000'");
   wm.addParameter(&param_pair);
 
+  // v2.4.0 — periféricos opcionais (deixe em branco se este ESP não tem CO2/balança)
+  WiFiManagerParameter param_co2_tok(
+    "co2_tok", "Token sensor CO2 (opcional)", g_token_co2.c_str(), 64);
+  WiFiManagerParameter param_sc_tok(
+    "sc_tok",  "Token balança (opcional)",     g_token_scale.c_str(), 64);
+  WiFiManagerParameter param_muda(
+    "muda",    "Identificador da muda ativa (opcional)", g_muda_ident.c_str(), 64);
+  wm.addParameter(&param_co2_tok);
+  wm.addParameter(&param_sc_tok);
+  wm.addParameter(&param_muda);
+
   // AP name único por dispositivo: "VitroCeres-XXXXXX" (últimos 3 bytes do MAC)
   uint64_t mac = ESP.getEfuseMac();
   char apName[24];
