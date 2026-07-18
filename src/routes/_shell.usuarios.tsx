@@ -273,6 +273,7 @@ function UsersPage() {
                 onConceder={(role) => handleConceder(u.user_id, role)}
                 onRemover={(role) => handleRemover(u.user_id, role)}
                 onExcluir={() => setConfirmarRemocao(u)}
+                onRedefinirSenha={() => { setSenhaAlvo(u); setNovaSenha(""); }}
               />
             ))
           )}
