@@ -15,7 +15,7 @@ export interface DadosPessoaisExport {
     tabela: string;
     operacao: string;
     registro_id: string | null;
-    created_at: string;
+    criado_em: string;
   }>;
   observacoes: string;
 }
