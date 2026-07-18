@@ -370,12 +370,14 @@ function UsuarioRow({
   onConceder,
   onRemover,
   onExcluir,
+  onRedefinirSenha,
 }: {
   usuario: UsuarioComPapeis;
   isSelf: boolean;
   onConceder: (role: AppRole) => void;
   onRemover: (role: AppRole) => void;
   onExcluir: () => void;
+  onRedefinirSenha: () => void;
 }) {
 
   const iniciais = (usuario.email ?? "?")
