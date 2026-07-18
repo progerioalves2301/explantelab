@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { UserPlus, Shield, ShieldCheck, Eye, Trash2, Loader2, UserX } from "lucide-react";
+import { UserPlus, Shield, ShieldCheck, Eye, Trash2, Loader2, UserX, KeyRound } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
