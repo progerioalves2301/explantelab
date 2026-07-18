@@ -196,6 +196,42 @@ export type Database = {
           },
         ]
       }
+      auditoria: {
+        Row: {
+          criado_em: string
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          id: string
+          operacao: string
+          registro_id: string | null
+          tabela: string
+          usuario_email: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          criado_em?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          operacao: string
+          registro_id?: string | null
+          tabela: string
+          usuario_email?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          criado_em?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          operacao?: string
+          registro_id?: string | null
+          tabela?: string
+          usuario_email?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
       bancada_secrets: {
         Row: {
           bancada_id: string
@@ -396,6 +432,24 @@ export type Database = {
           },
         ]
       }
+      bench_rate_state: {
+        Row: {
+          bancada_id: string
+          req_count: number
+          window_start: string
+        }
+        Insert: {
+          bancada_id: string
+          req_count?: number
+          window_start?: string
+        }
+        Update: {
+          bancada_id?: string
+          req_count?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       comandos: {
         Row: {
           bancada_id: string
@@ -490,6 +544,24 @@ export type Database = {
           },
         ]
       }
+      termos_aceites: {
+        Row: {
+          aceito_em: string
+          user_id: string
+          versao: string
+        }
+        Insert: {
+          aceito_em?: string
+          user_id: string
+          versao?: string
+        }
+        Update: {
+          aceito_em?: string
+          user_id?: string
+          versao?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -556,6 +628,10 @@ export type Database = {
           _valvulas: Json
         }
         Returns: Json
+      }
+      check_rate_limit: {
+        Args: { _bancada_id: string; _max?: number }
+        Returns: boolean
       }
       decidir_ar_condicionado: { Args: never; Returns: number }
       detectar_alertas: { Args: never; Returns: number }
