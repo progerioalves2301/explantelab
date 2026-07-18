@@ -12,6 +12,7 @@ import {
   DownloadCloud,
   AirVent,
   ShieldCheck,
+  Sprout,
 } from "lucide-react";
 import {
   Sidebar,
