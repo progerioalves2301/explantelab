@@ -44,9 +44,9 @@ export const exportarMeusDados = createServerFn({ method: "POST" })
 
     const { data: audit } = await supabaseAdmin
       .from("auditoria")
-      .select("tabela, operacao, registro_id, created_at")
+      .select("tabela, operacao, registro_id, criado_em")
       .eq("usuario_id", context.userId)
-      .order("created_at", { ascending: false })
+      .order("criado_em", { ascending: false })
       .limit(1000);
 
     return {
@@ -66,7 +66,7 @@ export const exportarMeusDados = createServerFn({ method: "POST" })
         tabela: a.tabela as string,
         operacao: a.operacao as string,
         registro_id: (a.registro_id as string | null) ?? null,
-        created_at: a.created_at as string,
+        criado_em: a.criado_em as string,
       })),
       observacoes:
         "Este arquivo contém os dados pessoais associados à sua conta VitroCeres, nos termos da LGPD (Lei 13.709/2018), art. 18, incisos II e V.",
