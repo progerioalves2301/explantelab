@@ -12,6 +12,7 @@ import {
   DownloadCloud,
   AirVent,
   ShieldCheck,
+  Sprout,
 } from "lucide-react";
 import {
   Sidebar,
@@ -35,6 +36,7 @@ const items: readonly Item[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Salas Bioreator", url: "/laboratorios", icon: FlaskConical },
   { title: "Nova prateleira", url: "/bancadas/nova", icon: PlusCircle },
+  { title: "Mudas & Pesagem", url: "/mudas", icon: Sprout },
   { title: "Alertas", url: "/alertas", icon: Bell },
   { title: "Ar-condicionado", url: "/ar-condicionado", icon: AirVent },
   { title: "Relatórios", url: "/relatorios", icon: FileText },

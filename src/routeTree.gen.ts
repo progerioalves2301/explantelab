@@ -17,14 +17,17 @@ import { Route as ShellUsuariosRouteImport } from './routes/_shell.usuarios'
 import { Route as ShellRelatoriosTemperaturaRouteImport } from './routes/_shell.relatorios-temperatura'
 import { Route as ShellRelatoriosRouteImport } from './routes/_shell.relatorios'
 import { Route as ShellPrivacidadeDadosRouteImport } from './routes/_shell.privacidade-dados'
+import { Route as ShellMudasRouteImport } from './routes/_shell.mudas'
 import { Route as ShellLaboratoriosRouteImport } from './routes/_shell.laboratorios'
 import { Route as ShellDashboardRouteImport } from './routes/_shell.dashboard'
 import { Route as ShellConfiguracoesRouteImport } from './routes/_shell.configuracoes'
 import { Route as ShellAtualizacaoRouteImport } from './routes/_shell.atualizacao'
 import { Route as ShellArCondicionadoRouteImport } from './routes/_shell.ar-condicionado'
 import { Route as ShellAlertasIndexRouteImport } from './routes/_shell.alertas.index'
+import { Route as ShellMudasIdRouteImport } from './routes/_shell.mudas.$id'
 import { Route as ShellBancadasNovaRouteImport } from './routes/_shell.bancadas.nova'
 import { Route as ShellAlertasDestinosRouteImport } from './routes/_shell.alertas.destinos'
+import { Route as ApiPublicScaleReadingRouteImport } from './routes/api/public/scale.reading'
 import { Route as ApiPublicHooksCheckAlertsRouteImport } from './routes/api/public/hooks/check-alerts'
 import { Route as ApiPublicBenchTelemetryRouteImport } from './routes/api/public/bench.telemetry'
 import { Route as ApiPublicBenchPairRouteImport } from './routes/api/public/bench.pair'
@@ -71,6 +74,11 @@ const ShellPrivacidadeDadosRoute = ShellPrivacidadeDadosRouteImport.update({
   path: '/privacidade-dados',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellMudasRoute = ShellMudasRouteImport.update({
+  id: '/mudas',
+  path: '/mudas',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellLaboratoriosRoute = ShellLaboratoriosRouteImport.update({
   id: '/laboratorios',
   path: '/laboratorios',
@@ -101,6 +109,11 @@ const ShellAlertasIndexRoute = ShellAlertasIndexRouteImport.update({
   path: '/alertas/',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellMudasIdRoute = ShellMudasIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ShellMudasRoute,
+} as any)
 const ShellBancadasNovaRoute = ShellBancadasNovaRouteImport.update({
   id: '/bancadas/nova',
   path: '/bancadas/nova',
@@ -110,6 +123,11 @@ const ShellAlertasDestinosRoute = ShellAlertasDestinosRouteImport.update({
   id: '/alertas/destinos',
   path: '/alertas/destinos',
   getParentRoute: () => ShellRoute,
+} as any)
+const ApiPublicScaleReadingRoute = ApiPublicScaleReadingRouteImport.update({
+  id: '/api/public/scale/reading',
+  path: '/api/public/scale/reading',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksCheckAlertsRoute =
   ApiPublicHooksCheckAlertsRouteImport.update({
@@ -147,18 +165,21 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
+  '/mudas': typeof ShellMudasRouteWithChildren
   '/privacidade-dados': typeof ShellPrivacidadeDadosRoute
   '/relatorios': typeof ShellRelatoriosRoute
   '/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
+  '/mudas/$id': typeof ShellMudasIdRoute
   '/alertas/': typeof ShellAlertasIndexRoute
   '/bancadas/$id/grafico': typeof ShellBancadasIdGraficoRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
+  '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -169,18 +190,21 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
+  '/mudas': typeof ShellMudasRouteWithChildren
   '/privacidade-dados': typeof ShellPrivacidadeDadosRoute
   '/relatorios': typeof ShellRelatoriosRoute
   '/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
+  '/mudas/$id': typeof ShellMudasIdRoute
   '/alertas': typeof ShellAlertasIndexRoute
   '/bancadas/$id/grafico': typeof ShellBancadasIdGraficoRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
+  '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -193,18 +217,21 @@ export interface FileRoutesById {
   '/_shell/configuracoes': typeof ShellConfiguracoesRoute
   '/_shell/dashboard': typeof ShellDashboardRoute
   '/_shell/laboratorios': typeof ShellLaboratoriosRoute
+  '/_shell/mudas': typeof ShellMudasRouteWithChildren
   '/_shell/privacidade-dados': typeof ShellPrivacidadeDadosRoute
   '/_shell/relatorios': typeof ShellRelatoriosRoute
   '/_shell/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/_shell/usuarios': typeof ShellUsuariosRoute
   '/_shell/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/_shell/bancadas/nova': typeof ShellBancadasNovaRoute
+  '/_shell/mudas/$id': typeof ShellMudasIdRoute
   '/_shell/alertas/': typeof ShellAlertasIndexRoute
   '/_shell/bancadas/$id/grafico': typeof ShellBancadasIdGraficoRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
+  '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -217,18 +244,21 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/dashboard'
     | '/laboratorios'
+    | '/mudas'
     | '/privacidade-dados'
     | '/relatorios'
     | '/relatorios-temperatura'
     | '/usuarios'
     | '/alertas/destinos'
     | '/bancadas/nova'
+    | '/mudas/$id'
     | '/alertas/'
     | '/bancadas/$id/grafico'
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
     | '/api/public/hooks/check-alerts'
+    | '/api/public/scale/reading'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -239,18 +269,21 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/dashboard'
     | '/laboratorios'
+    | '/mudas'
     | '/privacidade-dados'
     | '/relatorios'
     | '/relatorios-temperatura'
     | '/usuarios'
     | '/alertas/destinos'
     | '/bancadas/nova'
+    | '/mudas/$id'
     | '/alertas'
     | '/bancadas/$id/grafico'
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
     | '/api/public/hooks/check-alerts'
+    | '/api/public/scale/reading'
   id:
     | '__root__'
     | '/'
@@ -262,18 +295,21 @@ export interface FileRouteTypes {
     | '/_shell/configuracoes'
     | '/_shell/dashboard'
     | '/_shell/laboratorios'
+    | '/_shell/mudas'
     | '/_shell/privacidade-dados'
     | '/_shell/relatorios'
     | '/_shell/relatorios-temperatura'
     | '/_shell/usuarios'
     | '/_shell/alertas/destinos'
     | '/_shell/bancadas/nova'
+    | '/_shell/mudas/$id'
     | '/_shell/alertas/'
     | '/_shell/bancadas/$id/grafico'
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
     | '/api/public/hooks/check-alerts'
+    | '/api/public/scale/reading'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -285,6 +321,7 @@ export interface RootRouteChildren {
   ApiPublicBenchPairRoute: typeof ApiPublicBenchPairRoute
   ApiPublicBenchTelemetryRoute: typeof ApiPublicBenchTelemetryRoute
   ApiPublicHooksCheckAlertsRoute: typeof ApiPublicHooksCheckAlertsRoute
+  ApiPublicScaleReadingRoute: typeof ApiPublicScaleReadingRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -345,6 +382,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellPrivacidadeDadosRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/mudas': {
+      id: '/_shell/mudas'
+      path: '/mudas'
+      fullPath: '/mudas'
+      preLoaderRoute: typeof ShellMudasRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/laboratorios': {
       id: '/_shell/laboratorios'
       path: '/laboratorios'
@@ -387,6 +431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellAlertasIndexRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/mudas/$id': {
+      id: '/_shell/mudas/$id'
+      path: '/$id'
+      fullPath: '/mudas/$id'
+      preLoaderRoute: typeof ShellMudasIdRouteImport
+      parentRoute: typeof ShellMudasRoute
+    }
     '/_shell/bancadas/nova': {
       id: '/_shell/bancadas/nova'
       path: '/bancadas/nova'
@@ -400,6 +451,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/alertas/destinos'
       preLoaderRoute: typeof ShellAlertasDestinosRouteImport
       parentRoute: typeof ShellRoute
+    }
+    '/api/public/scale/reading': {
+      id: '/api/public/scale/reading'
+      path: '/api/public/scale/reading'
+      fullPath: '/api/public/scale/reading'
+      preLoaderRoute: typeof ApiPublicScaleReadingRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/check-alerts': {
       id: '/api/public/hooks/check-alerts'
@@ -439,12 +497,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ShellMudasRouteChildren {
+  ShellMudasIdRoute: typeof ShellMudasIdRoute
+}
+
+const ShellMudasRouteChildren: ShellMudasRouteChildren = {
+  ShellMudasIdRoute: ShellMudasIdRoute,
+}
+
+const ShellMudasRouteWithChildren = ShellMudasRoute._addFileChildren(
+  ShellMudasRouteChildren,
+)
+
 interface ShellRouteChildren {
   ShellArCondicionadoRoute: typeof ShellArCondicionadoRoute
   ShellAtualizacaoRoute: typeof ShellAtualizacaoRoute
   ShellConfiguracoesRoute: typeof ShellConfiguracoesRoute
   ShellDashboardRoute: typeof ShellDashboardRoute
   ShellLaboratoriosRoute: typeof ShellLaboratoriosRoute
+  ShellMudasRoute: typeof ShellMudasRouteWithChildren
   ShellPrivacidadeDadosRoute: typeof ShellPrivacidadeDadosRoute
   ShellRelatoriosRoute: typeof ShellRelatoriosRoute
   ShellRelatoriosTemperaturaRoute: typeof ShellRelatoriosTemperaturaRoute
@@ -461,6 +532,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellConfiguracoesRoute: ShellConfiguracoesRoute,
   ShellDashboardRoute: ShellDashboardRoute,
   ShellLaboratoriosRoute: ShellLaboratoriosRoute,
+  ShellMudasRoute: ShellMudasRouteWithChildren,
   ShellPrivacidadeDadosRoute: ShellPrivacidadeDadosRoute,
   ShellRelatoriosRoute: ShellRelatoriosRoute,
   ShellRelatoriosTemperaturaRoute: ShellRelatoriosTemperaturaRoute,
@@ -482,17 +554,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBenchPairRoute: ApiPublicBenchPairRoute,
   ApiPublicBenchTelemetryRoute: ApiPublicBenchTelemetryRoute,
   ApiPublicHooksCheckAlertsRoute: ApiPublicHooksCheckAlertsRoute,
+  ApiPublicScaleReadingRoute: ApiPublicScaleReadingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

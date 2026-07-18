@@ -232,6 +232,56 @@ export type Database = {
         }
         Relationships: []
       }
+      balancas: {
+        Row: {
+          ativa: boolean
+          created_at: string
+          device_token: string
+          fator_calibracao: number
+          id: string
+          laboratorio_id: string
+          nome: string
+          tara_g: number
+          ultima_leitura_g: number | null
+          ultima_sync: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativa?: boolean
+          created_at?: string
+          device_token?: string
+          fator_calibracao?: number
+          id?: string
+          laboratorio_id: string
+          nome: string
+          tara_g?: number
+          ultima_leitura_g?: number | null
+          ultima_sync?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativa?: boolean
+          created_at?: string
+          device_token?: string
+          fator_calibracao?: number
+          id?: string
+          laboratorio_id?: string
+          nome?: string
+          tara_g?: number
+          ultima_leitura_g?: number | null
+          ultima_sync?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "balancas_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bancada_secrets: {
         Row: {
           bancada_id: string
@@ -512,6 +562,67 @@ export type Database = {
         }
         Relationships: []
       }
+      medicoes_peso: {
+        Row: {
+          balanca_id: string | null
+          created_at: string
+          id: string
+          laboratorio_id: string | null
+          medido_em: string
+          muda_id: string
+          observacoes: string | null
+          operador_id: string | null
+          origem: string
+          valor_g: number
+        }
+        Insert: {
+          balanca_id?: string | null
+          created_at?: string
+          id?: string
+          laboratorio_id?: string | null
+          medido_em?: string
+          muda_id: string
+          observacoes?: string | null
+          operador_id?: string | null
+          origem?: string
+          valor_g: number
+        }
+        Update: {
+          balanca_id?: string | null
+          created_at?: string
+          id?: string
+          laboratorio_id?: string | null
+          medido_em?: string
+          muda_id?: string
+          observacoes?: string | null
+          operador_id?: string | null
+          origem?: string
+          valor_g?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicoes_peso_balanca_id_fkey"
+            columns: ["balanca_id"]
+            isOneToOne: false
+            referencedRelation: "balancas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_peso_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_peso_muda_id_fkey"
+            columns: ["muda_id"]
+            isOneToOne: false
+            referencedRelation: "mudas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medicoes_temperatura: {
         Row: {
           bancada_id: string
@@ -540,6 +651,69 @@ export type Database = {
             columns: ["bancada_id"]
             isOneToOne: false
             referencedRelation: "bancadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mudas: {
+        Row: {
+          ativa: boolean
+          bancada_id: string | null
+          created_at: string
+          criado_por: string | null
+          data_fim: string | null
+          data_inicio: string
+          especie: string | null
+          id: string
+          identificador: string
+          laboratorio_id: string | null
+          observacoes: string | null
+          peso_inicial_g: number | null
+          updated_at: string
+        }
+        Insert: {
+          ativa?: boolean
+          bancada_id?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_fim?: string | null
+          data_inicio?: string
+          especie?: string | null
+          id?: string
+          identificador: string
+          laboratorio_id?: string | null
+          observacoes?: string | null
+          peso_inicial_g?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ativa?: boolean
+          bancada_id?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_fim?: string | null
+          data_inicio?: string
+          especie?: string | null
+          id?: string
+          identificador?: string
+          laboratorio_id?: string | null
+          observacoes?: string | null
+          peso_inicial_g?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mudas_bancada_id_fkey"
+            columns: ["bancada_id"]
+            isOneToOne: false
+            referencedRelation: "bancadas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mudas_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
             referencedColumns: ["id"]
           },
         ]
@@ -677,6 +851,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      scale_push_reading: {
+        Args: {
+          _device_token: string
+          _muda_identificador: string
+          _valor_g: number
+        }
+        Returns: Json
       }
       trigger_scheduled_cycles: { Args: never; Returns: undefined }
     }
