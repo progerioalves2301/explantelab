@@ -143,7 +143,7 @@ function RelatorioTemperaturaPage() {
   const [labs, setLabs] = useState<Laboratorio[]>([]);
   const [bancadas, setBancadas] = useState<Bancada[]>([]);
   const [medicoes, setMedicoes] = useState<
-    { bancada_id: string; valor: number }[]
+    { bancada_id: string; valor: number; minuto: string }[]
   >([]);
   const [loading, setLoading] = useState(true);
 
@@ -159,16 +159,17 @@ function RelatorioTemperaturaPage() {
         supabase.from("bancadas").select("*").order("posicao", { nullsFirst: false }),
         supabase
           .from("medicoes_temperatura")
-          .select("bancada_id, valor")
+          .select("bancada_id, valor, minuto")
           .gte("minuto", desde)
+          .order("minuto", { ascending: true })
           .limit(100000),
       ]);
       if (!alive) return;
       setLabs((labsRes.data ?? []) as unknown as Laboratorio[]);
       setBancadas((bancadasRes.data ?? []) as unknown as Bancada[]);
       setMedicoes(
-        ((medRes.data ?? []) as { bancada_id: string; valor: number | string }[]).map(
-          (r) => ({ bancada_id: r.bancada_id, valor: Number(r.valor) }),
+        ((medRes.data ?? []) as { bancada_id: string; valor: number | string; minuto: string }[]).map(
+          (r) => ({ bancada_id: r.bancada_id, valor: Number(r.valor), minuto: r.minuto }),
         ),
       );
       setLoading(false);
@@ -178,6 +179,55 @@ function RelatorioTemperaturaPage() {
       alive = false;
     };
   }, [periodo]);
+
+  // Séries temporais agregadas por sala (média das prateleiras por bucket)
+  const seriesPorLab = useMemo(() => {
+    const horas = PERIODOS[periodo].horas;
+    // bucket: 24h→10min, 7d→1h, 30d→6h, 90d→1d
+    const bucketMin = horas <= 24 ? 10 : horas <= 24 * 7 ? 60 : horas <= 24 * 30 ? 360 : 1440;
+    const bucketMs = bucketMin * 60 * 1000;
+    const bancadaLab = new Map<string, string>();
+    for (const b of bancadas) bancadaLab.set(b.id, b.laboratorio_id ?? "__sem_lab__");
+
+    // labId -> bucketTs -> {sum,count}
+    const agg = new Map<string, Map<number, { sum: number; count: number }>>();
+    for (const m of medicoes) {
+      const labId = bancadaLab.get(m.bancada_id);
+      if (!labId) continue;
+      const ts = new Date(m.minuto).getTime();
+      const bucket = Math.floor(ts / bucketMs) * bucketMs;
+      let byLab = agg.get(labId);
+      if (!byLab) {
+        byLab = new Map();
+        agg.set(labId, byLab);
+      }
+      const cur = byLab.get(bucket) ?? { sum: 0, count: 0 };
+      cur.sum += m.valor;
+      cur.count += 1;
+      byLab.set(bucket, cur);
+    }
+
+    const fmtLabel = (ts: number) => {
+      const d = new Date(ts);
+      if (bucketMin < 60) {
+        return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      }
+      if (bucketMin < 1440) {
+        return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit" });
+      }
+      return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+    };
+
+    const out = new Map<string, { label: string; valor: number }[]>();
+    for (const [labId, byLab] of agg) {
+      const pts = Array.from(byLab.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([ts, v]) => ({ label: fmtLabel(ts), valor: Number((v.sum / v.count).toFixed(2)) }));
+      out.set(labId, pts);
+    }
+    return out;
+  }, [medicoes, bancadas, periodo]);
+
 
   const grupos = useMemo(() => {
     // Agrupa medições por bancada
