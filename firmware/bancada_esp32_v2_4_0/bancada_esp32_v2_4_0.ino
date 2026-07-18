@@ -1505,6 +1505,11 @@ void setup() {
 
   carregarPrefs();
 
+  // v2.4.0 — periféricos opcionais compartilhando o mesmo binário
+  iniciarScd41();     // SCD41 no I2C 21/22 (endereço diferente do DS3231)
+  iniciarHx711();     // HX711 nas GPIOs 16/17
+
+
   // Aplica fuso ANTES de ler a hora do RTC p/ que getLocalTime já retorne local.
   aplicarTz(cfg.tz);
   carregarHoraDoRtc();
