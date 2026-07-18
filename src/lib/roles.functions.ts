@@ -203,3 +203,49 @@ export const removerUsuario = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Redefine a senha de um usuário. Apenas admin.
+ *  A senha nova NUNCA é armazenada em texto plano (Supabase Auth aplica hash bcrypt).
+ *  A operação é registrada na tabela auditoria (art. 37 LGPD) via trigger. */
+export const redefinirSenha = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { user_id: string; nova_senha: string }) =>
+    z
+      .object({
+        user_id: z.string().uuid(),
+        nova_senha: z
+          .string()
+          .min(8, "Senha deve ter no mínimo 8 caracteres")
+          .regex(/[A-Z]/, "Senha deve conter ao menos 1 letra maiúscula")
+          .regex(/[a-z]/, "Senha deve conter ao menos 1 letra minúscula")
+          .regex(/[0-9]/, "Senha deve conter ao menos 1 número"),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Acesso negado");
+
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(
+      data.user_id,
+      { password: data.nova_senha },
+    );
+    if (error) throw new Error(error.message);
+
+    // Registro de auditoria (art. 37 LGPD) — nunca gravamos a senha
+    await supabaseAdmin.from("auditoria").insert({
+      usuario_id: context.userId,
+      tabela: "auth.users",
+      operacao: "PASSWORD_RESET",
+      registro_id: data.user_id,
+      dados_novos: { evento: "senha_redefinida_por_admin" },
+    });
+
+    return { ok: true };
+  });
+

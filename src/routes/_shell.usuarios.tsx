@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { UserPlus, Shield, ShieldCheck, Eye, Trash2, Loader2, UserX } from "lucide-react";
+import { UserPlus, Shield, ShieldCheck, Eye, Trash2, Loader2, UserX, KeyRound } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +38,7 @@ import {
   concederPapel,
   criarUsuario,
   listarUsuarios,
+  redefinirSenha,
   removerPapel,
   removerUsuario,
   type AppRole,
@@ -79,6 +80,7 @@ function UsersPage() {
   const remover = useServerFn(removerPapel);
   const criar = useServerFn(criarUsuario);
   const excluir = useServerFn(removerUsuario);
+  const redefinir = useServerFn(redefinirSenha);
   const [usuarios, setUsuarios] = useState<UsuarioComPapeis[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -90,6 +92,9 @@ function UsersPage() {
   const [novoRole, setNovoRole] = useState<AppRole>("operador");
   const [criando, setCriando] = useState(false);
   const [confirmarRemocao, setConfirmarRemocao] = useState<UsuarioComPapeis | null>(null);
+  const [senhaAlvo, setSenhaAlvo] = useState<UsuarioComPapeis | null>(null);
+  const [novaSenha, setNovaSenha] = useState("");
+  const [redefinindo, setRedefinindo] = useState(false);
 
   const carregar = async () => {
     try {
@@ -174,6 +179,21 @@ function UsersPage() {
     }
   };
 
+  const handleRedefinir = async () => {
+    if (!senhaAlvo) return;
+    try {
+      setRedefinindo(true);
+      await redefinir({ data: { user_id: senhaAlvo.user_id, nova_senha: novaSenha } });
+      toast.success(`Senha de ${senhaAlvo.email} redefinida`);
+      setSenhaAlvo(null);
+      setNovaSenha("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao redefinir senha");
+    } finally {
+      setRedefinindo(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -253,6 +273,7 @@ function UsersPage() {
                 onConceder={(role) => handleConceder(u.user_id, role)}
                 onRemover={(role) => handleRemover(u.user_id, role)}
                 onExcluir={() => setConfirmarRemocao(u)}
+                onRedefinirSenha={() => { setSenhaAlvo(u); setNovaSenha(""); }}
               />
             ))
           )}
@@ -338,6 +359,42 @@ function UsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={senhaAlvo !== null} onOpenChange={(o) => { if (!o) { setSenhaAlvo(null); setNovaSenha(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Redefinir senha</DialogTitle>
+            <DialogDescription>
+              Defina uma nova senha para <strong>{senhaAlvo?.email}</strong>. A senha é armazenada com hash bcrypt — nem administradores conseguem ver a senha antiga. A ação fica registrada na auditoria (art. 37 LGPD).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="nova-senha">Nova senha</Label>
+              <Input
+                id="nova-senha"
+                type="password"
+                value={novaSenha}
+                onChange={(e) => setNovaSenha(e.target.value)}
+                placeholder="Mín. 8 caracteres, 1 maiúscula, 1 minúscula, 1 número"
+                autoComplete="new-password"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Recomende ao usuário trocar a senha no próximo login.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setSenhaAlvo(null); setNovaSenha(""); }} disabled={redefinindo}>
+              Cancelar
+            </Button>
+            <Button onClick={handleRedefinir} disabled={redefinindo || !novaSenha}>
+              {redefinindo && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+              Redefinir senha
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
@@ -349,12 +406,14 @@ function UsuarioRow({
   onConceder,
   onRemover,
   onExcluir,
+  onRedefinirSenha,
 }: {
   usuario: UsuarioComPapeis;
   isSelf: boolean;
   onConceder: (role: AppRole) => void;
   onRemover: (role: AppRole) => void;
   onExcluir: () => void;
+  onRedefinirSenha: () => void;
 }) {
 
   const iniciais = (usuario.email ?? "?")
@@ -420,6 +479,16 @@ function UsuarioRow({
             ))}
         </SelectContent>
       </Select>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={onRedefinirSenha}
+        title="Redefinir senha"
+        aria-label="Redefinir senha"
+      >
+        <KeyRound className="h-4 w-4" />
+      </Button>
       <Button
         variant="ghost"
         size="icon"
