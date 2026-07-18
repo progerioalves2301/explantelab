@@ -1308,6 +1308,151 @@ void tickCiclo() {
   }
 }
 
+// =====================================================================
+// v2.4.0 — SCD41 (CO2) e HX711 (balança)
+// =====================================================================
+
+// POST simples em endpoint público com header X-Device-Token.
+bool postPublic(const char* path, const String& body, const String& token,
+                String& respOut) {
+  if (WiFi.status() != WL_CONNECTED || token.length() < 8) return false;
+  HTTPClient h;
+  WiFiClientSecure c;
+  c.setInsecure();
+  String url = String(API_HOST) + path;
+  if (!h.begin(c, url)) return false;
+  h.setTimeout(8000);
+  h.addHeader("Content-Type", "application/json");
+  h.addHeader("X-Device-Token", token);
+  int code = h.POST(body);
+  respOut = h.getString();
+  h.end();
+  if (code < 200 || code >= 300) {
+    Serial.printf("[HTTP] %s => %d: %s\n", path, code, respOut.c_str());
+    return false;
+  }
+  return true;
+}
+
+bool getPublic(const char* path, const String& token, String& respOut) {
+  if (WiFi.status() != WL_CONNECTED || token.length() < 8) return false;
+  HTTPClient h;
+  WiFiClientSecure c;
+  c.setInsecure();
+  String url = String(API_HOST) + path;
+  if (!h.begin(c, url)) return false;
+  h.setTimeout(8000);
+  h.addHeader("X-Device-Token", token);
+  int code = h.GET();
+  respOut = h.getString();
+  h.end();
+  if (code < 200 || code >= 300) return false;
+  return true;
+}
+
+// -------- CO2 (SCD41) --------
+void iniciarScd41() {
+  // Wire.begin() já foi chamado pelo bloco do DS3231; reaproveitamos o bus.
+  g_scd4x.begin(Wire);
+  g_scd4x.stopPeriodicMeasurement();
+  delay(500);
+  uint16_t err = g_scd4x.startPeriodicMeasurement();
+  if (err) {
+    Serial.printf("[SCD41] não iniciou (err=%u) — CO2 desabilitado\n", err);
+    g_tem_scd41 = false;
+  } else {
+    Serial.println("[SCD41] modo periódico OK (1 amostra a cada 5 s)");
+    g_tem_scd41 = true;
+  }
+}
+
+void tickCo2(unsigned long now) {
+  if (!g_tem_scd41) return;
+  // amostragem local a cada 5 s
+  if (now - g_ts_ultima_co2_leitura >= 5000UL) {
+    g_ts_ultima_co2_leitura = now;
+    bool pronto = false;
+    if (g_scd4x.getDataReadyFlag(pronto) == 0 && pronto) {
+      uint16_t ppm; float t, rh;
+      if (g_scd4x.readMeasurement(ppm, t, rh) == 0 && ppm > 0) {
+        g_co2_ppm      = ppm;
+        g_scd41_temp_c = t;
+        g_scd41_umid   = rh;
+        g_co2_soma    += ppm;
+        g_co2_amostras++;
+      }
+    }
+  }
+  // envia média a cada 60 s
+  if (now - g_ts_ultimo_co2_envio >= 60000UL && g_co2_amostras > 0 &&
+      g_token_co2.length() >= 8) {
+    g_ts_ultimo_co2_envio = now;
+    uint16_t media = (uint16_t)(g_co2_soma / g_co2_amostras);
+    g_co2_soma = 0; g_co2_amostras = 0;
+    String body = String("{\"ppm\":") + media + "}";
+    String resp;
+    if (postPublic("/api/public/co2/reading", body, g_token_co2, resp)) {
+      Serial.printf("[CO2] enviado %u ppm\n", (unsigned)media);
+    }
+  }
+}
+
+// -------- Balança HX711 --------
+void iniciarHx711() {
+  g_balanca.begin(PIN_HX_DOUT, PIN_HX_SCK);
+  g_balanca.set_scale(1.0f);
+  g_balanca.set_offset(0);
+  // Aguarda até 2 s pelo primeiro dado — se não responder, marca ausente.
+  uint32_t t0 = millis();
+  while (!g_balanca.is_ready() && millis() - t0 < 2000) delay(50);
+  g_tem_hx711 = g_balanca.is_ready();
+  Serial.printf("[HX711] %s (fator=%.4f zero=%ld)\n",
+                g_tem_hx711 ? "detectado" : "NAO detectado",
+                g_hx_fator_cal, g_hx_zero_offset);
+}
+
+float hxLerPesoG() {
+  if (!g_tem_hx711 || !g_balanca.is_ready()) return g_hx_peso_g;
+  long raw = g_balanca.read_average(10);
+  return (raw - g_hx_zero_offset) / g_hx_fator_cal;
+}
+
+void hxConsultarStatus() {
+  String resp;
+  if (!getPublic("/api/public/scale/status", g_token_scale, resp)) return;
+  JsonDocument d;
+  if (deserializeJson(d, resp)) return;
+  g_hx_pode_amostrar   = d["amostrar"] | false;
+  const char* m        = d["motivo"] | "ok";
+  g_hx_motivo_bloqueio = String(m);
+}
+
+void hxEnviarLeitura(float g) {
+  if (g_muda_ident.length() == 0) return;
+  String body = String("{\"valor_g\":") + String(g, 2) +
+                ",\"muda_identificador\":\"" + g_muda_ident + "\"}";
+  String resp;
+  if (postPublic("/api/public/scale/reading", body, g_token_scale, resp)) {
+    Serial.printf("[HX711] enviado %.2f g (muda=%s)\n", g, g_muda_ident.c_str());
+  }
+}
+
+void tickBalanca(unsigned long now) {
+  if (!g_tem_hx711 || g_token_scale.length() < 8) return;
+  if (now - g_ts_ultima_hx_leitura >= 2000UL) {
+    g_ts_ultima_hx_leitura = now;
+    g_hx_peso_g = hxLerPesoG();
+  }
+  if (now - g_ts_ultimo_hx_status >= 60000UL || g_ts_ultimo_hx_status == 0) {
+    g_ts_ultimo_hx_status = now;
+    hxConsultarStatus();
+  }
+  if (g_hx_pode_amostrar && now - g_ts_ultimo_hx_envio >= 300000UL) {
+    g_ts_ultimo_hx_envio = now;
+    hxEnviarLeitura(g_hx_peso_g);
+  }
+}
+
 // -------- Setup / Loop --------
 void setup() {
   // BOOT-SAFE: em placas Low Level Trigger, o GPIO fica em HIGH-Z durante o
