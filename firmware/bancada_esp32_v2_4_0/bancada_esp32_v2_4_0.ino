@@ -560,6 +560,22 @@ void carregarPrefs() {
   cfg.tz[sizeof(cfg.tz) - 1] = 0;
 
   cfg.versao                 = prefs.getUInt("cfgv",   0);
+  // v2.4.0 — tokens/mudas dos periféricos opcionais
+  g_token_co2      = prefs.getString("co2_tok", "");
+  g_token_scale    = prefs.getString("sc_tok",  "");
+  g_muda_ident     = prefs.getString("sc_muda", "");
+  g_hx_fator_cal   = prefs.getFloat ("hx_fat", 1.0f);
+  g_hx_zero_offset = prefs.getLong  ("hx_zer", 0);
+  prefs.end();
+}
+
+void salvarPerifericos() {
+  prefs.begin("genelab", false);
+  prefs.putString("co2_tok", g_token_co2);
+  prefs.putString("sc_tok",  g_token_scale);
+  prefs.putString("sc_muda", g_muda_ident);
+  prefs.putFloat ("hx_fat",  g_hx_fator_cal);
+  prefs.putLong  ("hx_zer",  g_hx_zero_offset);
   prefs.end();
 }
 
