@@ -55,20 +55,22 @@ interface Props {
 
 
 // Presets dos botões Bio Reator (V1..V4 — V5 removida do projeto, sempre false)
-const PRESET_PLANTA: ValvulasEstado = {
+// Alinhado ao firmware: INJETANDO abre V1+V4 (meio→planta), RETORNANDO abre V2+V3 (planta→meio)
+const PRESET_MEIO: ValvulasEstado = {
   v1: true,
   v2: false,
   v3: false,
   v4: true,
   v5: false,
 };
-const PRESET_MEIO: ValvulasEstado = {
+const PRESET_PLANTA: ValvulasEstado = {
   v1: false,
   v2: true,
   v3: true,
   v4: false,
   v5: false,
 };
+
 
 function eq(a: ValvulasEstado, b: ValvulasEstado) {
   return (
