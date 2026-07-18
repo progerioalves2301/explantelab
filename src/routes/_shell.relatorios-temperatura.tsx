@@ -2,6 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { jsPDF } from "jspdf";
 import { useEffect, useMemo, useState } from "react";
 import { Thermometer, FlaskConical, Loader2, FileText, ArrowLeft } from "lucide-react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -133,7 +143,7 @@ function RelatorioTemperaturaPage() {
   const [labs, setLabs] = useState<Laboratorio[]>([]);
   const [bancadas, setBancadas] = useState<Bancada[]>([]);
   const [medicoes, setMedicoes] = useState<
-    { bancada_id: string; valor: number }[]
+    { bancada_id: string; valor: number; minuto: string }[]
   >([]);
   const [loading, setLoading] = useState(true);
 
@@ -149,16 +159,17 @@ function RelatorioTemperaturaPage() {
         supabase.from("bancadas").select("*").order("posicao", { nullsFirst: false }),
         supabase
           .from("medicoes_temperatura")
-          .select("bancada_id, valor")
+          .select("bancada_id, valor, minuto")
           .gte("minuto", desde)
+          .order("minuto", { ascending: true })
           .limit(100000),
       ]);
       if (!alive) return;
       setLabs((labsRes.data ?? []) as unknown as Laboratorio[]);
       setBancadas((bancadasRes.data ?? []) as unknown as Bancada[]);
       setMedicoes(
-        ((medRes.data ?? []) as { bancada_id: string; valor: number | string }[]).map(
-          (r) => ({ bancada_id: r.bancada_id, valor: Number(r.valor) }),
+        ((medRes.data ?? []) as { bancada_id: string; valor: number | string; minuto: string }[]).map(
+          (r) => ({ bancada_id: r.bancada_id, valor: Number(r.valor), minuto: r.minuto }),
         ),
       );
       setLoading(false);
@@ -168,6 +179,55 @@ function RelatorioTemperaturaPage() {
       alive = false;
     };
   }, [periodo]);
+
+  // Séries temporais agregadas por sala (média das prateleiras por bucket)
+  const seriesPorLab = useMemo(() => {
+    const horas = PERIODOS[periodo].horas;
+    // bucket: 24h→10min, 7d→1h, 30d→6h, 90d→1d
+    const bucketMin = horas <= 24 ? 10 : horas <= 24 * 7 ? 60 : horas <= 24 * 30 ? 360 : 1440;
+    const bucketMs = bucketMin * 60 * 1000;
+    const bancadaLab = new Map<string, string>();
+    for (const b of bancadas) bancadaLab.set(b.id, b.laboratorio_id ?? "__sem_lab__");
+
+    // labId -> bucketTs -> {sum,count}
+    const agg = new Map<string, Map<number, { sum: number; count: number }>>();
+    for (const m of medicoes) {
+      const labId = bancadaLab.get(m.bancada_id);
+      if (!labId) continue;
+      const ts = new Date(m.minuto).getTime();
+      const bucket = Math.floor(ts / bucketMs) * bucketMs;
+      let byLab = agg.get(labId);
+      if (!byLab) {
+        byLab = new Map();
+        agg.set(labId, byLab);
+      }
+      const cur = byLab.get(bucket) ?? { sum: 0, count: 0 };
+      cur.sum += m.valor;
+      cur.count += 1;
+      byLab.set(bucket, cur);
+    }
+
+    const fmtLabel = (ts: number) => {
+      const d = new Date(ts);
+      if (bucketMin < 60) {
+        return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      }
+      if (bucketMin < 1440) {
+        return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit" });
+      }
+      return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+    };
+
+    const out = new Map<string, { label: string; valor: number }[]>();
+    for (const [labId, byLab] of agg) {
+      const pts = Array.from(byLab.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([ts, v]) => ({ label: fmtLabel(ts), valor: Number((v.sum / v.count).toFixed(2)) }));
+      out.set(labId, pts);
+    }
+    return out;
+  }, [medicoes, bancadas, periodo]);
+
 
   const grupos = useMemo(() => {
     // Agrupa medições por bancada
@@ -306,8 +366,76 @@ function RelatorioTemperaturaPage() {
                   </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {(() => {
+                  const serie = seriesPorLab.get(lab.id) ?? [];
+                  const mins = itens
+                    .map((i) => i.bancada.temp_min)
+                    .filter((v): v is number => typeof v === "number");
+                  const maxs = itens
+                    .map((i) => i.bancada.temp_max)
+                    .filter((v): v is number => typeof v === "number");
+                  const refMin = mins.length ? Math.min(...mins) : null;
+                  const refMax = maxs.length ? Math.max(...maxs) : null;
+                  if (serie.length < 2) {
+                    return (
+                      <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
+                        Dados insuficientes para o gráfico ({serie.length} ponto{serie.length === 1 ? "" : "s"}).
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="h-56 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={serie} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis
+                            dataKey="label"
+                            tick={{ fontSize: 10 }}
+                            interval="preserveStartEnd"
+                            minTickGap={30}
+                          />
+                          <YAxis
+                            tick={{ fontSize: 10 }}
+                            domain={["auto", "auto"]}
+                            width={36}
+                            unit="°"
+                          />
+                          <Tooltip
+                            contentStyle={{ fontSize: 12 }}
+                            formatter={(v: number) => [`${v.toFixed(1)} °C`, "Temp"]}
+                          />
+                          {refMin !== null && (
+                            <ReferenceLine
+                              y={refMin}
+                              stroke="#f59e0b"
+                              strokeDasharray="4 4"
+                              label={{ value: `min ${refMin}°`, fontSize: 10, fill: "#f59e0b", position: "insideBottomLeft" }}
+                            />
+                          )}
+                          {refMax !== null && (
+                            <ReferenceLine
+                              y={refMax}
+                              stroke="#ef4444"
+                              strokeDasharray="4 4"
+                              label={{ value: `max ${refMax}°`, fontSize: 10, fill: "#ef4444", position: "insideTopLeft" }}
+                            />
+                          )}
+                          <Line
+                            type="monotone"
+                            dataKey="valor"
+                            stroke="#2563eb"
+                            strokeWidth={2}
+                            dot={false}
+                            isAnimationActive={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  );
+                })()}
                 <div className="overflow-x-auto">
+
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b text-left text-xs uppercase text-muted-foreground">
