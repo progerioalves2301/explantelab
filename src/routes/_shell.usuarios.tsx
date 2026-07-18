@@ -38,6 +38,7 @@ import {
   concederPapel,
   criarUsuario,
   listarUsuarios,
+  redefinirSenha,
   removerPapel,
   removerUsuario,
   type AppRole,
