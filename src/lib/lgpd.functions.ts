@@ -70,7 +70,7 @@ async function coletarDadosPessoais(
     comandos = (data ?? []).map((c) => ({
       bancada_id: c.bancada_id as string,
       tipo: c.tipo as string,
-      payload: c.payload as unknown,
+      payload: JSON.stringify(c.payload ?? null),
       criado_em: c.created_at as string,
     }));
   }
