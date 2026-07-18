@@ -75,7 +75,12 @@ static const int PIN_DS18B20 = 4;
 static const int PIN_IR_LED = 32;   // LED IR p/ ar-condicionado (v2.1.0)
 static const int PIN_IR_RX  = 33;   // Receptor IR VS1838B/TL1838 (v2.2.0)
 
-static const char* FIRMWARE_VERSION = "2.3.2";
+// v2.4.0 — Balança HX711 (opcional, ativa se sensor responder)
+static const int PIN_HX_DOUT = 16;
+static const int PIN_HX_SCK  = 17;
+// v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
+
+static const char* FIRMWARE_VERSION = "2.4.0";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
