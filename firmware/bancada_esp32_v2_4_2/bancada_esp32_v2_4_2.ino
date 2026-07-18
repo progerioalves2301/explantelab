@@ -1632,7 +1632,8 @@ void lerTemperatura() {
     g_temperatura_planta = NAN;
     g_temperatura_valida = false;
     lastTelem = 0; // publica null/estado atual para não parecer congelado
-    if (g_temp_falhas_seguidas >= 3) {
+    if (g_temp_falhas_seguidas >= 3 && g_tem_ds18b20) {
+      // Só reinicia 1-Wire se realmente havia DS18B20 detectado no boot.
       g_sensor_travado = true;
       reiniciarBarramento1Wire();
       g_temp_falhas_seguidas = 0;
