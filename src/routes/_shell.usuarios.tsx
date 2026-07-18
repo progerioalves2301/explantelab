@@ -359,6 +359,42 @@ function UsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={senhaAlvo !== null} onOpenChange={(o) => { if (!o) { setSenhaAlvo(null); setNovaSenha(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Redefinir senha</DialogTitle>
+            <DialogDescription>
+              Defina uma nova senha para <strong>{senhaAlvo?.email}</strong>. A senha é armazenada com hash bcrypt — nem administradores conseguem ver a senha antiga. A ação fica registrada na auditoria (art. 37 LGPD).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="nova-senha">Nova senha</Label>
+              <Input
+                id="nova-senha"
+                type="password"
+                value={novaSenha}
+                onChange={(e) => setNovaSenha(e.target.value)}
+                placeholder="Mín. 8 caracteres, 1 maiúscula, 1 minúscula, 1 número"
+                autoComplete="new-password"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Recomende ao usuário trocar a senha no próximo login.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setSenhaAlvo(null); setNovaSenha(""); }} disabled={redefinindo}>
+              Cancelar
+            </Button>
+            <Button onClick={handleRedefinir} disabled={redefinindo || !novaSenha}>
+              {redefinindo && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+              Redefinir senha
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
