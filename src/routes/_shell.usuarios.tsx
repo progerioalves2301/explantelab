@@ -179,6 +179,21 @@ function UsersPage() {
     }
   };
 
+  const handleRedefinir = async () => {
+    if (!senhaAlvo) return;
+    try {
+      setRedefinindo(true);
+      await redefinir({ data: { user_id: senhaAlvo.user_id, nova_senha: novaSenha } });
+      toast.success(`Senha de ${senhaAlvo.email} redefinida`);
+      setSenhaAlvo(null);
+      setNovaSenha("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao redefinir senha");
+    } finally {
+      setRedefinindo(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
