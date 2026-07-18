@@ -1,24 +1,35 @@
 /*
- * GeneLab IoT — Bancada ESP32 (comunicação direta com Supabase)
+ * VitroCeres OS — Firmware unificado da Prateleira ESP32
  * =============================================================
- * - SUPABASE_URL e SUPABASE_ANON_KEY fixos no firmware (mesmo binário
- *   p/ todas as bancadas).
- * - No 1o boot, portal AP (WiFiManager) pede Wi-Fi + código de 6 dígitos.
- * - Firmware chama RPC public.bench_pair para trocar o código pelas
- *   credenciais reais (bancada_id + device_token) e salva em Preferences.
- * - Telemetria via RPC public.bench_push_telemetry (2s).
- * - Comandos via RPC public.bench_pull_commands (2s).
- * - WiFiClientSecure/HTTPClient globais + keep-alive p/ evitar
- *   fragmentação de heap.
+ * v2.4.0 — MESMO binário controla, no mesmo ESP32:
+ *   • Válvulas V1/V4 e V2/V3 (ciclo hidráulico)
+ *   • Luzes da prateleira (timer HH:MM local, DS3231/NTP)
+ *   • Temperatura da planta (DS18B20)
+ *   • Ar-condicionado por IR (envio + aprendizado)
+ *   • Sensor de CO2 SCD41 (I2C, opcional — mesmo bus do DS3231)
+ *   • Balança HX711 + célula de carga (opcional)
  *
- * Bibliotecas:
- *   - WiFiManager (tzapu) >= 2.0.17
- *   - ArduinoJson (Benoit Blanchon) >= 7.0
- *   - Preferences (nativo ESP32)
+ * Cada periférico é AUTO-DETECTADO no boot. Se o hardware não estiver
+ * presente, os ticks correspondentes ficam inertes — o mesmo firmware
+ * roda em qualquer prateleira, com ou sem CO2/balança.
  *
- * Board: ESP32 Dev Module (esp32 by Espressif >= 3.0)
+ * Provisionamento pelo portal Wi-Fi (WiFiManager):
+ *   - código de pareamento (6 dígitos) → bench_pair
+ *   - device_token do sensor CO2 (opcional, tela "Sensores CO2")
+ *   - device_token da balança (opcional, tela "Balanças")
+ *   - identificador da muda ativa (opcional)
+ *
+ * Comunicação:
+ *   - Prateleira/AC: RPC direta ao Supabase (bench_push_telemetry / _pull_commands)
+ *   - CO2:  POST https://explantelab.lovable.app/api/public/co2/reading
+ *   - Peso: POST https://explantelab.lovable.app/api/public/scale/reading
+ *
+ * Bibliotecas Arduino IDE:
+ *   WiFiManager (tzapu), ArduinoJson, OneWire, DallasTemperature,
+ *   RTClib, IRremoteESP8266, HX711 (bogde), Sensirion I2C SCD4x.
  * =============================================================
  */
+
 
 #include <Arduino.h>
 #include <WiFi.h>
