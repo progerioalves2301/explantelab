@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, LineChart as LineChartIcon, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, LineChart as LineChartIcon, RefreshCw, Trash2, FileDown } from "lucide-react";
 import {
   CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { format } from "date-fns";
+import jsPDF from "jspdf";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -80,9 +81,14 @@ function CurvaPage() {
           </h1>
           {muda?.especie && <p className="text-sm text-muted-foreground">{muda.especie}</p>}
         </div>
-        <Button variant="outline" size="sm" onClick={carregar} disabled={loading}>
-          <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={carregar} disabled={loading}>
+            <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
+          </Button>
+          <Button size="sm" onClick={() => gerarPdf(muda, pontos)} disabled={!muda || pontos.length === 0}>
+            <FileDown className="mr-1.5 h-4 w-4" /> Baixar PDF
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -200,3 +206,118 @@ function StatCard({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function gerarPdf(muda: Muda | null, pontos: MedicaoPeso[]) {
+  if (!muda || pontos.length === 0) return;
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const W = doc.internal.pageSize.getWidth();
+
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Curva de crescimento — ${muda.identificador}`, 15, 18);
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  const meta: string[] = [];
+  if (muda.especie) meta.push(`Espécie: ${muda.especie}`);
+  meta.push(`Início: ${format(new Date(muda.data_inicio), "dd/MM/yyyy")}`);
+  meta.push(`Pesagens: ${pontos.length}`);
+  meta.push(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm")}`);
+  doc.text(meta.join("   ·   "), 15, 25);
+
+  const valores = pontos.map((p) => Number(p.valor_g));
+  const inicial = valores[0];
+  const ultimo = valores[valores.length - 1];
+  const ganho = ultimo - inicial;
+  const ganhoPct = inicial ? (ganho / inicial) * 100 : 0;
+  const min = Math.min(...valores);
+  const max = Math.max(...valores);
+
+  doc.setFontSize(10);
+  const stats = [
+    `Inicial: ${inicial.toFixed(2)} g`,
+    `Atual: ${ultimo.toFixed(2)} g`,
+    `Ganho: ${ganho > 0 ? "+" : ""}${ganho.toFixed(2)} g (${ganhoPct.toFixed(1)}%)`,
+    `Mín / Máx: ${min.toFixed(2)} / ${max.toFixed(2)} g`,
+  ];
+  doc.text(stats.join("   ·   "), 15, 32);
+
+  // Gráfico
+  const gx = 20, gy = 45, gw = W - 40, gh = 90;
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.2);
+  doc.rect(gx, gy, gw, gh);
+
+  const yMin = Math.floor(min - 1);
+  const yMax = Math.ceil(max + 1);
+  const yRange = Math.max(yMax - yMin, 0.5);
+  const ts = pontos.map((p) => new Date(p.medido_em).getTime());
+  const tMin = ts[0];
+  const tMax = ts[ts.length - 1];
+  const tRange = Math.max(tMax - tMin, 1);
+
+  // Grid + eixos Y
+  doc.setDrawColor(230);
+  doc.setFontSize(8);
+  for (let i = 0; i <= 5; i++) {
+    const y = gy + (gh / 5) * i;
+    doc.line(gx, y, gx + gw, y);
+    const val = yMax - (yRange / 5) * i;
+    doc.text(`${val.toFixed(1)}g`, gx - 2, y + 1.5, { align: "right" });
+  }
+
+  // Eixo X (datas)
+  const nTicksX = Math.min(6, pontos.length);
+  for (let i = 0; i < nTicksX; i++) {
+    const idx = Math.round(((pontos.length - 1) * i) / (nTicksX - 1 || 1));
+    const x = gx + (gw * (ts[idx] - tMin)) / tRange;
+    doc.text(format(new Date(ts[idx]), "dd/MM HH:mm"), x, gy + gh + 5, { align: "center" });
+  }
+
+  // Linha
+  doc.setDrawColor(34, 139, 34);
+  doc.setLineWidth(0.6);
+  for (let i = 1; i < pontos.length; i++) {
+    const x1 = gx + (gw * (ts[i - 1] - tMin)) / tRange;
+    const y1 = gy + gh - (gh * (valores[i - 1] - yMin)) / yRange;
+    const x2 = gx + (gw * (ts[i] - tMin)) / tRange;
+    const y2 = gy + gh - (gh * (valores[i] - yMin)) / yRange;
+    doc.line(x1, y1, x2, y2);
+  }
+  // Pontos
+  doc.setFillColor(34, 139, 34);
+  for (let i = 0; i < pontos.length; i++) {
+    const x = gx + (gw * (ts[i] - tMin)) / tRange;
+    const y = gy + gh - (gh * (valores[i] - yMin)) / yRange;
+    doc.circle(x, y, 0.7, "F");
+  }
+
+  // Tabela de histórico
+  let yy = gy + gh + 15;
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("Histórico de pesagens", 15, yy);
+  yy += 5;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text("Data/Hora", 15, yy);
+  doc.text("Peso (g)", 80, yy);
+  doc.text("Origem", 115, yy);
+  doc.text("Observações", 145, yy);
+  yy += 2;
+  doc.setDrawColor(200);
+  doc.line(15, yy, W - 15, yy);
+  yy += 4;
+
+  for (const p of pontos) {
+    if (yy > 280) { doc.addPage(); yy = 20; }
+    doc.text(format(new Date(p.medido_em), "dd/MM/yyyy HH:mm"), 15, yy);
+    doc.text(Number(p.valor_g).toFixed(2), 80, yy);
+    doc.text(p.origem, 115, yy);
+    if (p.observacoes) doc.text(p.observacoes.slice(0, 40), 145, yy);
+    yy += 5;
+  }
+
+  doc.save(`Curva_${muda.identificador}.pdf`);
+}
+
