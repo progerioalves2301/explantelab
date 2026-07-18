@@ -705,6 +705,12 @@ void abrirPortalWifi(bool forcar) {
     }
     strncpy(pairing_code_buf, param_pair.getValue(), sizeof(pairing_code_buf) - 1);
     pairing_code_buf[sizeof(pairing_code_buf) - 1] = 0;
+    // v2.4.0 — grava periféricos opcionais informados no portal
+    String v;
+    v = String(param_co2_tok.getValue()); v.trim(); if (v.length() > 0) g_token_co2   = v;
+    v = String(param_sc_tok .getValue()); v.trim(); if (v.length() > 0) g_token_scale = v;
+    v = String(param_muda   .getValue()); v.trim(); g_muda_ident = v;   // pode limpar
+    salvarPerifericos();
     Serial.println("[WM] Wi-Fi conectado");
     return;
   }
