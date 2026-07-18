@@ -81,9 +81,14 @@ function CurvaPage() {
           </h1>
           {muda?.especie && <p className="text-sm text-muted-foreground">{muda.especie}</p>}
         </div>
-        <Button variant="outline" size="sm" onClick={carregar} disabled={loading}>
-          <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={carregar} disabled={loading}>
+            <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
+          </Button>
+          <Button size="sm" onClick={() => gerarPdf(muda, pontos)} disabled={!muda || pontos.length === 0}>
+            <FileDown className="mr-1.5 h-4 w-4" /> Baixar PDF
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
