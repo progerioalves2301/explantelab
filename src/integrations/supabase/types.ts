@@ -584,6 +584,48 @@ export type Database = {
         }
         Relationships: []
       }
+      medicoes_co2: {
+        Row: {
+          created_at: string
+          id: string
+          laboratorio_id: string
+          medido_em: string
+          ppm: number
+          sensor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          laboratorio_id: string
+          medido_em?: string
+          ppm: number
+          sensor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          laboratorio_id?: string
+          medido_em?: string
+          ppm?: number
+          sensor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicoes_co2_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_co2_sensor_id_fkey"
+            columns: ["sensor_id"]
+            isOneToOne: false
+            referencedRelation: "sensores_co2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medicoes_peso: {
         Row: {
           balanca_id: string | null
@@ -746,6 +788,50 @@ export type Database = {
           },
         ]
       }
+      sensores_co2: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          device_token: string
+          id: string
+          laboratorio_id: string
+          nome: string
+          ultima_leitura_ppm: number | null
+          ultima_medicao_em: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          device_token: string
+          id?: string
+          laboratorio_id: string
+          nome: string
+          ultima_leitura_ppm?: number | null
+          ultima_medicao_em?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          device_token?: string
+          id?: string
+          laboratorio_id?: string
+          nome?: string
+          ultima_leitura_ppm?: number | null
+          ultima_medicao_em?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sensores_co2_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solicitacoes_lgpd: {
         Row: {
           created_at: string
@@ -870,6 +956,10 @@ export type Database = {
       check_rate_limit: {
         Args: { _bancada_id: string; _max?: number }
         Returns: boolean
+      }
+      co2_push_reading: {
+        Args: { _device_token: string; _ppm: number }
+        Returns: Json
       }
       decidir_ar_condicionado: { Args: never; Returns: number }
       detectar_alertas: { Args: never; Returns: number }
