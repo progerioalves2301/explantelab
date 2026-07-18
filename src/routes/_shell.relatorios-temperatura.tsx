@@ -366,8 +366,76 @@ function RelatorioTemperaturaPage() {
                   </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {(() => {
+                  const serie = seriesPorLab.get(lab.id) ?? [];
+                  const mins = itens
+                    .map((i) => i.bancada.temp_min)
+                    .filter((v): v is number => typeof v === "number");
+                  const maxs = itens
+                    .map((i) => i.bancada.temp_max)
+                    .filter((v): v is number => typeof v === "number");
+                  const refMin = mins.length ? Math.min(...mins) : null;
+                  const refMax = maxs.length ? Math.max(...maxs) : null;
+                  if (serie.length < 2) {
+                    return (
+                      <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
+                        Dados insuficientes para o gráfico ({serie.length} ponto{serie.length === 1 ? "" : "s"}).
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="h-56 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={serie} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis
+                            dataKey="label"
+                            tick={{ fontSize: 10 }}
+                            interval="preserveStartEnd"
+                            minTickGap={30}
+                          />
+                          <YAxis
+                            tick={{ fontSize: 10 }}
+                            domain={["auto", "auto"]}
+                            width={36}
+                            unit="°"
+                          />
+                          <Tooltip
+                            contentStyle={{ fontSize: 12 }}
+                            formatter={(v: number) => [`${v.toFixed(1)} °C`, "Temp"]}
+                          />
+                          {refMin !== null && (
+                            <ReferenceLine
+                              y={refMin}
+                              stroke="#f59e0b"
+                              strokeDasharray="4 4"
+                              label={{ value: `min ${refMin}°`, fontSize: 10, fill: "#f59e0b", position: "insideBottomLeft" }}
+                            />
+                          )}
+                          {refMax !== null && (
+                            <ReferenceLine
+                              y={refMax}
+                              stroke="#ef4444"
+                              strokeDasharray="4 4"
+                              label={{ value: `max ${refMax}°`, fontSize: 10, fill: "#ef4444", position: "insideTopLeft" }}
+                            />
+                          )}
+                          <Line
+                            type="monotone"
+                            dataKey="valor"
+                            stroke="#2563eb"
+                            strokeWidth={2}
+                            dot={false}
+                            isAnimationActive={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  );
+                })()}
                 <div className="overflow-x-auto">
+
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b text-left text-xs uppercase text-muted-foreground">
