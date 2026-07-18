@@ -141,6 +141,40 @@ RTC_DS3231 g_rtc;
 bool       g_tem_rtc          = false;   // detectado no boot
 uint32_t   g_ultima_sync_rtc  = 0;       // millis() da última gravação NTP -> RTC
 
+// -------- SCD41 (CO2 ambiente — v2.4.0) --------
+// Sensor opcional; se não responder no I2C, os ticks de CO2 ficam desabilitados.
+SensirionI2CScd4x g_scd4x;
+bool     g_tem_scd41         = false;
+uint16_t g_co2_ppm           = 0;
+float    g_scd41_temp_c      = NAN;
+float    g_scd41_umid        = NAN;
+uint32_t g_co2_soma          = 0;
+uint16_t g_co2_amostras      = 0;
+unsigned long g_ts_ultima_co2_leitura = 0;
+unsigned long g_ts_ultimo_co2_envio   = 0;
+
+// -------- HX711 balança (opcional — v2.4.0) --------
+// Cada ESP32 pode ter uma balança + célula de carga ligados; o firmware detecta
+// no boot e desabilita graciosamente se o HX711 não estiver presente. Cadastre
+// a balança na tela "Balanças" do painel, copie o token e cole no portal Wi-Fi.
+HX711 g_balanca;
+bool  g_tem_hx711            = false;
+float g_hx_fator_cal         = 1.0f;   // calibração da célula (NVS)
+long  g_hx_zero_offset       = 0;      // tare (NVS)
+float g_hx_peso_g            = 0.0f;
+String g_muda_ident          = "";     // etiqueta da muda ativa (NVS)
+String g_token_scale         = "";     // device_token da balança (NVS)
+String g_token_co2           = "";     // device_token do sensor CO2 (NVS)
+bool   g_hx_pode_amostrar    = false;
+String g_hx_motivo_bloqueio  = "iniciando";
+unsigned long g_ts_ultima_hx_leitura = 0;
+unsigned long g_ts_ultimo_hx_status  = 0;
+unsigned long g_ts_ultimo_hx_envio   = 0;
+
+// URL base (mesmo host do painel) — endpoints públicos /api/public/*.
+static const char* API_HOST = "https://explantelab.lovable.app";
+
+
 // -------- Estado --------
 enum FaseCiclo { REPOUSO, INJETANDO, PAUSADO, RETORNANDO, ALIVIO, MANUAL, OFFLINE };
 
