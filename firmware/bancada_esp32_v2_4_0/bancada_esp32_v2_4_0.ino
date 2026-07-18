@@ -1693,6 +1693,8 @@ void loop() {
 
   tickWifiWatchdog(now); // v2.1.2 — reengata rápido quando o Wi-Fi/roteador volta
   tickIrLearn();          // v2.2.0 — captura IR do controle quando ativo
+  tickCo2(now);           // v2.4.0 — amostra e envia CO2 se SCD41 presente
+  tickBalanca(now);       // v2.4.0 — amostra e envia peso se HX711 presente
 
   if (now - lastTick > 1000)          { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); sincronizarNtpParaRtc(); }
   if (now - lastTemp > 3000)          { lastTemp  = now; lerTemperatura(); }  // 3s p/ detectar variação rápido
