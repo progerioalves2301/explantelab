@@ -446,6 +446,16 @@ function UsuarioRow({
       <Button
         variant="ghost"
         size="icon"
+        className="h-8 w-8"
+        onClick={onRedefinirSenha}
+        title="Redefinir senha"
+        aria-label="Redefinir senha"
+      >
+        <KeyRound className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
         className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
         onClick={onExcluir}
         disabled={isSelf}
