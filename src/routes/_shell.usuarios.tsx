@@ -92,6 +92,9 @@ function UsersPage() {
   const [novoRole, setNovoRole] = useState<AppRole>("operador");
   const [criando, setCriando] = useState(false);
   const [confirmarRemocao, setConfirmarRemocao] = useState<UsuarioComPapeis | null>(null);
+  const [senhaAlvo, setSenhaAlvo] = useState<UsuarioComPapeis | null>(null);
+  const [novaSenha, setNovaSenha] = useState("");
+  const [redefinindo, setRedefinindo] = useState(false);
 
   const carregar = async () => {
     try {
