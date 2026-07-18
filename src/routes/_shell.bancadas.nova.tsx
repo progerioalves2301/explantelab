@@ -221,7 +221,7 @@ function Provisioning({
           <ol className="ml-4 list-decimal space-y-2 text-sm text-muted-foreground">
             <li>
               Ligue a bancada. Ela sobe a rede Wi-Fi{" "}
-              <code className="rounded bg-muted px-1 font-mono">BancadaSetup</code>{" "}
+              <code className="rounded bg-muted px-1 font-mono">VitroCeres</code>{" "}
               (senha <code className="rounded bg-muted px-1 font-mono">1234567890</code>).
             </li>
             <li>
