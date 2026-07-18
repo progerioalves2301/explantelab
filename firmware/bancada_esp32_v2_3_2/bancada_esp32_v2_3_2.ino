@@ -73,7 +73,7 @@ static const int PIN_DS18B20 = 4;
 static const int PIN_IR_LED = 32;   // LED IR p/ ar-condicionado (v2.1.0)
 static const int PIN_IR_RX  = 33;   // Receptor IR VS1838B/TL1838 (v2.2.0)
 
-static const char* FIRMWARE_VERSION = "2.3.1";
+static const char* FIRMWARE_VERSION = "2.3.2";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -593,18 +593,19 @@ static const char PORTAL_HEAD[] PROGMEM =
   "text-transform:uppercase;}"
   "</style>"
   "<div class=\"wrap\"><div class=\"brand\">"
-  "<div class=\"logo\">G</div>"
-  "<div><h1>GeneLab IoT</h1><p>Configuração da Bancada</p></div>"
+  "<div class=\"logo\">V</div>"
+  "<div><h1>VitroCeres</h1><p>Configuração da Prateleira</p></div>"
   "</div><div class=\"card\">";
 
 static const char PORTAL_FOOT[] PROGMEM =
-  "</div><div class=\"footer\">ESP32 • Firmware 2.1.1</div></div>";
+  "</div><div class=\"footer\">ESP32 • VitroCeres OS</div></div>";
+
 
 void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
   wm.setConfigPortalTimeout(300);
   wm.setClass("invert");
-  wm.setTitle("GeneLab IoT — Bancada");
+  wm.setTitle("VitroCeres — Prateleira");
   wm.setCustomHeadElement(PORTAL_HEAD);
   wm.setCustomMenuHTML(PORTAL_FOOT);
   wm.setShowInfoUpdate(false);
@@ -617,8 +618,13 @@ void abrirPortalWifi(bool forcar) {
     "pattern='\\d{6}' inputmode='numeric' maxlength='6' placeholder='000000'");
   wm.addParameter(&param_pair);
 
-  const char* apName = "VitroCeres";
+  // AP name único por dispositivo: "VitroCeres-XXXXXX" (últimos 3 bytes do MAC)
+  uint64_t mac = ESP.getEfuseMac();
+  char apName[24];
+  snprintf(apName, sizeof(apName), "VitroCeres-%02X%02X%02X",
+           (uint8_t)(mac >> 24), (uint8_t)(mac >> 16), (uint8_t)(mac >> 8));
   const char* apPass = "1234567890";
+
 
   if (forcar) {
     // Primeiro boot / reset manual — precisa abrir portal p/ receber SSID+código.
@@ -1253,7 +1259,7 @@ void setup() {
 
   Serial.begin(115200);
   delay(200);
-  Serial.printf("\n== GeneLab Bancada ESP32 v%s (direct-Supabase) ==\n", FIRMWARE_VERSION);
+  Serial.printf("\n== VitroCeres Prateleira ESP32 v%s (direct-Supabase) ==\n", FIRMWARE_VERSION);
   Serial.printf("[RELAY] polaridade: ACTIVE_%s\n", RELAY_ACTIVE_LOW ? "LOW" : "HIGH");
 
   pinMode(PIN_RESET_BTN, INPUT_PULLUP);
