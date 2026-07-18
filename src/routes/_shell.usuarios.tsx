@@ -80,6 +80,7 @@ function UsersPage() {
   const remover = useServerFn(removerPapel);
   const criar = useServerFn(criarUsuario);
   const excluir = useServerFn(removerUsuario);
+  const redefinir = useServerFn(redefinirSenha);
   const [usuarios, setUsuarios] = useState<UsuarioComPapeis[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
