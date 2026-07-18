@@ -617,7 +617,7 @@ void abrirPortalWifi(bool forcar) {
     "pattern='\\d{6}' inputmode='numeric' maxlength='6' placeholder='000000'");
   wm.addParameter(&param_pair);
 
-  const char* apName = "BancadaSetup";
+  const char* apName = "VitroCeres";
   const char* apPass = "1234567890";
 
   if (forcar) {
