@@ -27,6 +27,7 @@ import { Route as ShellAlertasIndexRouteImport } from './routes/_shell.alertas.i
 import { Route as ShellMudasIdRouteImport } from './routes/_shell.mudas.$id'
 import { Route as ShellBancadasNovaRouteImport } from './routes/_shell.bancadas.nova'
 import { Route as ShellAlertasDestinosRouteImport } from './routes/_shell.alertas.destinos'
+import { Route as ApiPublicScaleStatusRouteImport } from './routes/api/public/scale.status'
 import { Route as ApiPublicScaleReadingRouteImport } from './routes/api/public/scale.reading'
 import { Route as ApiPublicHooksCheckAlertsRouteImport } from './routes/api/public/hooks/check-alerts'
 import { Route as ApiPublicBenchTelemetryRouteImport } from './routes/api/public/bench.telemetry'
@@ -124,6 +125,11 @@ const ShellAlertasDestinosRoute = ShellAlertasDestinosRouteImport.update({
   path: '/alertas/destinos',
   getParentRoute: () => ShellRoute,
 } as any)
+const ApiPublicScaleStatusRoute = ApiPublicScaleStatusRouteImport.update({
+  id: '/api/public/scale/status',
+  path: '/api/public/scale/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicScaleReadingRoute = ApiPublicScaleReadingRouteImport.update({
   id: '/api/public/scale/reading',
   path: '/api/public/scale/reading',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
+  '/api/public/scale/status': typeof ApiPublicScaleStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
+  '/api/public/scale/status': typeof ApiPublicScaleStatusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
+  '/api/public/scale/status': typeof ApiPublicScaleStatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/api/public/bench/telemetry'
     | '/api/public/hooks/check-alerts'
     | '/api/public/scale/reading'
+    | '/api/public/scale/status'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
     | '/api/public/bench/telemetry'
     | '/api/public/hooks/check-alerts'
     | '/api/public/scale/reading'
+    | '/api/public/scale/status'
   id:
     | '__root__'
     | '/'
@@ -310,6 +321,7 @@ export interface FileRouteTypes {
     | '/api/public/bench/telemetry'
     | '/api/public/hooks/check-alerts'
     | '/api/public/scale/reading'
+    | '/api/public/scale/status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -322,6 +334,7 @@ export interface RootRouteChildren {
   ApiPublicBenchTelemetryRoute: typeof ApiPublicBenchTelemetryRoute
   ApiPublicHooksCheckAlertsRoute: typeof ApiPublicHooksCheckAlertsRoute
   ApiPublicScaleReadingRoute: typeof ApiPublicScaleReadingRoute
+  ApiPublicScaleStatusRoute: typeof ApiPublicScaleStatusRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -452,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellAlertasDestinosRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/api/public/scale/status': {
+      id: '/api/public/scale/status'
+      path: '/api/public/scale/status'
+      fullPath: '/api/public/scale/status'
+      preLoaderRoute: typeof ApiPublicScaleStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/scale/reading': {
       id: '/api/public/scale/reading'
       path: '/api/public/scale/reading'
@@ -555,6 +575,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBenchTelemetryRoute: ApiPublicBenchTelemetryRoute,
   ApiPublicHooksCheckAlertsRoute: ApiPublicHooksCheckAlertsRoute,
   ApiPublicScaleReadingRoute: ApiPublicScaleReadingRoute,
+  ApiPublicScaleStatusRoute: ApiPublicScaleStatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
