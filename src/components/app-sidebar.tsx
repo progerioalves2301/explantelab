@@ -11,6 +11,7 @@ import {
   FileText,
   DownloadCloud,
   AirVent,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Sidebar,
