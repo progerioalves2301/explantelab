@@ -235,44 +235,66 @@ export type Database = {
       balancas: {
         Row: {
           ativa: boolean
+          bancada_associada_id: string | null
           created_at: string
           device_token: string
           fator_calibracao: number
           id: string
           laboratorio_id: string
+          minutos_estabilizacao: number
           nome: string
+          outlier_delta_g: number
+          residuo_ultimo_ciclo_g: number | null
           tara_g: number
           ultima_leitura_g: number | null
           ultima_sync: string | null
+          ultimo_ciclo_fim: string | null
           updated_at: string
         }
         Insert: {
           ativa?: boolean
+          bancada_associada_id?: string | null
           created_at?: string
           device_token?: string
           fator_calibracao?: number
           id?: string
           laboratorio_id: string
+          minutos_estabilizacao?: number
           nome: string
+          outlier_delta_g?: number
+          residuo_ultimo_ciclo_g?: number | null
           tara_g?: number
           ultima_leitura_g?: number | null
           ultima_sync?: string | null
+          ultimo_ciclo_fim?: string | null
           updated_at?: string
         }
         Update: {
           ativa?: boolean
+          bancada_associada_id?: string | null
           created_at?: string
           device_token?: string
           fator_calibracao?: number
           id?: string
           laboratorio_id?: string
+          minutos_estabilizacao?: number
           nome?: string
+          outlier_delta_g?: number
+          residuo_ultimo_ciclo_g?: number | null
           tara_g?: number
           ultima_leitura_g?: number | null
           ultima_sync?: string | null
+          ultimo_ciclo_fim?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "balancas_bancada_associada_id_fkey"
+            columns: ["bancada_associada_id"]
+            isOneToOne: false
+            referencedRelation: "bancadas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "balancas_laboratorio_id_fkey"
             columns: ["laboratorio_id"]
@@ -566,6 +588,7 @@ export type Database = {
         Row: {
           balanca_id: string | null
           created_at: string
+          fase_bancada: string | null
           id: string
           laboratorio_id: string | null
           medido_em: string
@@ -573,11 +596,13 @@ export type Database = {
           observacoes: string | null
           operador_id: string | null
           origem: string
+          residuo_estimado_g: number | null
           valor_g: number
         }
         Insert: {
           balanca_id?: string | null
           created_at?: string
+          fase_bancada?: string | null
           id?: string
           laboratorio_id?: string | null
           medido_em?: string
@@ -585,11 +610,13 @@ export type Database = {
           observacoes?: string | null
           operador_id?: string | null
           origem?: string
+          residuo_estimado_g?: number | null
           valor_g: number
         }
         Update: {
           balanca_id?: string | null
           created_at?: string
+          fase_bancada?: string | null
           id?: string
           laboratorio_id?: string | null
           medido_em?: string
@@ -597,6 +624,7 @@ export type Database = {
           observacoes?: string | null
           operador_id?: string | null
           origem?: string
+          residuo_estimado_g?: number | null
           valor_g?: number
         }
         Relationships: [
@@ -852,6 +880,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      scale_can_sample: { Args: { _device_token: string }; Returns: Json }
       scale_push_reading: {
         Args: {
           _device_token: string
