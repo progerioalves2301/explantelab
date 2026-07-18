@@ -20,7 +20,7 @@ export interface DadosPessoaisExport {
   comandos_emitidos: Array<{
     bancada_id: string;
     tipo: string;
-    payload: unknown;
+    payload: string;
     criado_em: string;
   }>;
   alertas_resolvidos_por_titular: Array<{
