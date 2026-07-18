@@ -442,7 +442,7 @@ function RelatorioTemperaturaPage() {
             variant="outline"
             size="sm"
             disabled={loading || grupos.length === 0}
-            onClick={() => gerarPdf(PERIODOS[periodo].label, grupos)}
+            onClick={() => gerarPdf(PERIODOS[periodo].label, grupos, seriesPorLab)}
           >
             <FileText className="mr-1.5 h-4 w-4" /> Salvar PDF
           </Button>
