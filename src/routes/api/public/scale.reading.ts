@@ -42,7 +42,7 @@ export const Route = createFileRoute("/api/public/scale/reading")({
 
         const { data, error } = await supabaseAdmin.rpc("scale_push_reading", {
           _device_token: token,
-          _muda_identificador: payload.muda_identificador ?? null,
+          _muda_identificador: payload.muda_identificador ?? "",
           _valor_g: payload.valor_g,
         });
         if (error) {
