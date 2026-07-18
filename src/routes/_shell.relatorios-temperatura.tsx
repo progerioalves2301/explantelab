@@ -63,9 +63,105 @@ function fmt(v: number | null, casas = 1) {
   return v.toFixed(casas);
 }
 
+function desenharGrafico(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  serie: { label: string; valor: number }[],
+  refMin: number | null,
+  refMax: number | null,
+) {
+  // Moldura
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.2);
+  doc.rect(x, y, w, h);
+
+  if (serie.length < 2) {
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text("Dados insuficientes para o gráfico.", x + 3, y + h / 2);
+    doc.setTextColor(0, 0, 0);
+    return;
+  }
+
+  const padL = 10;
+  const padR = 4;
+  const padT = 4;
+  const padB = 10;
+  const cx = x + padL;
+  const cy = y + padT;
+  const cw = w - padL - padR;
+  const ch = h - padT - padB;
+
+  const valores = serie.map((s) => s.valor);
+  let vMin = Math.min(...valores, ...(refMin !== null ? [refMin] : []));
+  let vMax = Math.max(...valores, ...(refMax !== null ? [refMax] : []));
+  if (vMin === vMax) {
+    vMin -= 1;
+    vMax += 1;
+  } else {
+    const pad = (vMax - vMin) * 0.1;
+    vMin -= pad;
+    vMax += pad;
+  }
+
+  const xAt = (i: number) => cx + (i / (serie.length - 1)) * cw;
+  const yAt = (v: number) => cy + ch - ((v - vMin) / (vMax - vMin)) * ch;
+
+  // Grid horizontal + labels do eixo Y (3 divisões)
+  doc.setDrawColor(235, 235, 235);
+  doc.setFontSize(7);
+  doc.setTextColor(120, 120, 120);
+  for (let i = 0; i <= 3; i++) {
+    const v = vMin + ((vMax - vMin) * i) / 3;
+    const yy = yAt(v);
+    doc.line(cx, yy, cx + cw, yy);
+    doc.text(`${v.toFixed(1)}°`, x + 1, yy + 1.2);
+  }
+
+  // Linhas de referência
+  if (refMin !== null) {
+    doc.setDrawColor(245, 158, 11);
+    doc.setLineDashPattern([1, 1], 0);
+    const yy = yAt(refMin);
+    doc.line(cx, yy, cx + cw, yy);
+    doc.setLineDashPattern([], 0);
+  }
+  if (refMax !== null) {
+    doc.setDrawColor(239, 68, 68);
+    doc.setLineDashPattern([1, 1], 0);
+    const yy = yAt(refMax);
+    doc.line(cx, yy, cx + cw, yy);
+    doc.setLineDashPattern([], 0);
+  }
+
+  // Linha da série
+  doc.setDrawColor(37, 99, 235);
+  doc.setLineWidth(0.5);
+  for (let i = 1; i < serie.length; i++) {
+    doc.line(xAt(i - 1), yAt(serie[i - 1].valor), xAt(i), yAt(serie[i].valor));
+  }
+  doc.setLineWidth(0.2);
+
+  // Labels de X (início, meio, fim)
+  doc.setTextColor(120, 120, 120);
+  doc.setFontSize(7);
+  const idxs = [0, Math.floor((serie.length - 1) / 2), serie.length - 1];
+  idxs.forEach((i, k) => {
+    const label = serie[i].label;
+    const tx = xAt(i);
+    const align = k === 0 ? "left" : k === 2 ? "right" : "center";
+    doc.text(label, tx, y + h - 2, { align: align as "left" | "right" | "center" });
+  });
+  doc.setTextColor(0, 0, 0);
+}
+
 function gerarPdf(
   periodoLabel: string,
   grupos: { lab: Laboratorio; itens: EstatBancada[] }[],
+  seriesPorLab: Map<string, { label: string; valor: number }[]>,
 ) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -106,6 +202,21 @@ function gerarPdf(
     doc.text(`${lab.nome} — ${itens.length} prateleira(s)`, margin, y);
     y += 6;
 
+    // Gráfico da sala
+    const serie = seriesPorLab.get(lab.id) ?? [];
+    const mins = itens
+      .map((i) => i.bancada.temp_min)
+      .filter((v): v is number => typeof v === "number");
+    const maxs = itens
+      .map((i) => i.bancada.temp_max)
+      .filter((v): v is number => typeof v === "number");
+    const refMin = mins.length ? Math.min(...mins) : null;
+    const refMax = maxs.length ? Math.max(...maxs) : null;
+    const chartH = 45;
+    addPage(chartH + 4);
+    desenharGrafico(doc, margin, y, contentWidth, chartH, serie, refMin, refMax);
+    y += chartH + 4;
+
     // Header linha
     const cols = ["Prateleira", "Mín °C", "Méd °C", "Máx °C", "Amostras", "Fora faixa"];
     const colX = [margin + 2, margin + 60, margin + 82, margin + 104, margin + 128, margin + 158];
@@ -137,6 +248,7 @@ function gerarPdf(
 
   doc.save("Relatorio de Temperatura.pdf");
 }
+
 
 function RelatorioTemperaturaPage() {
   const [periodo, setPeriodo] = useState<PeriodoKey>("24h");
