@@ -21,6 +21,7 @@ import { Route as ShellMudasRouteImport } from './routes/_shell.mudas'
 import { Route as ShellLaboratoriosRouteImport } from './routes/_shell.laboratorios'
 import { Route as ShellDashboardRouteImport } from './routes/_shell.dashboard'
 import { Route as ShellConfiguracoesRouteImport } from './routes/_shell.configuracoes'
+import { Route as ShellCo2RouteImport } from './routes/_shell.co2'
 import { Route as ShellAtualizacaoRouteImport } from './routes/_shell.atualizacao'
 import { Route as ShellArCondicionadoRouteImport } from './routes/_shell.ar-condicionado'
 import { Route as ShellAlertasIndexRouteImport } from './routes/_shell.alertas.index'
@@ -30,6 +31,7 @@ import { Route as ShellAlertasDestinosRouteImport } from './routes/_shell.alerta
 import { Route as ApiPublicScaleStatusRouteImport } from './routes/api/public/scale.status'
 import { Route as ApiPublicScaleReadingRouteImport } from './routes/api/public/scale.reading'
 import { Route as ApiPublicHooksCheckAlertsRouteImport } from './routes/api/public/hooks/check-alerts'
+import { Route as ApiPublicCo2ReadingRouteImport } from './routes/api/public/co2.reading'
 import { Route as ApiPublicBenchTelemetryRouteImport } from './routes/api/public/bench.telemetry'
 import { Route as ApiPublicBenchPairRouteImport } from './routes/api/public/bench.pair'
 import { Route as ApiPublicBenchCommandsRouteImport } from './routes/api/public/bench.commands'
@@ -95,6 +97,11 @@ const ShellConfiguracoesRoute = ShellConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellCo2Route = ShellCo2RouteImport.update({
+  id: '/co2',
+  path: '/co2',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellAtualizacaoRoute = ShellAtualizacaoRouteImport.update({
   id: '/atualizacao',
   path: '/atualizacao',
@@ -141,6 +148,11 @@ const ApiPublicHooksCheckAlertsRoute =
     path: '/api/public/hooks/check-alerts',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCo2ReadingRoute = ApiPublicCo2ReadingRouteImport.update({
+  id: '/api/public/co2/reading',
+  path: '/api/public/co2/reading',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBenchTelemetryRoute = ApiPublicBenchTelemetryRouteImport.update({
   id: '/api/public/bench/telemetry',
   path: '/api/public/bench/telemetry',
@@ -168,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/tv': typeof TvRoute
   '/ar-condicionado': typeof ShellArCondicionadoRoute
   '/atualizacao': typeof ShellAtualizacaoRoute
+  '/co2': typeof ShellCo2Route
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
@@ -184,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
+  '/api/public/co2/reading': typeof ApiPublicCo2ReadingRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
   '/api/public/scale/status': typeof ApiPublicScaleStatusRoute
@@ -194,6 +208,7 @@ export interface FileRoutesByTo {
   '/tv': typeof TvRoute
   '/ar-condicionado': typeof ShellArCondicionadoRoute
   '/atualizacao': typeof ShellAtualizacaoRoute
+  '/co2': typeof ShellCo2Route
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
@@ -210,6 +225,7 @@ export interface FileRoutesByTo {
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
+  '/api/public/co2/reading': typeof ApiPublicCo2ReadingRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
   '/api/public/scale/status': typeof ApiPublicScaleStatusRoute
@@ -222,6 +238,7 @@ export interface FileRoutesById {
   '/tv': typeof TvRoute
   '/_shell/ar-condicionado': typeof ShellArCondicionadoRoute
   '/_shell/atualizacao': typeof ShellAtualizacaoRoute
+  '/_shell/co2': typeof ShellCo2Route
   '/_shell/configuracoes': typeof ShellConfiguracoesRoute
   '/_shell/dashboard': typeof ShellDashboardRoute
   '/_shell/laboratorios': typeof ShellLaboratoriosRoute
@@ -238,6 +255,7 @@ export interface FileRoutesById {
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
+  '/api/public/co2/reading': typeof ApiPublicCo2ReadingRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
   '/api/public/scale/status': typeof ApiPublicScaleStatusRoute
@@ -250,6 +268,7 @@ export interface FileRouteTypes {
     | '/tv'
     | '/ar-condicionado'
     | '/atualizacao'
+    | '/co2'
     | '/configuracoes'
     | '/dashboard'
     | '/laboratorios'
@@ -266,6 +285,7 @@ export interface FileRouteTypes {
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
+    | '/api/public/co2/reading'
     | '/api/public/hooks/check-alerts'
     | '/api/public/scale/reading'
     | '/api/public/scale/status'
@@ -276,6 +296,7 @@ export interface FileRouteTypes {
     | '/tv'
     | '/ar-condicionado'
     | '/atualizacao'
+    | '/co2'
     | '/configuracoes'
     | '/dashboard'
     | '/laboratorios'
@@ -292,6 +313,7 @@ export interface FileRouteTypes {
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
+    | '/api/public/co2/reading'
     | '/api/public/hooks/check-alerts'
     | '/api/public/scale/reading'
     | '/api/public/scale/status'
@@ -303,6 +325,7 @@ export interface FileRouteTypes {
     | '/tv'
     | '/_shell/ar-condicionado'
     | '/_shell/atualizacao'
+    | '/_shell/co2'
     | '/_shell/configuracoes'
     | '/_shell/dashboard'
     | '/_shell/laboratorios'
@@ -319,6 +342,7 @@ export interface FileRouteTypes {
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
+    | '/api/public/co2/reading'
     | '/api/public/hooks/check-alerts'
     | '/api/public/scale/reading'
     | '/api/public/scale/status'
@@ -332,6 +356,7 @@ export interface RootRouteChildren {
   ApiPublicBenchCommandsRoute: typeof ApiPublicBenchCommandsRoute
   ApiPublicBenchPairRoute: typeof ApiPublicBenchPairRoute
   ApiPublicBenchTelemetryRoute: typeof ApiPublicBenchTelemetryRoute
+  ApiPublicCo2ReadingRoute: typeof ApiPublicCo2ReadingRoute
   ApiPublicHooksCheckAlertsRoute: typeof ApiPublicHooksCheckAlertsRoute
   ApiPublicScaleReadingRoute: typeof ApiPublicScaleReadingRoute
   ApiPublicScaleStatusRoute: typeof ApiPublicScaleStatusRoute
@@ -423,6 +448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellConfiguracoesRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/co2': {
+      id: '/_shell/co2'
+      path: '/co2'
+      fullPath: '/co2'
+      preLoaderRoute: typeof ShellCo2RouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/atualizacao': {
       id: '/_shell/atualizacao'
       path: '/atualizacao'
@@ -486,6 +518,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksCheckAlertsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/co2/reading': {
+      id: '/api/public/co2/reading'
+      path: '/api/public/co2/reading'
+      fullPath: '/api/public/co2/reading'
+      preLoaderRoute: typeof ApiPublicCo2ReadingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/bench/telemetry': {
       id: '/api/public/bench/telemetry'
       path: '/api/public/bench/telemetry'
@@ -532,6 +571,7 @@ const ShellMudasRouteWithChildren = ShellMudasRoute._addFileChildren(
 interface ShellRouteChildren {
   ShellArCondicionadoRoute: typeof ShellArCondicionadoRoute
   ShellAtualizacaoRoute: typeof ShellAtualizacaoRoute
+  ShellCo2Route: typeof ShellCo2Route
   ShellConfiguracoesRoute: typeof ShellConfiguracoesRoute
   ShellDashboardRoute: typeof ShellDashboardRoute
   ShellLaboratoriosRoute: typeof ShellLaboratoriosRoute
@@ -549,6 +589,7 @@ interface ShellRouteChildren {
 const ShellRouteChildren: ShellRouteChildren = {
   ShellArCondicionadoRoute: ShellArCondicionadoRoute,
   ShellAtualizacaoRoute: ShellAtualizacaoRoute,
+  ShellCo2Route: ShellCo2Route,
   ShellConfiguracoesRoute: ShellConfiguracoesRoute,
   ShellDashboardRoute: ShellDashboardRoute,
   ShellLaboratoriosRoute: ShellLaboratoriosRoute,
@@ -573,6 +614,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBenchCommandsRoute: ApiPublicBenchCommandsRoute,
   ApiPublicBenchPairRoute: ApiPublicBenchPairRoute,
   ApiPublicBenchTelemetryRoute: ApiPublicBenchTelemetryRoute,
+  ApiPublicCo2ReadingRoute: ApiPublicCo2ReadingRoute,
   ApiPublicHooksCheckAlertsRoute: ApiPublicHooksCheckAlertsRoute,
   ApiPublicScaleReadingRoute: ApiPublicScaleReadingRoute,
   ApiPublicScaleStatusRoute: ApiPublicScaleStatusRoute,
