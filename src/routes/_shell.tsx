@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
+import { TermosModal } from "@/components/termos-modal";
 import { supabase } from "@/integrations/supabase/client";
 
 // Pathless layout with sidebar + header for authenticated app sections.
@@ -29,6 +30,7 @@ function ShellLayout() {
           </main>
         </SidebarInset>
       </div>
+      <TermosModal />
     </SidebarProvider>
   );
 }
