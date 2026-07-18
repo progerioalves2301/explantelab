@@ -544,6 +544,42 @@ export type Database = {
           },
         ]
       }
+      solicitacoes_lgpd: {
+        Row: {
+          created_at: string
+          detalhes: Json | null
+          formato: string | null
+          id: string
+          ip: unknown
+          status: string
+          storage_path: string | null
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          detalhes?: Json | null
+          formato?: string | null
+          id?: string
+          ip?: unknown
+          status?: string
+          storage_path?: string | null
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          detalhes?: Json | null
+          formato?: string | null
+          id?: string
+          ip?: unknown
+          status?: string
+          storage_path?: string | null
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       termos_aceites: {
         Row: {
           aceito_em: string
