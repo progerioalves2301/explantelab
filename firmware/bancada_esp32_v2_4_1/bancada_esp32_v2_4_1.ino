@@ -56,7 +56,7 @@
 #include <ir_Electra.h>
 #include <ir_Whirlpool.h>    // Consul (grupo Whirlpool) — v2.1.4
 #include <HX711.h>                  // Balança célula de carga (v2.4.0)
-#include <SensirionI2CScd4x.h>      // Sensor CO2 SCD41 (v2.4.0)
+#include <SensirionI2cScd4x.h>      // Sensor CO2 SCD41 (biblioteca Sensirion v1.1.0+)
 
 
 // -------- Config Supabase (fixa no binário) --------
@@ -91,7 +91,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.4.0";
+static const char* FIRMWARE_VERSION = "2.4.1";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -154,7 +154,7 @@ uint32_t   g_ultima_sync_rtc  = 0;       // millis() da última gravação NTP -
 
 // -------- SCD41 (CO2 ambiente — v2.4.0) --------
 // Sensor opcional; se não responder no I2C, os ticks de CO2 ficam desabilitados.
-SensirionI2CScd4x g_scd4x;
+SensirionI2cScd4x g_scd4x;
 bool     g_tem_scd41         = false;
 uint16_t g_co2_ppm           = 0;
 float    g_scd41_temp_c      = NAN;
@@ -1364,7 +1364,7 @@ bool getPublic(const char* path, const String& token, String& respOut) {
 // -------- CO2 (SCD41) --------
 void iniciarScd41() {
   // Wire.begin() já foi chamado pelo bloco do DS3231; reaproveitamos o bus.
-  g_scd4x.begin(Wire);
+  g_scd4x.begin(Wire, SCD41_I2C_ADDR_62);
   g_scd4x.stopPeriodicMeasurement();
   delay(500);
   uint16_t err = g_scd4x.startPeriodicMeasurement();
@@ -1383,7 +1383,7 @@ void tickCo2(unsigned long now) {
   if (now - g_ts_ultima_co2_leitura >= 5000UL) {
     g_ts_ultima_co2_leitura = now;
     bool pronto = false;
-    if (g_scd4x.getDataReadyFlag(pronto) == 0 && pronto) {
+    if (g_scd4x.getDataReadyStatus(pronto) == 0 && pronto) {
       uint16_t ppm; float t, rh;
       if (g_scd4x.readMeasurement(ppm, t, rh) == 0 && ppm > 0) {
         g_co2_ppm      = ppm;
