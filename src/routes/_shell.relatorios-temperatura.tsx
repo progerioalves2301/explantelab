@@ -301,8 +301,8 @@ function RelatorioTemperaturaPage() {
     const bancadaLab = new Map<string, string>();
     for (const b of bancadas) bancadaLab.set(b.id, b.laboratorio_id ?? "__sem_lab__");
 
-    // labId -> bucketTs -> {sum,count}
-    const agg = new Map<string, Map<number, { sum: number; count: number }>>();
+    // labId -> bucketTs -> {max}
+    const agg = new Map<string, Map<number, { max: number }>>();
     for (const m of medicoes) {
       const labId = bancadaLab.get(m.bancada_id);
       if (!labId) continue;
@@ -313,10 +313,9 @@ function RelatorioTemperaturaPage() {
         byLab = new Map();
         agg.set(labId, byLab);
       }
-      const cur = byLab.get(bucket) ?? { sum: 0, count: 0 };
-      cur.sum += m.valor;
-      cur.count += 1;
-      byLab.set(bucket, cur);
+      const cur = byLab.get(bucket);
+      if (!cur) byLab.set(bucket, { max: m.valor });
+      else if (m.valor > cur.max) cur.max = m.valor;
     }
 
     const fmtLabel = (ts: number) => {
@@ -334,10 +333,11 @@ function RelatorioTemperaturaPage() {
     for (const [labId, byLab] of agg) {
       const pts = Array.from(byLab.entries())
         .sort((a, b) => a[0] - b[0])
-        .map(([ts, v]) => ({ label: fmtLabel(ts), valor: Number((v.sum / v.count).toFixed(2)) }));
+        .map(([ts, v]) => ({ label: fmtLabel(ts), valor: Number(v.max.toFixed(2)) }));
       out.set(labId, pts);
     }
     return out;
+
   }, [medicoes, bancadas, periodo]);
 
 
