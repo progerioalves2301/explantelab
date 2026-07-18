@@ -44,6 +44,8 @@
 #include <ir_Midea.h>
 #include <ir_Electra.h>
 #include <ir_Whirlpool.h>    // Consul (grupo Whirlpool) — v2.1.4
+#include <HX711.h>                  // Balança célula de carga (v2.4.0)
+#include <SensirionI2CScd4x.h>      // Sensor CO2 SCD41 (v2.4.0)
 
 
 // -------- Config Supabase (fixa no binário) --------
