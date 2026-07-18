@@ -91,7 +91,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.4.1";
+static const char* FIRMWARE_VERSION = "2.4.2";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -1589,11 +1589,25 @@ void reiniciarBarramento1Wire() {
 }
 
 void lerTemperatura() {
-  // v2.0.1: leitura igual ao teste simples da IDE Arduino: converte o barramento
-  // inteiro e lê o primeiro sensor por índice. Isso evita falso erro quando a
-  // leitura por endereço retorna falha mesmo com o DS18B20 respondendo.
-  dsSensor.requestTemperatures();
-  float t = dsSensor.getTempCByIndex(0);
+  // v2.4.2: instalação tem SEMPRE apenas UM sensor de temperatura por prateleira —
+  // ou o DS18B20 (na maioria das prateleiras) OU o SCD41 (quando a sala tem o
+  // sensor de CO2 acoplado à muda). Se o DS18B20 não foi detectado no boot mas o
+  // SCD41 está ativo, usamos a temperatura reportada pelo SCD41 no lugar. Assim
+  // o backend continua recebendo `_temperatura_planta` normalmente e todos os
+  // alertas / controle de ar-condicionado seguem funcionando sem alteração.
+  float t;
+  if (g_tem_ds18b20) {
+    // Leitura padrão do DS18B20 (igual ao teste simples da IDE Arduino).
+    dsSensor.requestTemperatures();
+    t = dsSensor.getTempCByIndex(0);
+  } else if (g_tem_scd41 && !isnan(g_scd41_temp_c)) {
+    // Fallback: SCD41 já roda em modo periódico (uma leitura a cada 5 s) em
+    // tickCo2(). Aqui apenas reaproveitamos o último valor cacheado.
+    t = g_scd41_temp_c;
+  } else {
+    // Nenhum sensor disponível — marca como leitura inválida.
+    t = DEVICE_DISCONNECTED_C;
+  }
   bool valida = t != DEVICE_DISCONNECTED_C && t > -50.0 && t < 125.0;
 
   if (valida) {
