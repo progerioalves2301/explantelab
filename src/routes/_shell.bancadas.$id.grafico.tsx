@@ -210,14 +210,14 @@ function GraficoTemperaturaPage() {
                   />
                 )}
                 <Line
-                  type="monotone"
+                  type="linear"
                   dataKey="valor"
                   name="Temperatura"
                   stroke="var(--fluid)"
                   strokeWidth={3}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  dot={{ r: 4, fill: "var(--fluid)", stroke: "var(--card)", strokeWidth: 2 }}
+                  dot={false}
                   activeDot={{ r: 6, fill: "var(--fluid)", stroke: "var(--card)", strokeWidth: 2 }}
                   isAnimationActive={false}
                   connectNulls
