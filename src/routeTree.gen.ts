@@ -24,6 +24,7 @@ import { Route as ShellConfiguracoesRouteImport } from './routes/_shell.configur
 import { Route as ShellAtualizacaoRouteImport } from './routes/_shell.atualizacao'
 import { Route as ShellArCondicionadoRouteImport } from './routes/_shell.ar-condicionado'
 import { Route as ShellAlertasIndexRouteImport } from './routes/_shell.alertas.index'
+import { Route as ShellMudasIdRouteImport } from './routes/_shell.mudas.$id'
 import { Route as ShellBancadasNovaRouteImport } from './routes/_shell.bancadas.nova'
 import { Route as ShellAlertasDestinosRouteImport } from './routes/_shell.alertas.destinos'
 import { Route as ApiPublicHooksCheckAlertsRouteImport } from './routes/api/public/hooks/check-alerts'
@@ -107,6 +108,11 @@ const ShellAlertasIndexRoute = ShellAlertasIndexRouteImport.update({
   path: '/alertas/',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellMudasIdRoute = ShellMudasIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ShellMudasRoute,
+} as any)
 const ShellBancadasNovaRoute = ShellBancadasNovaRouteImport.update({
   id: '/bancadas/nova',
   path: '/bancadas/nova',
@@ -153,13 +159,14 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
-  '/mudas': typeof ShellMudasRoute
+  '/mudas': typeof ShellMudasRouteWithChildren
   '/privacidade-dados': typeof ShellPrivacidadeDadosRoute
   '/relatorios': typeof ShellRelatoriosRoute
   '/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
+  '/mudas/$id': typeof ShellMudasIdRoute
   '/alertas/': typeof ShellAlertasIndexRoute
   '/bancadas/$id/grafico': typeof ShellBancadasIdGraficoRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
@@ -176,13 +183,14 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
-  '/mudas': typeof ShellMudasRoute
+  '/mudas': typeof ShellMudasRouteWithChildren
   '/privacidade-dados': typeof ShellPrivacidadeDadosRoute
   '/relatorios': typeof ShellRelatoriosRoute
   '/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
+  '/mudas/$id': typeof ShellMudasIdRoute
   '/alertas': typeof ShellAlertasIndexRoute
   '/bancadas/$id/grafico': typeof ShellBancadasIdGraficoRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
@@ -201,13 +209,14 @@ export interface FileRoutesById {
   '/_shell/configuracoes': typeof ShellConfiguracoesRoute
   '/_shell/dashboard': typeof ShellDashboardRoute
   '/_shell/laboratorios': typeof ShellLaboratoriosRoute
-  '/_shell/mudas': typeof ShellMudasRoute
+  '/_shell/mudas': typeof ShellMudasRouteWithChildren
   '/_shell/privacidade-dados': typeof ShellPrivacidadeDadosRoute
   '/_shell/relatorios': typeof ShellRelatoriosRoute
   '/_shell/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/_shell/usuarios': typeof ShellUsuariosRoute
   '/_shell/alertas/destinos': typeof ShellAlertasDestinosRoute
   '/_shell/bancadas/nova': typeof ShellBancadasNovaRoute
+  '/_shell/mudas/$id': typeof ShellMudasIdRoute
   '/_shell/alertas/': typeof ShellAlertasIndexRoute
   '/_shell/bancadas/$id/grafico': typeof ShellBancadasIdGraficoRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/alertas/destinos'
     | '/bancadas/nova'
+    | '/mudas/$id'
     | '/alertas/'
     | '/bancadas/$id/grafico'
     | '/api/public/bench/commands'
@@ -256,6 +266,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/alertas/destinos'
     | '/bancadas/nova'
+    | '/mudas/$id'
     | '/alertas'
     | '/bancadas/$id/grafico'
     | '/api/public/bench/commands'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/_shell/usuarios'
     | '/_shell/alertas/destinos'
     | '/_shell/bancadas/nova'
+    | '/_shell/mudas/$id'
     | '/_shell/alertas/'
     | '/_shell/bancadas/$id/grafico'
     | '/api/public/bench/commands'
@@ -406,6 +418,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellAlertasIndexRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/mudas/$id': {
+      id: '/_shell/mudas/$id'
+      path: '/$id'
+      fullPath: '/mudas/$id'
+      preLoaderRoute: typeof ShellMudasIdRouteImport
+      parentRoute: typeof ShellMudasRoute
+    }
     '/_shell/bancadas/nova': {
       id: '/_shell/bancadas/nova'
       path: '/bancadas/nova'
@@ -458,13 +477,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ShellMudasRouteChildren {
+  ShellMudasIdRoute: typeof ShellMudasIdRoute
+}
+
+const ShellMudasRouteChildren: ShellMudasRouteChildren = {
+  ShellMudasIdRoute: ShellMudasIdRoute,
+}
+
+const ShellMudasRouteWithChildren = ShellMudasRoute._addFileChildren(
+  ShellMudasRouteChildren,
+)
+
 interface ShellRouteChildren {
   ShellArCondicionadoRoute: typeof ShellArCondicionadoRoute
   ShellAtualizacaoRoute: typeof ShellAtualizacaoRoute
   ShellConfiguracoesRoute: typeof ShellConfiguracoesRoute
   ShellDashboardRoute: typeof ShellDashboardRoute
   ShellLaboratoriosRoute: typeof ShellLaboratoriosRoute
-  ShellMudasRoute: typeof ShellMudasRoute
+  ShellMudasRoute: typeof ShellMudasRouteWithChildren
   ShellPrivacidadeDadosRoute: typeof ShellPrivacidadeDadosRoute
   ShellRelatoriosRoute: typeof ShellRelatoriosRoute
   ShellRelatoriosTemperaturaRoute: typeof ShellRelatoriosTemperaturaRoute
@@ -481,7 +512,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellConfiguracoesRoute: ShellConfiguracoesRoute,
   ShellDashboardRoute: ShellDashboardRoute,
   ShellLaboratoriosRoute: ShellLaboratoriosRoute,
-  ShellMudasRoute: ShellMudasRoute,
+  ShellMudasRoute: ShellMudasRouteWithChildren,
   ShellPrivacidadeDadosRoute: ShellPrivacidadeDadosRoute,
   ShellRelatoriosRoute: ShellRelatoriosRoute,
   ShellRelatoriosTemperaturaRoute: ShellRelatoriosTemperaturaRoute,
