@@ -711,6 +711,69 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={novoCicloOpen}
+        onOpenChange={(o) => {
+          setNovoCicloOpen(o);
+          if (!o) setSenhaNovoCiclo("");
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Iniciar Novo Ciclo — {bancada.nome}</DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>Esta ação irá:</p>
+                <ul className="ml-4 list-disc space-y-1 text-muted-foreground">
+                  <li>Encerrar a muda ativa desta prateleira (se houver)</li>
+                  <li>Marcar o início do novo ciclo — CO₂, temperatura e peso passam a ser exibidos a partir de agora</li>
+                  <li>Enviar STOP ao ESP para interromper o ciclo hidráulico atual</li>
+                  <li>Tarar a balança associada (se houver)</li>
+                  <li>Registrar em auditoria (LGPD)</li>
+                </ul>
+                <p className="pt-2 font-medium text-foreground">
+                  Confirme sua senha para prosseguir.
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="senha-novo-ciclo">Senha</Label>
+            <Input
+              id="senha-novo-ciclo"
+              type="password"
+              autoComplete="current-password"
+              value={senhaNovoCiclo}
+              onChange={(e) => setSenhaNovoCiclo(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !confirmandoCiclo) {
+                  e.preventDefault();
+                  confirmarNovoCiclo();
+                }
+              }}
+              placeholder="Sua senha"
+              disabled={confirmandoCiclo}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setNovoCicloOpen(false)}
+              disabled={confirmandoCiclo}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmarNovoCiclo}
+              disabled={confirmandoCiclo || !senhaNovoCiclo}
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              {confirmandoCiclo ? "Iniciando…" : "Iniciar Novo Ciclo"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
