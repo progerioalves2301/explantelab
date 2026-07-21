@@ -116,6 +116,8 @@ function GraficoTemperaturaPage() {
           <TabsTrigger value="24h">Últimas 24h</TabsTrigger>
           <TabsTrigger value="7d">7 dias</TabsTrigger>
           <TabsTrigger value="30d">30 dias</TabsTrigger>
+          <TabsTrigger value="60d">60 dias</TabsTrigger>
+          <TabsTrigger value="120d">120 dias</TabsTrigger>
         </TabsList>
       </Tabs>
 
