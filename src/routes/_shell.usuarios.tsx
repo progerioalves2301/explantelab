@@ -64,8 +64,8 @@ export const Route = createFileRoute("/_shell/usuarios")({
 
 const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Administrador",
-  operador: "Operador",
-  visualizador: "Visualizador",
+  operador: "Técnico",
+  visualizador: "Operador",
 };
 
 const ROLE_ICON: Record<AppRole, typeof Shield> = {
@@ -200,7 +200,7 @@ function UsersPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Usuários</h1>
           <p className="text-sm text-muted-foreground">
-            Administradores, operadores e visualizadores com acesso ao painel.
+            Administradores, técnicos e operadores com acesso ao painel.
           </p>
         </div>
         <Button onClick={() => setNovoOpen(true)} disabled={semSessao}>
@@ -225,7 +225,7 @@ function UsersPage() {
           </div>
           <div className="rounded-md border p-3">
             <div className="flex items-center gap-2 font-medium">
-              <Shield className="h-4 w-4 text-primary" /> Operador
+              <Shield className="h-4 w-4 text-primary" /> Técnico
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               Controla ciclos manuais e monitora prateleiras do dia a dia.
@@ -233,7 +233,7 @@ function UsersPage() {
           </div>
           <div className="rounded-md border p-3">
             <div className="flex items-center gap-2 font-medium">
-              <Eye className="h-4 w-4 text-primary" /> Visualizador
+              <Eye className="h-4 w-4 text-primary" /> Operador
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               Somente leitura. Ideal para gestores e auditoria.
@@ -319,8 +319,8 @@ function UsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="operador">Operador</SelectItem>
-                  <SelectItem value="visualizador">Visualizador</SelectItem>
+                  <SelectItem value="operador">Técnico</SelectItem>
+                  <SelectItem value="visualizador">Operador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
