@@ -225,7 +225,7 @@ function UsersPage() {
           </div>
           <div className="rounded-md border p-3">
             <div className="flex items-center gap-2 font-medium">
-              <Shield className="h-4 w-4 text-primary" /> Operador
+              <Shield className="h-4 w-4 text-primary" /> Técnico
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               Controla ciclos manuais e monitora prateleiras do dia a dia.
@@ -233,7 +233,7 @@ function UsersPage() {
           </div>
           <div className="rounded-md border p-3">
             <div className="flex items-center gap-2 font-medium">
-              <Eye className="h-4 w-4 text-primary" /> Visualizador
+              <Eye className="h-4 w-4 text-primary" /> Operador
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               Somente leitura. Ideal para gestores e auditoria.
