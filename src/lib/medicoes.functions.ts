@@ -11,6 +11,8 @@ const PERIODOS = {
   "24h": 24,
   "7d": 24 * 7,
   "30d": 24 * 30,
+  "60d": 24 * 60,
+  "120d": 24 * 120,
 } as const;
 
 export type PeriodoGrafico = keyof typeof PERIODOS;
@@ -21,6 +23,8 @@ const BUCKET_MIN: Record<PeriodoGrafico, number> = {
   "24h": 1,
   "7d": 10,
   "30d": 30,
+  "60d": 60,
+  "120d": 120,
 };
 
 export const listarHistoricoTemperatura = createServerFn({ method: "GET" })
