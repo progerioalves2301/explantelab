@@ -44,7 +44,9 @@ const PERIODOS = {
   "24h": { label: "Últimas 24 horas", horas: 24 },
   "7d": { label: "Últimos 7 dias", horas: 24 * 7 },
   "30d": { label: "Últimos 30 dias", horas: 24 * 30 },
+  "60d": { label: "Últimos 60 dias", horas: 24 * 60 },
   "90d": { label: "Últimos 90 dias", horas: 24 * 90 },
+  "120d": { label: "Últimos 120 dias", horas: 24 * 120 },
 } as const;
 
 type PeriodoKey = keyof typeof PERIODOS;
