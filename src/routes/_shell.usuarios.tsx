@@ -200,7 +200,7 @@ function UsersPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Usuários</h1>
           <p className="text-sm text-muted-foreground">
-            Administradores, operadores e visualizadores com acesso ao painel.
+            Administradores, técnicos e operadores com acesso ao painel.
           </p>
         </div>
         <Button onClick={() => setNovoOpen(true)} disabled={semSessao}>
