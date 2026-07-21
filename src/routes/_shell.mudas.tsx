@@ -282,7 +282,7 @@ function NovaMudaDialog({
       <DialogFooter>
         <Button
           onClick={async () => {
-            if (!identificador.trim()) { toast.error("Informe o identificador"); return; }
+            if (!identificador.trim()) { toast.error("Informe a variedade"); return; }
             setSaving(true);
             try {
               await criar({
