@@ -10,6 +10,7 @@ import {
   Lightbulb,
   LineChart,
   Clock3,
+  RotateCcw,
   SlidersHorizontal,
   Sprout,
   Square,
@@ -22,6 +23,16 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -39,6 +50,7 @@ import { ValveIndicator } from "./valve-indicator";
 import { formatCountdown, timeAgo } from "@/lib/mock-data";
 import { proximoDisparoSegundos } from "@/lib/schedule";
 import { enviarComando, excluirBancada, regenerarPairingCode } from "@/lib/bancadas.functions";
+import { iniciarNovoCiclo } from "@/lib/novo-ciclo.functions";
 import { toast } from "sonner";
 import type { Bancada, Laboratorio, ValvulasEstado } from "@/lib/types";
 import { cn } from "@/lib/utils";
