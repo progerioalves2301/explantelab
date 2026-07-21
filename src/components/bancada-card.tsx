@@ -103,9 +103,13 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
   const [pairOpen, setPairOpen] = useState(false);
   const [pairCode, setPairCode] = useState<string | null>(null);
   const [pairing, setPairing] = useState(false);
+  const [novoCicloOpen, setNovoCicloOpen] = useState(false);
+  const [senhaNovoCiclo, setSenhaNovoCiclo] = useState("");
+  const [confirmandoCiclo, setConfirmandoCiclo] = useState(false);
   const excluir = useServerFn(excluirBancada);
   const comandar = useServerFn(enviarComando);
   const gerarCodigo = useServerFn(regenerarPairingCode);
+  const novoCiclo = useServerFn(iniciarNovoCiclo);
   const sensorReinicios = bancada.sensor_reinicios ?? 0;
   const temTemperatura = bancada.temperatura_planta != null;
   const sensorComFalha = !temTemperatura;
