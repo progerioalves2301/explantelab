@@ -51,6 +51,7 @@ interface Props {
   segments?: StatusSegment[];
   clock?: number;
   laboratorio?: Laboratorio | null;
+  variedade?: string | null;
 }
 
 
