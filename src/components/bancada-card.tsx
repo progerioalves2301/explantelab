@@ -256,6 +256,30 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
     }
   };
 
+  const confirmarNovoCiclo = async () => {
+    if (!senhaNovoCiclo) {
+      toast.error("Digite a senha para confirmar");
+      return;
+    }
+    setConfirmandoCiclo(true);
+    try {
+      const r = await novoCiclo({
+        data: { bancada_id: bancada.id, senha: senhaNovoCiclo },
+      });
+      const partes: string[] = ["Novo ciclo iniciado"];
+      if (r.mudas_encerradas > 0) partes.push(`${r.mudas_encerradas} muda(s) encerrada(s)`);
+      if (r.balanca_tara) partes.push("balança tarada");
+      toast.success(partes.join(" · "));
+      setNovoCicloOpen(false);
+      setSenhaNovoCiclo("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao iniciar novo ciclo");
+    } finally {
+      setConfirmandoCiclo(false);
+    }
+  };
+
+
   return (
     <Card className="card-elevated overflow-hidden transition hover:border-primary/40">
       {laboratorio && (
