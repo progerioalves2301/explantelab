@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { jsPDF } from "jspdf";
 import { useEffect, useMemo, useState } from "react";
-import { FileText, FlaskConical, Clock, Loader2, Thermometer } from "lucide-react";
+import { FileText, FlaskConical, Clock, Loader2, Thermometer, AlertTriangle } from "lucide-react";
 import {
   Tabs,
   TabsContent,
@@ -266,6 +266,11 @@ function RelatoriosPage() {
           <Button asChild variant="outline" size="sm" className="print-hide print:hidden">
             <Link to="/relatorios-temperatura">
               <Thermometer className="mr-1.5 h-4 w-4" /> Relatório de Temperatura
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="print-hide print:hidden">
+            <Link to="/relatorios-alertas">
+              <AlertTriangle className="mr-1.5 h-4 w-4" /> Relatório de Alertas
             </Link>
           </Button>
           <Button
