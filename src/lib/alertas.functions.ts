@@ -43,6 +43,27 @@ export const listarAlertas = createServerFn({ method: "GET" })
     })) as Alerta[];
   });
 
+export const listarAlertasPeriodo = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { desde: string; ate: string }) =>
+    z.object({ desde: z.string(), ate: z.string() }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<Alerta[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("alertas")
+      .select("*, bancadas(nome, laboratorio_id)")
+      .gte("created_at", data.desde)
+      .lte("created_at", data.ate)
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((a: any) => ({
+      ...a,
+      bancada_nome: a.bancadas?.nome ?? null,
+      laboratorio_id: a.bancadas?.laboratorio_id ?? null,
+    })) as unknown as Alerta[];
+  });
+
 export const resolverAlerta = createServerFn({ method: "POST" })
   .middleware([requireOperador])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
