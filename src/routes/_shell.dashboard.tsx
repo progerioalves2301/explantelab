@@ -54,6 +54,7 @@ function DashboardPage() {
   const [logs, setLogs] = useState<
     { bancada_id: string; status: string; changed_at: string }[]
   >([]);
+  const [mudasByBancada, setMudasByBancada] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let alive = true;
