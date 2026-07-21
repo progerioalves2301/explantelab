@@ -60,7 +60,7 @@ function DashboardPage() {
     let alive = true;
     const refetch = async () => {
       const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-      const [bRes, lRes, logRes] = await Promise.all([
+      const [bRes, lRes, logRes, mRes] = await Promise.all([
         supabase
           .from("bancadas")
           .select("*")
@@ -74,11 +74,21 @@ function DashboardPage() {
           .select("bancada_id,status,changed_at")
           .gte("changed_at", since)
           .order("changed_at", { ascending: true }),
+        supabase
+          .from("mudas")
+          .select("bancada_id,identificador,created_at")
+          .eq("ativa", true)
+          .order("created_at", { ascending: false }),
       ]);
       if (!alive) return;
       setBancadas((bRes.data ?? []) as unknown as Bancada[]);
       setLabs((lRes.data ?? []) as unknown as Laboratorio[]);
       setLogs((logRes.data ?? []) as never);
+      const map: Record<string, string> = {};
+      for (const m of (mRes.data ?? []) as { bancada_id: string | null; identificador: string }[]) {
+        if (m.bancada_id && !map[m.bancada_id]) map[m.bancada_id] = m.identificador;
+      }
+      setMudasByBancada(map);
       setLoading(false);
     };
 
