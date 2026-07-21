@@ -64,8 +64,8 @@ export const Route = createFileRoute("/_shell/usuarios")({
 
 const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Administrador",
-  operador: "Operador",
-  visualizador: "Visualizador",
+  operador: "Técnico",
+  visualizador: "Operador",
 };
 
 const ROLE_ICON: Record<AppRole, typeof Shield> = {
