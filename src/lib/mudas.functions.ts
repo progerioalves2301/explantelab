@@ -82,6 +82,35 @@ export const criarMuda = createServerFn({ method: "POST" })
     return row as unknown as Muda;
   });
 
+const editarSchema = z.object({
+  id: z.string().uuid(),
+  identificador: z.string().min(1).max(64),
+  especie: z.string().max(120).optional().nullable(),
+  laboratorio_id: z.string().uuid().optional().nullable(),
+  bancada_id: z.string().uuid().optional().nullable(),
+  observacoes: z.string().max(2000).optional().nullable(),
+});
+
+export const editarMuda = createServerFn({ method: "POST" })
+  .middleware([requireTecnico])
+  .inputValidator((input: z.infer<typeof editarSchema>) => editarSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("mudas")
+      .update({
+        identificador: data.identificador,
+        especie: data.especie ?? null,
+        laboratorio_id: data.laboratorio_id ?? null,
+        bancada_id: data.bancada_id ?? null,
+        observacoes: data.observacoes ?? null,
+      })
+      .eq("id", data.id)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return row as unknown as Muda;
+  });
+
 export const encerrarMuda = createServerFn({ method: "POST" })
   .middleware([requireTecnico])
   .inputValidator((input: { id: string }) => input)
