@@ -319,6 +319,7 @@ function DashboardPage() {
               segments={segmentsByBancada.get(b.id)}
               clock={clock}
               laboratorio={labs.find((l) => l.id === b.laboratorio_id) ?? null}
+              variedade={mudasByBancada[b.id] ?? null}
             />
           ))}
         </div>
