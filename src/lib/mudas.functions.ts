@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireTecnico } from "@/lib/role-middleware";
 
 export type Muda = {
   id: string;
@@ -49,7 +50,7 @@ const criarSchema = z.object({
 });
 
 export const criarMuda = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireTecnico])
   .inputValidator((input: z.infer<typeof criarSchema>) => criarSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
@@ -82,7 +83,7 @@ export const criarMuda = createServerFn({ method: "POST" })
   });
 
 export const encerrarMuda = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireTecnico])
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
@@ -94,7 +95,7 @@ export const encerrarMuda = createServerFn({ method: "POST" })
   });
 
 export const excluirMuda = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireTecnico])
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("mudas").delete().eq("id", data.id);
@@ -109,7 +110,7 @@ const pesagemSchema = z.object({
 });
 
 export const registrarPesagem = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireTecnico])
   .inputValidator((input: z.infer<typeof pesagemSchema>) => pesagemSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: muda } = await context.supabase
@@ -149,7 +150,7 @@ export const listarPesagens = createServerFn({ method: "GET" })
   });
 
 export const excluirPesagem = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireTecnico])
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
