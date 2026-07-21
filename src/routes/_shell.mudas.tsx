@@ -239,8 +239,8 @@ function NovaMudaDialog({
       </DialogHeader>
       <div className="space-y-3">
         <div>
-          <Label>Identificador *</Label>
-          <Input value={identificador} onChange={(e) => setId(e.target.value)} placeholder="Ex.: M-001, Lote-A-3…" />
+          <Label>Variedade *</Label>
+          <Input value={identificador} onChange={(e) => setId(e.target.value)} placeholder="Ex.: Cannabis Sativa, Framboesa…" />
         </div>
         <div>
           <Label>Espécie / cultivar</Label>
@@ -282,7 +282,7 @@ function NovaMudaDialog({
       <DialogFooter>
         <Button
           onClick={async () => {
-            if (!identificador.trim()) { toast.error("Informe o identificador"); return; }
+            if (!identificador.trim()) { toast.error("Informe a variedade"); return; }
             setSaving(true);
             try {
               await criar({

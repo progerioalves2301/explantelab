@@ -51,6 +51,7 @@ interface Props {
   segments?: StatusSegment[];
   clock?: number;
   laboratorio?: Laboratorio | null;
+  variedade?: string | null;
 }
 
 
@@ -82,7 +83,7 @@ function eq(a: ValvulasEstado, b: ValvulasEstado) {
   );
 }
 
-export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio }: Props) {
+export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio, variedade }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [sending, setSending] = useState(false);
@@ -252,6 +253,11 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="min-w-0 flex-1 break-words text-base font-semibold leading-tight">
             {bancada.nome}
+            {variedade && (
+              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                · {variedade}
+              </span>
+            )}
           </CardTitle>
           <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
             há {formatShortDuration(tempoNoEstado(bancada, clock))}
