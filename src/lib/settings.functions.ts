@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Configuracoes } from "./types";
 import { DEFAULT_CONFIG } from "./types";
-import { requireOperador } from "@/lib/role-middleware";
+import { requireTecnico } from "@/lib/role-middleware";
 
 const HORARIO_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -46,7 +46,7 @@ export const getDefaultCiclo = createServerFn({ method: "GET" }).handler(
 );
 
 export const salvarDefaultCiclo = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator((data: { config: Configuracoes }) =>
     z.object({ config: configSchema }).parse(data),
   )
