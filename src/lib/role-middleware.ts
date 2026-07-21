@@ -29,6 +29,26 @@ export const requireOperador = createMiddleware({ type: "function" })
     return next({ context });
   });
 
+/**
+ * Permite Administrador (DB "admin") e Técnico (DB "operador").
+ * Bloqueia Operador (DB "visualizador") — usado para configurações do sistema.
+ */
+export const requireTecnico = createMiddleware({ type: "function" })
+  .middleware([requireSupabaseAuth])
+  .server(async ({ next, context }) => {
+    const { data, error } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    const roles = (data ?? []).map((r) => r.role as string);
+    const permitido = roles.some((r) => r === "admin" || r === "operador");
+    if (!permitido) {
+      throw new Error("Acesso negado: requer Técnico ou Administrador");
+    }
+    return next({ context });
+  });
+
 /** Permite apenas admin. */
 export const requireAdmin = createMiddleware({ type: "function" })
   .middleware([requireSupabaseAuth])
