@@ -16,7 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  listarMudas, criarMuda, encerrarMuda, excluirMuda,
+  listarMudas, criarMuda, editarMuda, encerrarMuda, excluirMuda,
   registrarPesagem, type Muda,
 } from "@/lib/mudas.functions";
 import { listLaboratorios } from "@/lib/laboratorios.functions";
@@ -36,6 +36,7 @@ export const Route = createFileRoute("/_shell/mudas")({
 function MudasPage() {
   const listar = useServerFn(listarMudas);
   const criar = useServerFn(criarMuda);
+  const editar = useServerFn(editarMuda);
   const encerrar = useServerFn(encerrarMuda);
   const excluir = useServerFn(excluirMuda);
   const pesar = useServerFn(registrarPesagem);
@@ -49,6 +50,7 @@ function MudasPage() {
   const [apenasAtivas, setApenasAtivas] = useState(true);
 
   const [openNova, setOpenNova] = useState(false);
+  const [openEditar, setOpenEditar] = useState<Muda | null>(null);
   const [openPesar, setOpenPesar] = useState<Muda | null>(null);
 
   const carregar = async () => {
@@ -164,6 +166,9 @@ function MudasPage() {
                         <LineChartIcon className="mr-1 h-3.5 w-3.5" /> Curva
                       </Link>
                     </Button>
+                    <Button size="sm" variant="outline" onClick={() => setOpenEditar(m)}>
+                      <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
+                    </Button>
                     {m.ativa && (
                       <Button
                         size="sm"
@@ -210,7 +215,111 @@ function MudasPage() {
           />
         )}
       </Dialog>
+      <Dialog open={!!openEditar} onOpenChange={(v) => !v && setOpenEditar(null)}>
+        {openEditar && (
+          <EditarMudaDialog
+            muda={openEditar}
+            labs={labs}
+            bancadas={bancadas}
+            onDone={async () => {
+              setOpenEditar(null);
+              await carregar();
+            }}
+            editar={editar}
+          />
+        )}
+      </Dialog>
     </div>
+  );
+}
+
+function EditarMudaDialog({
+  muda, labs, bancadas, onDone, editar,
+}: {
+  muda: Muda;
+  labs: Laboratorio[];
+  bancadas: Bancada[];
+  onDone: () => void;
+  editar: ReturnType<typeof useServerFn<typeof editarMuda>>;
+}) {
+  const [identificador, setId] = useState(muda.identificador);
+  const [especie, setEspecie] = useState(muda.especie ?? "");
+  const [labId, setLabId] = useState<string>(muda.laboratorio_id ?? "");
+  const [bancId, setBancId] = useState<string>(muda.bancada_id ?? "");
+  const [obs, setObs] = useState(muda.observacoes ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const bancadasDaSala = bancadas.filter((b) => !labId || b.laboratorio_id === labId);
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Editar muda</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-3">
+        <div>
+          <Label>Variedade *</Label>
+          <Input value={identificador} onChange={(e) => setId(e.target.value)} />
+        </div>
+        <div>
+          <Label>Espécie / cultivar</Label>
+          <Input value={especie} onChange={(e) => setEspecie(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label>Sala</Label>
+            <Select value={labId} onValueChange={(v) => { setLabId(v); setBancId(""); }}>
+              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>
+                {labs.map((l) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Prateleira</Label>
+            <Select value={bancId} onValueChange={setBancId} disabled={!labId}>
+              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>
+                {bancadasDaSala.map((b) => <SelectItem key={b.id} value={b.id}>{b.nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div>
+          <Label>Observações</Label>
+          <Textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2} />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button
+          onClick={async () => {
+            if (!identificador.trim()) { toast.error("Informe a variedade"); return; }
+            setSaving(true);
+            try {
+              await editar({
+                data: {
+                  id: muda.id,
+                  identificador: identificador.trim(),
+                  especie: especie.trim() || null,
+                  laboratorio_id: labId || null,
+                  bancada_id: bancId || null,
+                  observacoes: obs.trim() || null,
+                },
+              });
+              toast.success("Muda atualizada");
+              onDone();
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+            } finally {
+              setSaving(false);
+            }
+          }}
+          disabled={saving}
+        >
+          {saving ? "Salvando…" : "Salvar"}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }
 
