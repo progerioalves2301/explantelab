@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Laboratorio } from "./types";
-import { requireOperador } from "@/lib/role-middleware";
+import { requireTecnico } from "@/lib/role-middleware";
 
 export const listLaboratorios = createServerFn({ method: "GET" }).handler(
   async (): Promise<Laboratorio[]> => {
@@ -19,7 +19,7 @@ export const listLaboratorios = createServerFn({ method: "GET" }).handler(
 );
 
 export const criarLaboratorio = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator(
     (data: { nome: string; descricao?: string; cor?: string; ordem?: number }) =>
       z
@@ -53,7 +53,7 @@ export const criarLaboratorio = createServerFn({ method: "POST" })
   });
 
 export const atualizarLaboratorio = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator(
     (data: {
       id: string;
@@ -89,7 +89,7 @@ export const atualizarLaboratorio = createServerFn({ method: "POST" })
   });
 
 export const excluirLaboratorio = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator((data: { id: string }) =>
     z.object({ id: z.string().uuid() }).parse(data),
   )
@@ -107,7 +107,7 @@ export const excluirLaboratorio = createServerFn({ method: "POST" })
   });
 
 export const atribuirBancadaLaboratorio = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator(
     (data: {
       bancada_id: string;
