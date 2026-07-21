@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireOperador } from "@/lib/role-middleware";
+import { requireTecnico } from "@/lib/role-middleware";
 
 export type SensorCo2 = {
   id: string;
@@ -34,7 +34,7 @@ function novoToken() {
 }
 
 export const criarSensorCo2 = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator((input: { laboratorio_id: string; nome: string }) =>
     z
       .object({
@@ -58,7 +58,7 @@ export const criarSensorCo2 = createServerFn({ method: "POST" })
   });
 
 export const removerSensorCo2 = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator((input: { id: string }) =>
     z.object({ id: z.string().uuid() }).parse(input),
   )
@@ -72,7 +72,7 @@ export const removerSensorCo2 = createServerFn({ method: "POST" })
   });
 
 export const alternarSensorCo2 = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator((input: { id: string; ativo: boolean }) =>
     z.object({ id: z.string().uuid(), ativo: z.boolean() }).parse(input),
   )

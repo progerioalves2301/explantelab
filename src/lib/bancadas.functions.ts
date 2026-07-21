@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Bancada, ComandoTipo, Configuracoes } from "./types";
 import { withComputedBancadasStatus } from "./bancada-status";
-import { requireOperador } from "@/lib/role-middleware";
+import { requireTecnico } from "@/lib/role-middleware";
 
 const HORARIO_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -46,7 +46,7 @@ export const listBancadas = createServerFn({ method: "GET" }).handler(
 // O usuário digita esses 6 dígitos no portal AP do ESP32; o dispositivo
 // então troca o código pelas credenciais reais via /api/public/bench/pair.
 export const criarBancada = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator(
     (data: {
       nome: string;
@@ -134,7 +134,7 @@ export const criarBancada = createServerFn({ method: "POST" })
 
 // Excluir bancada
 export const excluirBancada = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator((data: { id: string }) =>
     z.object({ id: z.string().uuid() }).parse(data),
   )
@@ -160,7 +160,7 @@ export const excluirBancada = createServerFn({ method: "POST" })
 // O device_token é preservado (mesmo dispositivo continua válido); apenas o
 // código curto para digitação no portal AP é renovado.
 export const regenerarPairingCode = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator((data: { bancada_id: string }) =>
     z.object({ bancada_id: z.string().uuid() }).parse(data),
   )
@@ -229,7 +229,7 @@ export const regenerarPairingCode = createServerFn({ method: "POST" })
 
 // Atualizar propriedades básicas da bancada (nome, laboratório, posição).
 export const atualizarBancada = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator(
     (data: {
       id: string;
@@ -300,7 +300,7 @@ export const enviarComando = createServerFn({ method: "POST" })
 
 // Salvar config da bancada + disparar UPDATE_CONFIG.
 export const salvarConfig = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator((data: { bancada_id: string; config: Configuracoes }) =>
     z
       .object({
@@ -339,7 +339,7 @@ export const salvarConfig = createServerFn({ method: "POST" })
 
 // Salvar limites de alerta (temperatura + offline threshold).
 export const salvarLimitesAlerta = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator(
     (data: {
       bancada_id: string;
@@ -376,7 +376,7 @@ export const salvarLimitesAlerta = createServerFn({ method: "POST" })
 // específico ou de TODA a instalação. Também enfileira UPDATE_CONFIG para
 // cada uma, para o ESP32 receber no próximo poll.
 export const aplicarConfigEmMassa = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator(
     (data: {
       escopo: "todas" | "laboratorio";
