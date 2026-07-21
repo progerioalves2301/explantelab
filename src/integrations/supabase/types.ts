@@ -423,6 +423,7 @@ export type Database = {
       }
       bancadas: {
         Row: {
+          ciclo_iniciado_em: string | null
           config: Json
           config_version: number
           created_at: string
@@ -447,6 +448,7 @@ export type Database = {
           valvulas: Json
         }
         Insert: {
+          ciclo_iniciado_em?: string | null
           config?: Json
           config_version?: number
           created_at?: string
@@ -471,6 +473,7 @@ export type Database = {
           valvulas?: Json
         }
         Update: {
+          ciclo_iniciado_em?: string | null
           config?: Json
           config_version?: number
           created_at?: string

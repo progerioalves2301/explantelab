@@ -34,8 +34,20 @@ export const listarHistoricoTemperatura = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => {
     const horas = PERIODOS[data.periodo] ?? 24;
-    const desde = new Date(Date.now() - horas * 3600 * 1000).toISOString();
+    let desde = new Date(Date.now() - horas * 3600 * 1000).toISOString();
     const bucketMin = BUCKET_MIN[data.periodo] ?? 1;
+
+    // Se um novo ciclo foi iniciado nesta prateleira e ele começou dentro
+    // da janela, cortamos o histórico no marco — cada ciclo mostra só seus
+    // próprios dados.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: banc } = await (context.supabase as any)
+      .from("bancadas")
+      .select("ciclo_iniciado_em")
+      .eq("id", data.bancada_id)
+      .maybeSingle();
+    const cicloIni = banc?.ciclo_iniciado_em as string | null | undefined;
+    if (cicloIni && cicloIni > desde) desde = cicloIni;
 
     // Paginação para vencer o teto de 1000 linhas do PostgREST em janelas longas
     const pageSize = 1000;

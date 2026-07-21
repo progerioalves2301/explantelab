@@ -10,6 +10,7 @@ import {
   Lightbulb,
   LineChart,
   Clock3,
+  RotateCcw,
   SlidersHorizontal,
   Sprout,
   Square,
@@ -22,6 +23,16 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -39,6 +50,7 @@ import { ValveIndicator } from "./valve-indicator";
 import { formatCountdown, timeAgo } from "@/lib/mock-data";
 import { proximoDisparoSegundos } from "@/lib/schedule";
 import { enviarComando, excluirBancada, regenerarPairingCode } from "@/lib/bancadas.functions";
+import { iniciarNovoCiclo } from "@/lib/novo-ciclo.functions";
 import { toast } from "sonner";
 import type { Bancada, Laboratorio, ValvulasEstado } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -91,9 +103,13 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
   const [pairOpen, setPairOpen] = useState(false);
   const [pairCode, setPairCode] = useState<string | null>(null);
   const [pairing, setPairing] = useState(false);
+  const [novoCicloOpen, setNovoCicloOpen] = useState(false);
+  const [senhaNovoCiclo, setSenhaNovoCiclo] = useState("");
+  const [confirmandoCiclo, setConfirmandoCiclo] = useState(false);
   const excluir = useServerFn(excluirBancada);
   const comandar = useServerFn(enviarComando);
   const gerarCodigo = useServerFn(regenerarPairingCode);
+  const novoCiclo = useServerFn(iniciarNovoCiclo);
   const sensorReinicios = bancada.sensor_reinicios ?? 0;
   const temTemperatura = bancada.temperatura_planta != null;
   const sensorComFalha = !temTemperatura;
@@ -239,6 +255,30 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
       setStopping(false);
     }
   };
+
+  const confirmarNovoCiclo = async () => {
+    if (!senhaNovoCiclo) {
+      toast.error("Digite a senha para confirmar");
+      return;
+    }
+    setConfirmandoCiclo(true);
+    try {
+      const r = await novoCiclo({
+        data: { bancada_id: bancada.id, senha: senhaNovoCiclo },
+      });
+      const partes: string[] = ["Novo ciclo iniciado"];
+      if (r.mudas_encerradas > 0) partes.push(`${r.mudas_encerradas} muda(s) encerrada(s)`);
+      if (r.balanca_tara) partes.push("balança tarada");
+      toast.success(partes.join(" · "));
+      setNovoCicloOpen(false);
+      setSenhaNovoCiclo("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao iniciar novo ciclo");
+    } finally {
+      setConfirmandoCiclo(false);
+    }
+  };
+
 
   return (
     <Card className="card-elevated overflow-hidden transition hover:border-primary/40">
@@ -534,6 +574,16 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               <LineChart className="h-4 w-4" />
             </Link>
           </Button>
+          <Button
+            size="sm"
+            onClick={() => setNovoCicloOpen(true)}
+            className="h-8 px-2 text-xs bg-emerald-600 text-white hover:bg-emerald-700"
+            aria-label="Iniciar novo ciclo de mudas"
+            title="Iniciar novo ciclo de mudas"
+          >
+            <RotateCcw className="mr-1 h-3.5 w-3.5 shrink-0" />
+            Novo Ciclo
+          </Button>
           {tab === "manual" ? (
             <Button
               size="sm"
@@ -661,6 +711,69 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={novoCicloOpen}
+        onOpenChange={(o) => {
+          setNovoCicloOpen(o);
+          if (!o) setSenhaNovoCiclo("");
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Iniciar Novo Ciclo — {bancada.nome}</DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>Esta ação irá:</p>
+                <ul className="ml-4 list-disc space-y-1 text-muted-foreground">
+                  <li>Encerrar a muda ativa desta prateleira (se houver)</li>
+                  <li>Marcar o início do novo ciclo — CO₂, temperatura e peso passam a ser exibidos a partir de agora</li>
+                  <li>Enviar STOP ao ESP para interromper o ciclo hidráulico atual</li>
+                  <li>Tarar a balança associada (se houver)</li>
+                  <li>Registrar em auditoria (LGPD)</li>
+                </ul>
+                <p className="pt-2 font-medium text-foreground">
+                  Confirme sua senha para prosseguir.
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="senha-novo-ciclo">Senha</Label>
+            <Input
+              id="senha-novo-ciclo"
+              type="password"
+              autoComplete="current-password"
+              value={senhaNovoCiclo}
+              onChange={(e) => setSenhaNovoCiclo(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !confirmandoCiclo) {
+                  e.preventDefault();
+                  confirmarNovoCiclo();
+                }
+              }}
+              placeholder="Sua senha"
+              disabled={confirmandoCiclo}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setNovoCicloOpen(false)}
+              disabled={confirmandoCiclo}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmarNovoCiclo}
+              disabled={confirmandoCiclo || !senhaNovoCiclo}
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              {confirmandoCiclo ? "Iniciando…" : "Iniciar Novo Ciclo"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
