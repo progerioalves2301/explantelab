@@ -46,7 +46,7 @@ export const getDefaultCiclo = createServerFn({ method: "GET" }).handler(
 );
 
 export const salvarDefaultCiclo = createServerFn({ method: "POST" })
-  .middleware([requireOperador])
+  .middleware([requireTecnico])
   .inputValidator((data: { config: Configuracoes }) =>
     z.object({ config: configSchema }).parse(data),
   )
