@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Bancada, ComandoTipo, Configuracoes } from "./types";
 import { withComputedBancadasStatus } from "./bancada-status";
-import { requireTecnico } from "@/lib/role-middleware";
+import { requireOperador, requireTecnico } from "@/lib/role-middleware";
 
 const HORARIO_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
