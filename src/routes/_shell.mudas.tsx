@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Sprout, Plus, Scale, LineChart as LineChartIcon, Trash2, CheckCircle2 } from "lucide-react";
+import { Sprout, Plus, Scale, LineChart as LineChartIcon, Trash2, CheckCircle2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
