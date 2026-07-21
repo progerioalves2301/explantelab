@@ -15,6 +15,7 @@ import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShellUsuariosRouteImport } from './routes/_shell.usuarios'
 import { Route as ShellRelatoriosTemperaturaRouteImport } from './routes/_shell.relatorios-temperatura'
+import { Route as ShellRelatoriosAlertasRouteImport } from './routes/_shell.relatorios-alertas'
 import { Route as ShellRelatoriosRouteImport } from './routes/_shell.relatorios'
 import { Route as ShellPrivacidadeDadosRouteImport } from './routes/_shell.privacidade-dados'
 import { Route as ShellMudasRouteImport } from './routes/_shell.mudas'
@@ -67,6 +68,11 @@ const ShellRelatoriosTemperaturaRoute =
     path: '/relatorios-temperatura',
     getParentRoute: () => ShellRoute,
   } as any)
+const ShellRelatoriosAlertasRoute = ShellRelatoriosAlertasRouteImport.update({
+  id: '/relatorios-alertas',
+  path: '/relatorios-alertas',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellRelatoriosRoute = ShellRelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/mudas': typeof ShellMudasRouteWithChildren
   '/privacidade-dados': typeof ShellPrivacidadeDadosRoute
   '/relatorios': typeof ShellRelatoriosRoute
+  '/relatorios-alertas': typeof ShellRelatoriosAlertasRoute
   '/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
@@ -215,6 +222,7 @@ export interface FileRoutesByTo {
   '/mudas': typeof ShellMudasRouteWithChildren
   '/privacidade-dados': typeof ShellPrivacidadeDadosRoute
   '/relatorios': typeof ShellRelatoriosRoute
+  '/relatorios-alertas': typeof ShellRelatoriosAlertasRoute
   '/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
@@ -245,6 +253,7 @@ export interface FileRoutesById {
   '/_shell/mudas': typeof ShellMudasRouteWithChildren
   '/_shell/privacidade-dados': typeof ShellPrivacidadeDadosRoute
   '/_shell/relatorios': typeof ShellRelatoriosRoute
+  '/_shell/relatorios-alertas': typeof ShellRelatoriosAlertasRoute
   '/_shell/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/_shell/usuarios': typeof ShellUsuariosRoute
   '/_shell/alertas/destinos': typeof ShellAlertasDestinosRoute
@@ -275,6 +284,7 @@ export interface FileRouteTypes {
     | '/mudas'
     | '/privacidade-dados'
     | '/relatorios'
+    | '/relatorios-alertas'
     | '/relatorios-temperatura'
     | '/usuarios'
     | '/alertas/destinos'
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/mudas'
     | '/privacidade-dados'
     | '/relatorios'
+    | '/relatorios-alertas'
     | '/relatorios-temperatura'
     | '/usuarios'
     | '/alertas/destinos'
@@ -332,6 +343,7 @@ export interface FileRouteTypes {
     | '/_shell/mudas'
     | '/_shell/privacidade-dados'
     | '/_shell/relatorios'
+    | '/_shell/relatorios-alertas'
     | '/_shell/relatorios-temperatura'
     | '/_shell/usuarios'
     | '/_shell/alertas/destinos'
@@ -404,6 +416,13 @@ declare module '@tanstack/react-router' {
       path: '/relatorios-temperatura'
       fullPath: '/relatorios-temperatura'
       preLoaderRoute: typeof ShellRelatoriosTemperaturaRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/relatorios-alertas': {
+      id: '/_shell/relatorios-alertas'
+      path: '/relatorios-alertas'
+      fullPath: '/relatorios-alertas'
+      preLoaderRoute: typeof ShellRelatoriosAlertasRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/relatorios': {
@@ -578,6 +597,7 @@ interface ShellRouteChildren {
   ShellMudasRoute: typeof ShellMudasRouteWithChildren
   ShellPrivacidadeDadosRoute: typeof ShellPrivacidadeDadosRoute
   ShellRelatoriosRoute: typeof ShellRelatoriosRoute
+  ShellRelatoriosAlertasRoute: typeof ShellRelatoriosAlertasRoute
   ShellRelatoriosTemperaturaRoute: typeof ShellRelatoriosTemperaturaRoute
   ShellUsuariosRoute: typeof ShellUsuariosRoute
   ShellAlertasDestinosRoute: typeof ShellAlertasDestinosRoute
@@ -596,6 +616,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellMudasRoute: ShellMudasRouteWithChildren,
   ShellPrivacidadeDadosRoute: ShellPrivacidadeDadosRoute,
   ShellRelatoriosRoute: ShellRelatoriosRoute,
+  ShellRelatoriosAlertasRoute: ShellRelatoriosAlertasRoute,
   ShellRelatoriosTemperaturaRoute: ShellRelatoriosTemperaturaRoute,
   ShellUsuariosRoute: ShellUsuariosRoute,
   ShellAlertasDestinosRoute: ShellAlertasDestinosRoute,
