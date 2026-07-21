@@ -319,8 +319,8 @@ function UsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="operador">Operador</SelectItem>
-                  <SelectItem value="visualizador">Visualizador</SelectItem>
+                  <SelectItem value="operador">Técnico</SelectItem>
+                  <SelectItem value="visualizador">Operador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
