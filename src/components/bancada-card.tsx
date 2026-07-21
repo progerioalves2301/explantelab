@@ -574,6 +574,16 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               <LineChart className="h-4 w-4" />
             </Link>
           </Button>
+          <Button
+            size="sm"
+            onClick={() => setNovoCicloOpen(true)}
+            className="h-8 px-2 text-xs bg-emerald-600 text-white hover:bg-emerald-700"
+            aria-label="Iniciar novo ciclo de mudas"
+            title="Iniciar novo ciclo de mudas"
+          >
+            <RotateCcw className="mr-1 h-3.5 w-3.5 shrink-0" />
+            Novo Ciclo
+          </Button>
           {tab === "manual" ? (
             <Button
               size="sm"
