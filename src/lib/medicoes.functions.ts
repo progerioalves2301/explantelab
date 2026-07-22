@@ -57,7 +57,12 @@ export const listarHistoricoTemperatura = createServerFn({ method: "GET" })
       .eq("id", data.bancada_id)
       .maybeSingle();
     const cicloIni = banc?.ciclo_iniciado_em as string | null | undefined;
-    if (cicloIni && cicloIni > desde) desde = cicloIni;
+    if (
+      cicloIni &&
+      new Date(cicloIni).getTime() > new Date(desde).getTime()
+    ) {
+      desde = cicloIni;
+    }
 
     // Paginação para vencer o teto de 1000 linhas do PostgREST em janelas longas
     const pageSize = 1000;
@@ -130,7 +135,9 @@ export const listarRelatorioTemperatura = createServerFn({ method: "GET" })
     const medicoesPorBancada = await Promise.all(
       bancadas.map(async (bancada) => {
         const desde =
-          bancada.ciclo_iniciado_em && bancada.ciclo_iniciado_em > desdePeriodo
+          bancada.ciclo_iniciado_em &&
+          new Date(bancada.ciclo_iniciado_em).getTime() >
+            new Date(desdePeriodo).getTime()
             ? bancada.ciclo_iniciado_em
             : desdePeriodo;
         const rows: { bancada_id: string; valor: number; minuto: string }[] = [];
