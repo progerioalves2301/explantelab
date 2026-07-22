@@ -207,6 +207,49 @@ export const listarPesagens = createServerFn({ method: "GET" })
     return (rows ?? []) as unknown as MedicaoPeso[];
   });
 
+export type PesagemRelatorio = {
+  id: string;
+  muda_id: string;
+  valor_g: number;
+  medido_em: string;
+  origem: string;
+  muda_identificador: string;
+  muda_especie: string | null;
+  laboratorio_id: string | null;
+  laboratorio_nome: string | null;
+  bancada_id: string | null;
+  bancada_nome: string | null;
+};
+
+export const listarRelatorioPeso = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { desde: string; ate: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("medicoes_peso")
+      .select(
+        "id, muda_id, valor_g, medido_em, origem, laboratorio_id, mudas(identificador, especie, bancada_id, bancadas(nome)), laboratorios(nome)",
+      )
+      .gte("medido_em", data.desde)
+      .lte("medido_em", data.ate)
+      .order("medido_em", { ascending: true })
+      .limit(20000);
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r: any) => ({
+      id: r.id,
+      muda_id: r.muda_id,
+      valor_g: Number(r.valor_g),
+      medido_em: r.medido_em,
+      origem: r.origem,
+      muda_identificador: r.mudas?.identificador ?? "—",
+      muda_especie: r.mudas?.especie ?? null,
+      laboratorio_id: r.laboratorio_id ?? null,
+      laboratorio_nome: r.laboratorios?.nome ?? null,
+      bancada_id: r.mudas?.bancada_id ?? null,
+      bancada_nome: r.mudas?.bancadas?.nome ?? null,
+    })) as PesagemRelatorio[];
+  });
+
 export const excluirPesagem = createServerFn({ method: "POST" })
   .middleware([requireTecnico])
   .inputValidator((input: { id: string }) => input)
