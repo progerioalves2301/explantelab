@@ -31,6 +31,7 @@ export const Route = createFileRoute("/_shell/relatorios-alertas")({
 });
 
 const PDF_FILENAME = "Relatorio de Alertas.pdf";
+const TODAS_VARIEDADES = "__todas__";
 
 function toLocalDateInput(d: Date) {
   const iso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString();
@@ -39,6 +40,15 @@ function toLocalDateInput(d: Date) {
 
 function fmtDataHora(iso: string) {
   return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+}
+
+function mudaAtivaEm(mudasDaBancada: MudaPeriodo[], ts: number): MudaPeriodo | null {
+  for (const m of mudasDaBancada) {
+    const ini = new Date(m.data_inicio).getTime();
+    const fim = m.data_fim ? new Date(m.data_fim).getTime() : Infinity;
+    if (ts >= ini && ts <= fim) return m;
+  }
+  return null;
 }
 
 const TIPO_LABEL: Record<string, string> = {
