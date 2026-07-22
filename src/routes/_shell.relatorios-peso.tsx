@@ -26,7 +26,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   listarRelatorioPeso,
+  listarMudas,
   type PesagemRelatorio,
+  type Muda,
 } from "@/lib/mudas.functions";
 import { listLaboratorios } from "@/lib/laboratorios.functions";
 import type { Laboratorio } from "@/lib/types";
