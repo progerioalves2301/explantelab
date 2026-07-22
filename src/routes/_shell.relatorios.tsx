@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { jsPDF } from "jspdf";
 import { useEffect, useMemo, useState } from "react";
-import { FileText, FlaskConical, Clock, Loader2, Thermometer, AlertTriangle } from "lucide-react";
+import { FileText, FlaskConical, Clock, Loader2, Thermometer, AlertTriangle, Scale } from "lucide-react";
 import {
   Tabs,
   TabsContent,
