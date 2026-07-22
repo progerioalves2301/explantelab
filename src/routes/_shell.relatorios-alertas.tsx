@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { listarAlertasPeriodo, type Alerta } from "@/lib/alertas.functions";
 import { listLaboratorios } from "@/lib/laboratorios.functions";
+import { listarMudasPeriodo, type MudaPeriodo } from "@/lib/mudas.functions";
 import type { Laboratorio } from "@/lib/types";
 
 export const Route = createFileRoute("/_shell/relatorios-alertas")({
