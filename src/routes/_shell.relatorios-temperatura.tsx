@@ -279,12 +279,23 @@ function RelatorioTemperaturaPage() {
           .limit(100000),
       ]);
       if (!alive) return;
+      const bancadasData = (bancadasRes.data ?? []) as unknown as Bancada[];
       setLabs((labsRes.data ?? []) as unknown as Laboratorio[]);
-      setBancadas((bancadasRes.data ?? []) as unknown as Bancada[]);
+      setBancadas(bancadasData);
+      // Corta histórico no marco de "Novo Ciclo" de cada prateleira
+      const cicloIniPorBancada = new Map<string, string>();
+      for (const b of bancadasData) {
+        const ini = (b as unknown as { ciclo_iniciado_em?: string | null }).ciclo_iniciado_em;
+        if (ini) cicloIniPorBancada.set(b.id, ini);
+      }
+      const rows = (medRes.data ?? []) as { bancada_id: string; valor: number | string; minuto: string }[];
       setMedicoes(
-        ((medRes.data ?? []) as { bancada_id: string; valor: number | string; minuto: string }[]).map(
-          (r) => ({ bancada_id: r.bancada_id, valor: Number(r.valor), minuto: r.minuto }),
-        ),
+        rows
+          .filter((r) => {
+            const ini = cicloIniPorBancada.get(r.bancada_id);
+            return !ini || r.minuto >= ini;
+          })
+          .map((r) => ({ bancada_id: r.bancada_id, valor: Number(r.valor), minuto: r.minuto })),
       );
       setLoading(false);
     };
