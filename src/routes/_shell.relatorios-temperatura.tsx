@@ -181,6 +181,7 @@ function gerarPdf(
   periodoLabel: string,
   grupos: { lab: Laboratorio; itens: EstatBancada[] }[],
   seriesPorLab: Map<string, { label: string; valor: number }[]>,
+  variedadeFiltro: string,
 ) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -195,10 +196,15 @@ function gerarPdf(
     y = margin;
   };
 
-  doc.setProperties({ title: "Relatorio de Temperatura" });
+  const tituloVariedade =
+    variedadeFiltro && variedadeFiltro !== TODAS_VARIEDADES
+      ? ` — Variedade: ${variedadeFiltro}`
+      : "";
+
+  doc.setProperties({ title: `Relatorio de Temperatura${tituloVariedade}` });
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text("Relatório de Temperatura", margin, y);
+  doc.text(`Relatório de Temperatura${tituloVariedade}`, margin, y);
   y += 7;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
@@ -237,8 +243,16 @@ function gerarPdf(
     y += chartH + 4;
 
     // Header linha
-    const cols = ["Prateleira", "Mín °C", "Méd °C", "Máx °C", "Amostras", "Fora faixa"];
-    const colX = [margin + 2, margin + 60, margin + 82, margin + 104, margin + 128, margin + 158];
+    const cols = ["Prateleira", "Variedade", "Mín °C", "Méd °C", "Máx °C", "Amostras", "Fora"];
+    const colX = [
+      margin + 2,
+      margin + 42,
+      margin + 82,
+      margin + 100,
+      margin + 118,
+      margin + 138,
+      margin + 162,
+    ];
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setFillColor(240, 240, 240);
@@ -249,8 +263,11 @@ function gerarPdf(
     doc.setFont("helvetica", "normal");
     itens.forEach((it) => {
       addPage(6);
+      const variedadesTxt =
+        it.variedades.length > 0 ? it.variedades.join(", ") : "—";
       const row = [
         it.bancada.nome,
+        variedadesTxt.length > 22 ? `${variedadesTxt.slice(0, 22)}…` : variedadesTxt,
         fmt(it.min),
         fmt(it.avg),
         fmt(it.max),
@@ -265,7 +282,11 @@ function gerarPdf(
     y += 4;
   });
 
-  doc.save("Relatorio de Temperatura.pdf");
+  const nomeArquivo =
+    variedadeFiltro && variedadeFiltro !== TODAS_VARIEDADES
+      ? `Relatorio de Temperatura - ${variedadeFiltro}.pdf`
+      : "Relatorio de Temperatura.pdf";
+  doc.save(nomeArquivo);
 }
 
 
