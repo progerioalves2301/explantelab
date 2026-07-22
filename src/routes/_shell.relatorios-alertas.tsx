@@ -60,6 +60,7 @@ const TIPO_LABEL: Record<string, string> = {
 function RelatoriosAlertasPage() {
   const listar = useServerFn(listarAlertasPeriodo);
   const listLabs = useServerFn(listLaboratorios);
+  const listMudas = useServerFn(listarMudasPeriodo);
 
   const hoje = new Date();
   const seteDias = new Date(hoje.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -70,9 +71,11 @@ function RelatoriosAlertasPage() {
   const [severidade, setSeveridade] = useState<string>("todas");
   const [labId, setLabId] = useState<string>("todas");
   const [status, setStatus] = useState<string>("todos");
+  const [variedade, setVariedade] = useState<string>(TODAS_VARIEDADES);
 
   const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [labs, setLabs] = useState<Laboratorio[]>([]);
+  const [mudas, setMudas] = useState<MudaPeriodo[]>([]);
   const [loading, setLoading] = useState(false);
 
   const carregar = async () => {
@@ -80,12 +83,14 @@ function RelatoriosAlertasPage() {
     try {
       const desdeISO = new Date(`${desde}T00:00:00`).toISOString();
       const ateISO = new Date(`${ate}T23:59:59`).toISOString();
-      const [a, l] = await Promise.all([
+      const [a, l, m] = await Promise.all([
         listar({ data: { desde: desdeISO, ate: ateISO } }),
         listLabs(),
+        listMudas({ data: { desde: desdeISO, ate: ateISO } }),
       ]);
       setAlertas(a);
       setLabs(l);
+      setMudas(m);
     } finally {
       setLoading(false);
     }
@@ -94,6 +99,36 @@ function RelatoriosAlertasPage() {
   useEffect(() => { void carregar(); /* eslint-disable-next-line */ }, []);
 
   const labById = useMemo(() => new Map(labs.map((l) => [l.id, l])), [labs]);
+
+  const mudasPorBancada = useMemo(() => {
+    const map = new Map<string, MudaPeriodo[]>();
+    for (const m of mudas) {
+      if (!m.bancada_id) continue;
+      const arr = map.get(m.bancada_id) ?? [];
+      arr.push(m);
+      map.set(m.bancada_id, arr);
+    }
+    for (const arr of map.values()) {
+      arr.sort(
+        (a, b) =>
+          new Date(b.data_inicio).getTime() - new Date(a.data_inicio).getTime(),
+      );
+    }
+    return map;
+  }, [mudas]);
+
+  const variedadesDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    for (const m of mudas) set.add(m.identificador);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [mudas]);
+
+  const variedadeDoAlerta = (a: Alerta): string | null => {
+    const mudasB = mudasPorBancada.get(a.bancada_id);
+    if (!mudasB) return null;
+    const ativa = mudaAtivaEm(mudasB, new Date(a.created_at).getTime());
+    return ativa?.identificador ?? null;
+  };
 
   const filtrados = useMemo(() => {
     return alertas.filter((a) => {
@@ -105,9 +140,13 @@ function RelatoriosAlertasPage() {
         const lid = (a as any).laboratorio_id as string | null;
         if (lid !== labId) return false;
       }
+      if (variedade !== TODAS_VARIEDADES) {
+        if (variedadeDoAlerta(a) !== variedade) return false;
+      }
       return true;
     });
-  }, [alertas, tipo, severidade, status, labId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alertas, tipo, severidade, status, labId, variedade, mudasPorBancada]);
 
   const stats = useMemo(() => {
     const porTipo: Record<string, number> = {};
