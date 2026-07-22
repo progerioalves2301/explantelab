@@ -273,6 +273,11 @@ function RelatoriosPage() {
               <AlertTriangle className="mr-1.5 h-4 w-4" /> Relatório de Alertas
             </Link>
           </Button>
+          <Button asChild variant="outline" size="sm" className="print-hide print:hidden">
+            <Link to="/relatorios-peso">
+              <Scale className="mr-1.5 h-4 w-4" /> Relatório de Peso
+            </Link>
+          </Button>
           <Button
             variant="outline"
             size="sm"
