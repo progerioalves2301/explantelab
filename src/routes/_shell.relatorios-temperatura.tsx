@@ -356,7 +356,7 @@ function RelatorioTemperaturaPage() {
 
     // labId -> bucketTs -> {max}
     const agg = new Map<string, Map<number, { max: number }>>();
-    for (const m of medicoes) {
+    for (const m of medicoesFiltradas) {
       const labId = bancadaLab.get(m.bancada_id);
       if (!labId) continue;
       const ts = new Date(m.minuto).getTime();
@@ -391,16 +391,27 @@ function RelatorioTemperaturaPage() {
     }
     return out;
 
-  }, [medicoes, bancadas, periodo]);
+  }, [medicoesFiltradas, bancadas, periodo]);
 
 
   const grupos = useMemo(() => {
     // Agrupa medições por bancada
     const porBancada = new Map<string, number[]>();
-    for (const m of medicoes) {
+    const variedadesPorBancada = new Map<string, Set<string>>();
+    for (const m of medicoesFiltradas) {
       const arr = porBancada.get(m.bancada_id) ?? [];
       arr.push(m.valor);
       porBancada.set(m.bancada_id, arr);
+
+      const mudasB = mudasPorBancada.get(m.bancada_id);
+      if (mudasB) {
+        const ativa = mudaAtivaEm(mudasB, new Date(m.minuto).getTime());
+        if (ativa) {
+          const set = variedadesPorBancada.get(m.bancada_id) ?? new Set<string>();
+          set.add(ativa.identificador);
+          variedadesPorBancada.set(m.bancada_id, set);
+        }
+      }
     }
 
     const stats: Record<string, EstatBancada> = {};
@@ -428,6 +439,7 @@ function RelatorioTemperaturaPage() {
         max,
         avg: vals.length > 0 ? sum / vals.length : null,
         foraFaixa: fora,
+        variedades: Array.from(variedadesPorBancada.get(b.id) ?? []).sort(),
       };
     }
 
@@ -436,11 +448,21 @@ function RelatorioTemperaturaPage() {
         lab,
         itens: bancadas
           .filter((b) => b.laboratorio_id === lab.id)
-          .map((b) => stats[b.id]),
+          .map((b) => stats[b.id])
+          // Se filtro de variedade estiver ativo, só mantém prateleiras que
+          // realmente tiveram essa variedade no período.
+          .filter((it) =>
+            variedade === TODAS_VARIEDADES ? true : it.variedades.length > 0,
+          ),
       }))
       .filter((g) => g.itens.length > 0);
 
-    const semLab = bancadas.filter((b) => !b.laboratorio_id);
+    const semLab = bancadas
+      .filter((b) => !b.laboratorio_id)
+      .map((b) => stats[b.id])
+      .filter((it) =>
+        variedade === TODAS_VARIEDADES ? true : it.variedades.length > 0,
+      );
     if (semLab.length > 0) {
       groups.push({
         lab: {
@@ -451,13 +473,13 @@ function RelatorioTemperaturaPage() {
           ordem: 999,
           created_at: "",
         },
-        itens: semLab.map((b) => stats[b.id]),
+        itens: semLab,
       });
     }
     return groups;
-  }, [labs, bancadas, medicoes]);
+  }, [labs, bancadas, medicoesFiltradas, mudasPorBancada, variedade]);
 
-  const totalPontos = medicoes.length;
+  const totalPontos = medicoesFiltradas.length;
 
   return (
     <div className="space-y-4">
