@@ -24,6 +24,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -740,9 +741,8 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           </DialogHeader>
           <div className="space-y-2 py-2">
             <Label htmlFor="senha-novo-ciclo">Senha</Label>
-            <Input
+            <PasswordInput
               id="senha-novo-ciclo"
-              type="password"
               autoComplete="current-password"
               value={senhaNovoCiclo}
               onChange={(e) => setSenhaNovoCiclo(e.target.value)}
