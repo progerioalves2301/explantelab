@@ -60,7 +60,22 @@ type EstatBancada = {
   max: number | null;
   avg: number | null;
   foraFaixa: number;
+  variedades: string[];
 };
+
+const TODAS_VARIEDADES = "__todas__";
+
+function mudaAtivaEm(
+  mudasDaBancada: MudaPeriodo[],
+  ts: number,
+): MudaPeriodo | null {
+  for (const m of mudasDaBancada) {
+    const ini = new Date(m.data_inicio).getTime();
+    const fim = m.data_fim ? new Date(m.data_fim).getTime() : Infinity;
+    if (ts >= ini && ts <= fim) return m;
+  }
+  return null;
+}
 
 function fmt(v: number | null, casas = 1) {
   if (v === null || !Number.isFinite(v)) return "—";
