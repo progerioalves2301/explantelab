@@ -72,6 +72,7 @@ function fmtDataCurta(iso: string) {
 function RelatorioPesoPage() {
   const listar = useServerFn(listarRelatorioPeso);
   const listLabs = useServerFn(listLaboratorios);
+  const listMudasAtivas = useServerFn(listarMudas);
 
   const hoje = new Date();
   const trintaDias = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -83,6 +84,7 @@ function RelatorioPesoPage() {
 
   const [pesagens, setPesagens] = useState<PesagemRelatorio[]>([]);
   const [labs, setLabs] = useState<Laboratorio[]>([]);
+  const [mudasAtivas, setMudasAtivas] = useState<Muda[]>([]);
   const [loading, setLoading] = useState(false);
 
   const carregar = async () => {
@@ -90,12 +92,14 @@ function RelatorioPesoPage() {
     try {
       const desdeISO = new Date(`${desde}T00:00:00`).toISOString();
       const ateISO = new Date(`${ate}T23:59:59`).toISOString();
-      const [p, l] = await Promise.all([
+      const [p, l, m] = await Promise.all([
         listar({ data: { desde: desdeISO, ate: ateISO } }),
         listLabs(),
+        listMudasAtivas({ data: { apenas_ativas: true } }),
       ]);
       setPesagens(p);
       setLabs(l);
+      setMudasAtivas(m);
     } finally {
       setLoading(false);
     }
@@ -105,9 +109,9 @@ function RelatorioPesoPage() {
 
   const variedadesDisponiveis = useMemo(() => {
     const set = new Set<string>();
-    for (const p of pesagens) if (p.muda_identificador) set.add(p.muda_identificador);
+    for (const m of mudasAtivas) if (m.identificador) set.add(m.identificador);
     return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }, [pesagens]);
+  }, [mudasAtivas]);
 
   const filtradas = useMemo(() => {
     return pesagens.filter((p) => {
