@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listarRelatorioTemperatura } from "@/lib/medicoes.functions";
+import { listarMudasPeriodo, type MudaPeriodo } from "@/lib/mudas.functions";
 import type { Bancada, Laboratorio } from "@/lib/types";
 
 export const Route = createFileRoute("/_shell/relatorios-temperatura")({
