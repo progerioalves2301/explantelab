@@ -167,10 +167,12 @@ function RelatoriosAlertasPage() {
     const margin = 12;
     let y = margin;
 
-    doc.setProperties({ title: "Relatorio de Alertas" });
+    const tituloVar =
+      variedade && variedade !== TODAS_VARIEDADES ? ` — Variedade: ${variedade}` : "";
+    doc.setProperties({ title: `Relatorio de Alertas${tituloVar}` });
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text("Relatório de Alertas", margin, y);
+    doc.text(`Relatório de Alertas${tituloVar}`, margin, y);
     y += 7;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
@@ -191,11 +193,12 @@ function RelatoriosAlertasPage() {
 
     // Cabeçalho da tabela
     const cols = [
-      { label: "Data/Hora", w: 32 },
-      { label: "Prateleira", w: 30 },
-      { label: "Tipo", w: 22 },
-      { label: "Sev.", w: 15 },
-      { label: "Mensagem", w: 60 },
+      { label: "Data/Hora", w: 30 },
+      { label: "Prateleira", w: 26 },
+      { label: "Variedade", w: 26 },
+      { label: "Tipo", w: 20 },
+      { label: "Sev.", w: 14 },
+      { label: "Mensagem", w: 45 },
       { label: "Status", w: 20 },
     ];
     const drawHeader = () => {
@@ -214,35 +217,42 @@ function RelatoriosAlertasPage() {
     drawHeader();
 
     filtrados.forEach((a) => {
-      const msgLines = doc.splitTextToSize(a.mensagem, cols[4].w - 1) as string[];
+      const msgLines = doc.splitTextToSize(a.mensagem, cols[5].w - 1) as string[];
       const rowH = Math.max(6, msgLines.length * 3.6 + 2);
       if (y + rowH > pageH - margin) {
         doc.addPage();
         y = margin;
         drawHeader();
       }
+      const vr = variedadeDoAlerta(a) ?? "—";
       doc.setFontSize(8);
       let x = margin + 1;
       doc.text(fmtDataHora(a.created_at), x, y + 4);
       x += cols[0].w;
-      doc.text((a.bancada_nome ?? "-").slice(0, 22), x, y + 4);
+      doc.text((a.bancada_nome ?? "-").slice(0, 18), x, y + 4);
       x += cols[1].w;
-      doc.text(TIPO_LABEL[a.tipo] ?? a.tipo, x, y + 4);
+      doc.text(vr.length > 18 ? `${vr.slice(0, 18)}…` : vr, x, y + 4);
       x += cols[2].w;
+      doc.text(TIPO_LABEL[a.tipo] ?? a.tipo, x, y + 4);
+      x += cols[3].w;
       if (a.severidade === "critical") doc.setTextColor(200, 30, 30);
       else doc.setTextColor(180, 130, 0);
       doc.text(a.severidade === "critical" ? "Crítico" : "Aviso", x, y + 4);
       doc.setTextColor(0, 0, 0);
-      x += cols[3].w;
-      msgLines.forEach((line, i) => doc.text(line, x, y + 4 + i * 3.6));
       x += cols[4].w;
+      msgLines.forEach((line, i) => doc.text(line, x, y + 4 + i * 3.6));
+      x += cols[5].w;
       doc.text(a.resolvido_em ? "Resolvido" : "Aberto", x, y + 4);
       doc.setDrawColor(230, 230, 230);
       doc.line(margin, y + rowH, pageW - margin, y + rowH);
       y += rowH;
     });
 
-    doc.save(PDF_FILENAME);
+    const nome =
+      variedade && variedade !== TODAS_VARIEDADES
+        ? `Relatorio de Alertas - ${variedade}.pdf`
+        : PDF_FILENAME;
+    doc.save(nome);
   };
 
   return (
