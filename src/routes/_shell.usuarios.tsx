@@ -303,9 +303,8 @@ function UsersPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="novo-senha">Senha</Label>
-              <Input
+              <PasswordInput
                 id="novo-senha"
-                type="password"
                 value={novoSenha}
                 onChange={(e) => setNovoSenha(e.target.value)}
                 placeholder="Mínimo 6 caracteres"
