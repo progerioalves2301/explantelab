@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 export type PontoTemperatura = {
   minuto: string; // ISO timestamp
@@ -16,6 +17,15 @@ const PERIODOS = {
 } as const;
 
 export type PeriodoGrafico = keyof typeof PERIODOS;
+
+type LaboratorioRow = Database["public"]["Tables"]["laboratorios"]["Row"];
+type BancadaRow = Database["public"]["Tables"]["bancadas"]["Row"];
+
+export type DadosRelatorioTemperatura = {
+  laboratorios: LaboratorioRow[];
+  bancadas: BancadaRow[];
+  medicoes: { bancada_id: string; valor: number; minuto: string }[];
+};
 
 // Tamanho do bucket (em minutos) por período — mantém no máx ~2000 pontos
 const BUCKET_MIN: Record<PeriodoGrafico, number> = {
@@ -47,7 +57,12 @@ export const listarHistoricoTemperatura = createServerFn({ method: "GET" })
       .eq("id", data.bancada_id)
       .maybeSingle();
     const cicloIni = banc?.ciclo_iniciado_em as string | null | undefined;
-    if (cicloIni && cicloIni > desde) desde = cicloIni;
+    if (
+      cicloIni &&
+      new Date(cicloIni).getTime() > new Date(desde).getTime()
+    ) {
+      desde = cicloIni;
+    }
 
     // Paginação para vencer o teto de 1000 linhas do PostgREST em janelas longas
     const pageSize = 1000;
@@ -88,4 +103,72 @@ export const listarHistoricoTemperatura = createServerFn({ method: "GET" })
         minuto: new Date(k).toISOString(),
         valor: v.max,
       })) satisfies PontoTemperatura[];
+  });
+
+/**
+ * Carrega o relatório aplicando o marco de cada Novo Ciclo já na consulta.
+ * A paginação é feita por prateleira para não perder os dados mais recentes
+ * no limite padrão de linhas da API do banco.
+ */
+export const listarRelatorioTemperatura = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { horas: number }) => {
+    if (!Number.isFinite(input.horas) || input.horas < 1 || input.horas > 24 * 120) {
+      throw new Error("Período inválido");
+    }
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const desdePeriodo = new Date(Date.now() - data.horas * 3_600_000).toISOString();
+    const [labsRes, bancadasRes] = await Promise.all([
+      context.supabase.from("laboratorios").select("*").order("ordem"),
+      context.supabase
+        .from("bancadas")
+        .select("*")
+        .order("posicao", { nullsFirst: false }),
+    ]);
+    if (labsRes.error) throw new Error(labsRes.error.message);
+    if (bancadasRes.error) throw new Error(bancadasRes.error.message);
+
+    const bancadas = (bancadasRes.data ?? []) as BancadaRow[];
+
+    const medicoesPorBancada = await Promise.all(
+      bancadas.map(async (bancada) => {
+        const desde =
+          bancada.ciclo_iniciado_em &&
+          new Date(bancada.ciclo_iniciado_em).getTime() >
+            new Date(desdePeriodo).getTime()
+            ? bancada.ciclo_iniciado_em
+            : desdePeriodo;
+        const rows: { bancada_id: string; valor: number; minuto: string }[] = [];
+        const pageSize = 1000;
+
+        for (let page = 0; page < 100; page += 1) {
+          const inicio = page * pageSize;
+          const { data: batch, error } = await context.supabase
+            .from("medicoes_temperatura")
+            .select("bancada_id, valor, minuto")
+            .eq("bancada_id", bancada.id)
+            .gte("minuto", desde)
+            .order("minuto", { ascending: true })
+            .range(inicio, inicio + pageSize - 1);
+          if (error) throw new Error(error.message);
+          for (const row of batch ?? []) {
+            rows.push({
+              bancada_id: row.bancada_id,
+              valor: Number(row.valor),
+              minuto: row.minuto,
+            });
+          }
+          if ((batch ?? []).length < pageSize) break;
+        }
+        return rows;
+      }),
+    );
+
+    return {
+      laboratorios: (labsRes.data ?? []) as LaboratorioRow[],
+      bancadas,
+      medicoes: medicoesPorBancada.flat(),
+    } satisfies DadosRelatorioTemperatura;
   });

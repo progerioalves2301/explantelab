@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { jsPDF } from "jspdf";
 import { useEffect, useMemo, useState } from "react";
 import { Thermometer, FlaskConical, Loader2, FileText, ArrowLeft } from "lucide-react";
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { listarRelatorioTemperatura } from "@/lib/medicoes.functions";
 import type { Bancada, Laboratorio } from "@/lib/types";
 
 export const Route = createFileRoute("/_shell/relatorios-temperatura")({
@@ -260,50 +261,26 @@ function RelatorioTemperaturaPage() {
     { bancada_id: string; valor: number; minuto: string }[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const carregarRelatorio = useServerFn(listarRelatorioTemperatura);
 
   useEffect(() => {
     let alive = true;
     const load = async () => {
       setLoading(true);
       const horas = PERIODOS[periodo].horas;
-      const desde = new Date(Date.now() - horas * 3600 * 1000).toISOString();
-
-      const [labsRes, bancadasRes, medRes] = await Promise.all([
-        supabase.from("laboratorios").select("*").order("ordem"),
-        supabase.from("bancadas").select("*").order("posicao", { nullsFirst: false }),
-        supabase
-          .from("medicoes_temperatura")
-          .select("bancada_id, valor, minuto")
-          .gte("minuto", desde)
-          .order("minuto", { ascending: true })
-          .limit(100000),
-      ]);
+      const dados = await carregarRelatorio({ data: { horas } });
       if (!alive) return;
-      const bancadasData = (bancadasRes.data ?? []) as unknown as Bancada[];
-      setLabs((labsRes.data ?? []) as unknown as Laboratorio[]);
+      const bancadasData = dados.bancadas as unknown as Bancada[];
+      setLabs(dados.laboratorios as unknown as Laboratorio[]);
       setBancadas(bancadasData);
-      // Corta histórico no marco de "Novo Ciclo" de cada prateleira
-      const cicloIniPorBancada = new Map<string, string>();
-      for (const b of bancadasData) {
-        const ini = (b as unknown as { ciclo_iniciado_em?: string | null }).ciclo_iniciado_em;
-        if (ini) cicloIniPorBancada.set(b.id, ini);
-      }
-      const rows = (medRes.data ?? []) as { bancada_id: string; valor: number | string; minuto: string }[];
-      setMedicoes(
-        rows
-          .filter((r) => {
-            const ini = cicloIniPorBancada.get(r.bancada_id);
-            return !ini || r.minuto >= ini;
-          })
-          .map((r) => ({ bancada_id: r.bancada_id, valor: Number(r.valor), minuto: r.minuto })),
-      );
+      setMedicoes(dados.medicoes);
       setLoading(false);
     };
     void load();
     return () => {
       alive = false;
     };
-  }, [periodo]);
+  }, [periodo, carregarRelatorio]);
 
   // Séries temporais agregadas por sala (média das prateleiras por bucket)
   const seriesPorLab = useMemo(() => {
