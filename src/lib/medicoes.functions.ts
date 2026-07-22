@@ -17,6 +17,12 @@ const PERIODOS = {
 
 export type PeriodoGrafico = keyof typeof PERIODOS;
 
+export type DadosRelatorioTemperatura = {
+  laboratorios: Record<string, unknown>[];
+  bancadas: Record<string, unknown>[];
+  medicoes: { bancada_id: string; valor: number; minuto: string }[];
+};
+
 // Tamanho do bucket (em minutos) por período — mantém no máx ~2000 pontos
 const BUCKET_MIN: Record<PeriodoGrafico, number> = {
   "6h": 1,
@@ -88,4 +94,72 @@ export const listarHistoricoTemperatura = createServerFn({ method: "GET" })
         minuto: new Date(k).toISOString(),
         valor: v.max,
       })) satisfies PontoTemperatura[];
+  });
+
+/**
+ * Carrega o relatório aplicando o marco de cada Novo Ciclo já na consulta.
+ * A paginação é feita por prateleira para não perder os dados mais recentes
+ * no limite padrão de linhas da API do banco.
+ */
+export const listarRelatorioTemperatura = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { horas: number }) => {
+    if (!Number.isFinite(input.horas) || input.horas < 1 || input.horas > 24 * 120) {
+      throw new Error("Período inválido");
+    }
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const desdePeriodo = new Date(Date.now() - data.horas * 3_600_000).toISOString();
+    const [labsRes, bancadasRes] = await Promise.all([
+      context.supabase.from("laboratorios").select("*").order("ordem"),
+      context.supabase
+        .from("bancadas")
+        .select("*")
+        .order("posicao", { nullsFirst: false }),
+    ]);
+    if (labsRes.error) throw new Error(labsRes.error.message);
+    if (bancadasRes.error) throw new Error(bancadasRes.error.message);
+
+    const bancadas = (bancadasRes.data ?? []) as Array<
+      Record<string, unknown> & { id: string; ciclo_iniciado_em?: string | null }
+    >;
+
+    const medicoesPorBancada = await Promise.all(
+      bancadas.map(async (bancada) => {
+        const desde =
+          bancada.ciclo_iniciado_em && bancada.ciclo_iniciado_em > desdePeriodo
+            ? bancada.ciclo_iniciado_em
+            : desdePeriodo;
+        const rows: { bancada_id: string; valor: number; minuto: string }[] = [];
+        const pageSize = 1000;
+
+        for (let page = 0; page < 100; page += 1) {
+          const inicio = page * pageSize;
+          const { data: batch, error } = await context.supabase
+            .from("medicoes_temperatura")
+            .select("bancada_id, valor, minuto")
+            .eq("bancada_id", bancada.id)
+            .gte("minuto", desde)
+            .order("minuto", { ascending: true })
+            .range(inicio, inicio + pageSize - 1);
+          if (error) throw new Error(error.message);
+          for (const row of batch ?? []) {
+            rows.push({
+              bancada_id: row.bancada_id,
+              valor: Number(row.valor),
+              minuto: row.minuto,
+            });
+          }
+          if ((batch ?? []).length < pageSize) break;
+        }
+        return rows;
+      }),
+    );
+
+    return {
+      laboratorios: (labsRes.data ?? []) as Record<string, unknown>[],
+      bancadas,
+      medicoes: medicoesPorBancada.flat(),
+    } satisfies DadosRelatorioTemperatura;
   });

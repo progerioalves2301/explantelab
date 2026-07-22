@@ -71,6 +71,7 @@ export interface Bancada {
   tem_rtc?: boolean | null;
   sensor_travado?: boolean | null;
   sensor_reinicios?: number | null;
+  ciclo_iniciado_em?: string | null;
   created_at: string;
 }
 
