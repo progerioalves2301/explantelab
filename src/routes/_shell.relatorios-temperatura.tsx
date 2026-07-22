@@ -664,6 +664,7 @@ function RelatorioTemperaturaPage() {
                     <thead>
                       <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                         <th className="py-2 pr-2">Prateleira</th>
+                        <th className="py-2 pr-2">Variedade</th>
                         <th className="py-2 pr-2 text-right">Mín °C</th>
                         <th className="py-2 pr-2 text-right">Média °C</th>
                         <th className="py-2 pr-2 text-right">Máx °C</th>
@@ -684,6 +685,20 @@ function RelatorioTemperaturaPage() {
                               {it.bancada.nome}
                             </Link>
                           </td>
+                          <td className="py-2 pr-2 text-xs">
+                            {it.variedades.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {it.variedades.map((v) => (
+                                  <Badge key={v} variant="secondary" className="text-[10px]">
+                                    {v}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+
                           <td className="py-2 pr-2 text-right font-mono">
                             {fmt(it.min)}
                           </td>
