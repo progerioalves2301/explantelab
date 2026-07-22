@@ -381,6 +381,7 @@ function RelatoriosAlertasPage() {
                   <TableRow>
                     <TableHead>Data/Hora</TableHead>
                     <TableHead>Prateleira</TableHead>
+                    <TableHead>Variedade</TableHead>
                     <TableHead>Sala</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Severidade</TableHead>
@@ -393,13 +394,22 @@ function RelatoriosAlertasPage() {
                   {filtrados.map((a) => {
                     const lid = (a as any).laboratorio_id as string | null;
                     const lab = lid ? labById.get(lid) : null;
+                    const vr = variedadeDoAlerta(a);
                     return (
                       <TableRow key={a.id}>
                         <TableCell className="whitespace-nowrap text-xs tabular-nums">
                           {fmtDataHora(a.created_at)}
                         </TableCell>
                         <TableCell className="text-xs">{a.bancada_nome ?? "-"}</TableCell>
+                        <TableCell className="text-xs">
+                          {vr ? (
+                            <Badge variant="secondary" className="text-[10px]">{vr}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs">{lab?.nome ?? "-"}</TableCell>
+
                         <TableCell>
                           <Badge variant="outline" className="text-[10px]">
                             {TIPO_LABEL[a.tipo] ?? a.tipo}
