@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 export type PontoTemperatura = {
   minuto: string; // ISO timestamp
@@ -17,9 +18,12 @@ const PERIODOS = {
 
 export type PeriodoGrafico = keyof typeof PERIODOS;
 
+type LaboratorioRow = Database["public"]["Tables"]["laboratorios"]["Row"];
+type BancadaRow = Database["public"]["Tables"]["bancadas"]["Row"];
+
 export type DadosRelatorioTemperatura = {
-  laboratorios: Record<string, unknown>[];
-  bancadas: Record<string, unknown>[];
+  laboratorios: LaboratorioRow[];
+  bancadas: BancadaRow[];
   medicoes: { bancada_id: string; valor: number; minuto: string }[];
 };
 
@@ -121,9 +125,7 @@ export const listarRelatorioTemperatura = createServerFn({ method: "GET" })
     if (labsRes.error) throw new Error(labsRes.error.message);
     if (bancadasRes.error) throw new Error(bancadasRes.error.message);
 
-    const bancadas = (bancadasRes.data ?? []) as Array<
-      Record<string, unknown> & { id: string; ciclo_iniciado_em?: string | null }
-    >;
+    const bancadas = (bancadasRes.data ?? []) as BancadaRow[];
 
     const medicoesPorBancada = await Promise.all(
       bancadas.map(async (bancada) => {
@@ -158,7 +160,7 @@ export const listarRelatorioTemperatura = createServerFn({ method: "GET" })
     );
 
     return {
-      laboratorios: (labsRes.data ?? []) as Record<string, unknown>[],
+      laboratorios: (labsRes.data ?? []) as LaboratorioRow[],
       bancadas,
       medicoes: medicoesPorBancada.flat(),
     } satisfies DadosRelatorioTemperatura;
