@@ -26,6 +26,35 @@ export type MedicaoPeso = {
   observacoes: string | null;
 };
 
+export type MudaPeriodo = {
+  id: string;
+  identificador: string;
+  especie: string | null;
+  bancada_id: string | null;
+  laboratorio_id: string | null;
+  data_inicio: string;
+  data_fim: string | null;
+};
+
+export const listarMudasPeriodo = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { desde: string; ate: string }) => input)
+  .handler(async ({ data, context }) => {
+    // Mudas que se sobrepõem à janela [desde, ate]:
+    //   data_inicio <= ate  AND  (data_fim IS NULL OR data_fim >= desde)
+    const { data: rows, error } = await context.supabase
+      .from("mudas")
+      .select(
+        "id, identificador, especie, bancada_id, laboratorio_id, data_inicio, data_fim",
+      )
+      .lte("data_inicio", data.ate)
+      .or(`data_fim.is.null,data_fim.gte.${data.desde}`)
+      .order("data_inicio", { ascending: false })
+      .limit(5000);
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as unknown as MudaPeriodo[];
+  });
+
 export const listarMudas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { apenas_ativas?: boolean } | undefined) => input ?? {})

@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listarRelatorioTemperatura } from "@/lib/medicoes.functions";
+import { listarMudasPeriodo, type MudaPeriodo } from "@/lib/mudas.functions";
 import type { Bancada, Laboratorio } from "@/lib/types";
 
 export const Route = createFileRoute("/_shell/relatorios-temperatura")({
@@ -59,7 +60,22 @@ type EstatBancada = {
   max: number | null;
   avg: number | null;
   foraFaixa: number;
+  variedades: string[];
 };
+
+const TODAS_VARIEDADES = "__todas__";
+
+function mudaAtivaEm(
+  mudasDaBancada: MudaPeriodo[],
+  ts: number,
+): MudaPeriodo | null {
+  for (const m of mudasDaBancada) {
+    const ini = new Date(m.data_inicio).getTime();
+    const fim = m.data_fim ? new Date(m.data_fim).getTime() : Infinity;
+    if (ts >= ini && ts <= fim) return m;
+  }
+  return null;
+}
 
 function fmt(v: number | null, casas = 1) {
   if (v === null || !Number.isFinite(v)) return "—";
@@ -165,6 +181,7 @@ function gerarPdf(
   periodoLabel: string,
   grupos: { lab: Laboratorio; itens: EstatBancada[] }[],
   seriesPorLab: Map<string, { label: string; valor: number }[]>,
+  variedadeFiltro: string,
 ) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -179,10 +196,15 @@ function gerarPdf(
     y = margin;
   };
 
-  doc.setProperties({ title: "Relatorio de Temperatura" });
+  const tituloVariedade =
+    variedadeFiltro && variedadeFiltro !== TODAS_VARIEDADES
+      ? ` — Variedade: ${variedadeFiltro}`
+      : "";
+
+  doc.setProperties({ title: `Relatorio de Temperatura${tituloVariedade}` });
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text("Relatório de Temperatura", margin, y);
+  doc.text(`Relatório de Temperatura${tituloVariedade}`, margin, y);
   y += 7;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
@@ -221,8 +243,16 @@ function gerarPdf(
     y += chartH + 4;
 
     // Header linha
-    const cols = ["Prateleira", "Mín °C", "Méd °C", "Máx °C", "Amostras", "Fora faixa"];
-    const colX = [margin + 2, margin + 60, margin + 82, margin + 104, margin + 128, margin + 158];
+    const cols = ["Prateleira", "Variedade", "Mín °C", "Méd °C", "Máx °C", "Amostras", "Fora"];
+    const colX = [
+      margin + 2,
+      margin + 42,
+      margin + 82,
+      margin + 100,
+      margin + 118,
+      margin + 138,
+      margin + 162,
+    ];
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setFillColor(240, 240, 240);
@@ -233,8 +263,11 @@ function gerarPdf(
     doc.setFont("helvetica", "normal");
     itens.forEach((it) => {
       addPage(6);
+      const variedadesTxt =
+        it.variedades.length > 0 ? it.variedades.join(", ") : "—";
       const row = [
         it.bancada.nome,
+        variedadesTxt.length > 22 ? `${variedadesTxt.slice(0, 22)}…` : variedadesTxt,
         fmt(it.min),
         fmt(it.avg),
         fmt(it.max),
@@ -249,7 +282,11 @@ function gerarPdf(
     y += 4;
   });
 
-  doc.save("Relatorio de Temperatura.pdf");
+  const nomeArquivo =
+    variedadeFiltro && variedadeFiltro !== TODAS_VARIEDADES
+      ? `Relatorio de Temperatura - ${variedadeFiltro}.pdf`
+      : "Relatorio de Temperatura.pdf";
+  doc.save(nomeArquivo);
 }
 
 
@@ -260,27 +297,74 @@ function RelatorioTemperaturaPage() {
   const [medicoes, setMedicoes] = useState<
     { bancada_id: string; valor: number; minuto: string }[]
   >([]);
+  const [mudas, setMudas] = useState<MudaPeriodo[]>([]);
+  const [variedade, setVariedade] = useState<string>(TODAS_VARIEDADES);
   const [loading, setLoading] = useState(true);
   const carregarRelatorio = useServerFn(listarRelatorioTemperatura);
+  const carregarMudas = useServerFn(listarMudasPeriodo);
 
   useEffect(() => {
     let alive = true;
     const load = async () => {
       setLoading(true);
       const horas = PERIODOS[periodo].horas;
-      const dados = await carregarRelatorio({ data: { horas } });
+      const desde = new Date(Date.now() - horas * 3_600_000).toISOString();
+      const ate = new Date().toISOString();
+      const [dados, ms] = await Promise.all([
+        carregarRelatorio({ data: { horas } }),
+        carregarMudas({ data: { desde, ate } }),
+      ]);
       if (!alive) return;
       const bancadasData = dados.bancadas as unknown as Bancada[];
       setLabs(dados.laboratorios as unknown as Laboratorio[]);
       setBancadas(bancadasData);
       setMedicoes(dados.medicoes);
+      setMudas(ms);
       setLoading(false);
     };
     void load();
     return () => {
       alive = false;
     };
-  }, [periodo, carregarRelatorio]);
+  }, [periodo, carregarRelatorio, carregarMudas]);
+
+  // Mudas indexadas por bancada, ordenadas por data_inicio DESC (mais recente
+  // primeiro) — usadas para descobrir qual variedade estava ativa em cada ts.
+  const mudasPorBancada = useMemo(() => {
+    const map = new Map<string, MudaPeriodo[]>();
+    for (const m of mudas) {
+      if (!m.bancada_id) continue;
+      const arr = map.get(m.bancada_id) ?? [];
+      arr.push(m);
+      map.set(m.bancada_id, arr);
+    }
+    for (const arr of map.values()) {
+      arr.sort(
+        (a, b) =>
+          new Date(b.data_inicio).getTime() - new Date(a.data_inicio).getTime(),
+      );
+    }
+    return map;
+  }, [mudas]);
+
+  const variedadesDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    for (const m of mudas) set.add(m.identificador);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [mudas]);
+
+  // Aplica o filtro de variedade sobre as medições: só passam pontos cuja
+  // muda ativa naquele instante tenha o identificador selecionado.
+  const medicoesFiltradas = useMemo(() => {
+    if (variedade === TODAS_VARIEDADES) return medicoes;
+    return medicoes.filter((m) => {
+      const mudasB = mudasPorBancada.get(m.bancada_id);
+      if (!mudasB) return false;
+      const ativa = mudaAtivaEm(mudasB, new Date(m.minuto).getTime());
+      return ativa?.identificador === variedade;
+    });
+  }, [medicoes, mudasPorBancada, variedade]);
+
 
   // Séries temporais agregadas por sala (média das prateleiras por bucket)
   const seriesPorLab = useMemo(() => {
@@ -293,7 +377,7 @@ function RelatorioTemperaturaPage() {
 
     // labId -> bucketTs -> {max}
     const agg = new Map<string, Map<number, { max: number }>>();
-    for (const m of medicoes) {
+    for (const m of medicoesFiltradas) {
       const labId = bancadaLab.get(m.bancada_id);
       if (!labId) continue;
       const ts = new Date(m.minuto).getTime();
@@ -328,16 +412,27 @@ function RelatorioTemperaturaPage() {
     }
     return out;
 
-  }, [medicoes, bancadas, periodo]);
+  }, [medicoesFiltradas, bancadas, periodo]);
 
 
   const grupos = useMemo(() => {
     // Agrupa medições por bancada
     const porBancada = new Map<string, number[]>();
-    for (const m of medicoes) {
+    const variedadesPorBancada = new Map<string, Set<string>>();
+    for (const m of medicoesFiltradas) {
       const arr = porBancada.get(m.bancada_id) ?? [];
       arr.push(m.valor);
       porBancada.set(m.bancada_id, arr);
+
+      const mudasB = mudasPorBancada.get(m.bancada_id);
+      if (mudasB) {
+        const ativa = mudaAtivaEm(mudasB, new Date(m.minuto).getTime());
+        if (ativa) {
+          const set = variedadesPorBancada.get(m.bancada_id) ?? new Set<string>();
+          set.add(ativa.identificador);
+          variedadesPorBancada.set(m.bancada_id, set);
+        }
+      }
     }
 
     const stats: Record<string, EstatBancada> = {};
@@ -365,6 +460,7 @@ function RelatorioTemperaturaPage() {
         max,
         avg: vals.length > 0 ? sum / vals.length : null,
         foraFaixa: fora,
+        variedades: Array.from(variedadesPorBancada.get(b.id) ?? []).sort(),
       };
     }
 
@@ -373,11 +469,21 @@ function RelatorioTemperaturaPage() {
         lab,
         itens: bancadas
           .filter((b) => b.laboratorio_id === lab.id)
-          .map((b) => stats[b.id]),
+          .map((b) => stats[b.id])
+          // Se filtro de variedade estiver ativo, só mantém prateleiras que
+          // realmente tiveram essa variedade no período.
+          .filter((it) =>
+            variedade === TODAS_VARIEDADES ? true : it.variedades.length > 0,
+          ),
       }))
       .filter((g) => g.itens.length > 0);
 
-    const semLab = bancadas.filter((b) => !b.laboratorio_id);
+    const semLab = bancadas
+      .filter((b) => !b.laboratorio_id)
+      .map((b) => stats[b.id])
+      .filter((it) =>
+        variedade === TODAS_VARIEDADES ? true : it.variedades.length > 0,
+      );
     if (semLab.length > 0) {
       groups.push({
         lab: {
@@ -388,13 +494,13 @@ function RelatorioTemperaturaPage() {
           ordem: 999,
           created_at: "",
         },
-        itens: semLab.map((b) => stats[b.id]),
+        itens: semLab,
       });
     }
     return groups;
-  }, [labs, bancadas, medicoes]);
+  }, [labs, bancadas, medicoesFiltradas, mudasPorBancada, variedade]);
 
-  const totalPontos = medicoes.length;
+  const totalPontos = medicoesFiltradas.length;
 
   return (
     <div className="space-y-4">
@@ -413,6 +519,19 @@ function RelatorioTemperaturaPage() {
               <ArrowLeft className="mr-1.5 h-4 w-4" /> Ciclos
             </Link>
           </Button>
+          <Select value={variedade} onValueChange={setVariedade}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Variedade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODAS_VARIEDADES}>Todas as variedades</SelectItem>
+              {variedadesDisponiveis.map((v) => (
+                <SelectItem key={v} value={v}>
+                  {v}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select
             value={periodo}
             onValueChange={(v) => setPeriodo(v as PeriodoKey)}
@@ -432,12 +551,15 @@ function RelatorioTemperaturaPage() {
             variant="outline"
             size="sm"
             disabled={loading || grupos.length === 0}
-            onClick={() => gerarPdf(PERIODOS[periodo].label, grupos, seriesPorLab)}
+            onClick={() =>
+              gerarPdf(PERIODOS[periodo].label, grupos, seriesPorLab, variedade)
+            }
           >
             <FileText className="mr-1.5 h-4 w-4" /> Salvar PDF
           </Button>
         </div>
       </div>
+
 
       {loading ? (
         <div className="flex items-center gap-2 py-10 text-muted-foreground">
@@ -542,6 +664,7 @@ function RelatorioTemperaturaPage() {
                     <thead>
                       <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                         <th className="py-2 pr-2">Prateleira</th>
+                        <th className="py-2 pr-2">Variedade</th>
                         <th className="py-2 pr-2 text-right">Mín °C</th>
                         <th className="py-2 pr-2 text-right">Média °C</th>
                         <th className="py-2 pr-2 text-right">Máx °C</th>
@@ -562,6 +685,20 @@ function RelatorioTemperaturaPage() {
                               {it.bancada.nome}
                             </Link>
                           </td>
+                          <td className="py-2 pr-2 text-xs">
+                            {it.variedades.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {it.variedades.map((v) => (
+                                  <Badge key={v} variant="secondary" className="text-[10px]">
+                                    {v}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+
                           <td className="py-2 pr-2 text-right font-mono">
                             {fmt(it.min)}
                           </td>

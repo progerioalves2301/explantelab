@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { listarAlertasPeriodo, type Alerta } from "@/lib/alertas.functions";
 import { listLaboratorios } from "@/lib/laboratorios.functions";
+import { listarMudasPeriodo, type MudaPeriodo } from "@/lib/mudas.functions";
 import type { Laboratorio } from "@/lib/types";
 
 export const Route = createFileRoute("/_shell/relatorios-alertas")({
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/_shell/relatorios-alertas")({
 });
 
 const PDF_FILENAME = "Relatorio de Alertas.pdf";
+const TODAS_VARIEDADES = "__todas__";
 
 function toLocalDateInput(d: Date) {
   const iso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString();
@@ -38,6 +40,15 @@ function toLocalDateInput(d: Date) {
 
 function fmtDataHora(iso: string) {
   return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+}
+
+function mudaAtivaEm(mudasDaBancada: MudaPeriodo[], ts: number): MudaPeriodo | null {
+  for (const m of mudasDaBancada) {
+    const ini = new Date(m.data_inicio).getTime();
+    const fim = m.data_fim ? new Date(m.data_fim).getTime() : Infinity;
+    if (ts >= ini && ts <= fim) return m;
+  }
+  return null;
 }
 
 const TIPO_LABEL: Record<string, string> = {
@@ -49,6 +60,7 @@ const TIPO_LABEL: Record<string, string> = {
 function RelatoriosAlertasPage() {
   const listar = useServerFn(listarAlertasPeriodo);
   const listLabs = useServerFn(listLaboratorios);
+  const listMudas = useServerFn(listarMudasPeriodo);
 
   const hoje = new Date();
   const seteDias = new Date(hoje.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -59,9 +71,11 @@ function RelatoriosAlertasPage() {
   const [severidade, setSeveridade] = useState<string>("todas");
   const [labId, setLabId] = useState<string>("todas");
   const [status, setStatus] = useState<string>("todos");
+  const [variedade, setVariedade] = useState<string>(TODAS_VARIEDADES);
 
   const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [labs, setLabs] = useState<Laboratorio[]>([]);
+  const [mudas, setMudas] = useState<MudaPeriodo[]>([]);
   const [loading, setLoading] = useState(false);
 
   const carregar = async () => {
@@ -69,12 +83,14 @@ function RelatoriosAlertasPage() {
     try {
       const desdeISO = new Date(`${desde}T00:00:00`).toISOString();
       const ateISO = new Date(`${ate}T23:59:59`).toISOString();
-      const [a, l] = await Promise.all([
+      const [a, l, m] = await Promise.all([
         listar({ data: { desde: desdeISO, ate: ateISO } }),
         listLabs(),
+        listMudas({ data: { desde: desdeISO, ate: ateISO } }),
       ]);
       setAlertas(a);
       setLabs(l);
+      setMudas(m);
     } finally {
       setLoading(false);
     }
@@ -83,6 +99,36 @@ function RelatoriosAlertasPage() {
   useEffect(() => { void carregar(); /* eslint-disable-next-line */ }, []);
 
   const labById = useMemo(() => new Map(labs.map((l) => [l.id, l])), [labs]);
+
+  const mudasPorBancada = useMemo(() => {
+    const map = new Map<string, MudaPeriodo[]>();
+    for (const m of mudas) {
+      if (!m.bancada_id) continue;
+      const arr = map.get(m.bancada_id) ?? [];
+      arr.push(m);
+      map.set(m.bancada_id, arr);
+    }
+    for (const arr of map.values()) {
+      arr.sort(
+        (a, b) =>
+          new Date(b.data_inicio).getTime() - new Date(a.data_inicio).getTime(),
+      );
+    }
+    return map;
+  }, [mudas]);
+
+  const variedadesDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    for (const m of mudas) set.add(m.identificador);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [mudas]);
+
+  const variedadeDoAlerta = (a: Alerta): string | null => {
+    const mudasB = mudasPorBancada.get(a.bancada_id);
+    if (!mudasB) return null;
+    const ativa = mudaAtivaEm(mudasB, new Date(a.created_at).getTime());
+    return ativa?.identificador ?? null;
+  };
 
   const filtrados = useMemo(() => {
     return alertas.filter((a) => {
@@ -94,9 +140,13 @@ function RelatoriosAlertasPage() {
         const lid = (a as any).laboratorio_id as string | null;
         if (lid !== labId) return false;
       }
+      if (variedade !== TODAS_VARIEDADES) {
+        if (variedadeDoAlerta(a) !== variedade) return false;
+      }
       return true;
     });
-  }, [alertas, tipo, severidade, status, labId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alertas, tipo, severidade, status, labId, variedade, mudasPorBancada]);
 
   const stats = useMemo(() => {
     const porTipo: Record<string, number> = {};
@@ -117,10 +167,12 @@ function RelatoriosAlertasPage() {
     const margin = 12;
     let y = margin;
 
-    doc.setProperties({ title: "Relatorio de Alertas" });
+    const tituloVar =
+      variedade && variedade !== TODAS_VARIEDADES ? ` — Variedade: ${variedade}` : "";
+    doc.setProperties({ title: `Relatorio de Alertas${tituloVar}` });
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text("Relatório de Alertas", margin, y);
+    doc.text(`Relatório de Alertas${tituloVar}`, margin, y);
     y += 7;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
@@ -141,11 +193,12 @@ function RelatoriosAlertasPage() {
 
     // Cabeçalho da tabela
     const cols = [
-      { label: "Data/Hora", w: 32 },
-      { label: "Prateleira", w: 30 },
-      { label: "Tipo", w: 22 },
-      { label: "Sev.", w: 15 },
-      { label: "Mensagem", w: 60 },
+      { label: "Data/Hora", w: 30 },
+      { label: "Prateleira", w: 26 },
+      { label: "Variedade", w: 26 },
+      { label: "Tipo", w: 20 },
+      { label: "Sev.", w: 14 },
+      { label: "Mensagem", w: 45 },
       { label: "Status", w: 20 },
     ];
     const drawHeader = () => {
@@ -164,35 +217,42 @@ function RelatoriosAlertasPage() {
     drawHeader();
 
     filtrados.forEach((a) => {
-      const msgLines = doc.splitTextToSize(a.mensagem, cols[4].w - 1) as string[];
+      const msgLines = doc.splitTextToSize(a.mensagem, cols[5].w - 1) as string[];
       const rowH = Math.max(6, msgLines.length * 3.6 + 2);
       if (y + rowH > pageH - margin) {
         doc.addPage();
         y = margin;
         drawHeader();
       }
+      const vr = variedadeDoAlerta(a) ?? "—";
       doc.setFontSize(8);
       let x = margin + 1;
       doc.text(fmtDataHora(a.created_at), x, y + 4);
       x += cols[0].w;
-      doc.text((a.bancada_nome ?? "-").slice(0, 22), x, y + 4);
+      doc.text((a.bancada_nome ?? "-").slice(0, 18), x, y + 4);
       x += cols[1].w;
-      doc.text(TIPO_LABEL[a.tipo] ?? a.tipo, x, y + 4);
+      doc.text(vr.length > 18 ? `${vr.slice(0, 18)}…` : vr, x, y + 4);
       x += cols[2].w;
+      doc.text(TIPO_LABEL[a.tipo] ?? a.tipo, x, y + 4);
+      x += cols[3].w;
       if (a.severidade === "critical") doc.setTextColor(200, 30, 30);
       else doc.setTextColor(180, 130, 0);
       doc.text(a.severidade === "critical" ? "Crítico" : "Aviso", x, y + 4);
       doc.setTextColor(0, 0, 0);
-      x += cols[3].w;
-      msgLines.forEach((line, i) => doc.text(line, x, y + 4 + i * 3.6));
       x += cols[4].w;
+      msgLines.forEach((line, i) => doc.text(line, x, y + 4 + i * 3.6));
+      x += cols[5].w;
       doc.text(a.resolvido_em ? "Resolvido" : "Aberto", x, y + 4);
       doc.setDrawColor(230, 230, 230);
       doc.line(margin, y + rowH, pageW - margin, y + rowH);
       y += rowH;
     });
 
-    doc.save(PDF_FILENAME);
+    const nome =
+      variedade && variedade !== TODAS_VARIEDADES
+        ? `Relatorio de Alertas - ${variedade}.pdf`
+        : PDF_FILENAME;
+    doc.save(nome);
   };
 
   return (
@@ -272,12 +332,25 @@ function RelatoriosAlertasPage() {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label className="text-xs">Variedade</Label>
+            <Select value={variedade} onValueChange={setVariedade}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODAS_VARIEDADES}>Todas</SelectItem>
+                {variedadesDisponiveis.map((v) => (
+                  <SelectItem key={v} value={v}>{v}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="md:col-span-6">
             <Button size="sm" onClick={carregar} disabled={loading}>
               {loading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
               Atualizar
             </Button>
           </div>
+
         </CardContent>
       </Card>
 
@@ -308,6 +381,7 @@ function RelatoriosAlertasPage() {
                   <TableRow>
                     <TableHead>Data/Hora</TableHead>
                     <TableHead>Prateleira</TableHead>
+                    <TableHead>Variedade</TableHead>
                     <TableHead>Sala</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Severidade</TableHead>
@@ -320,13 +394,22 @@ function RelatoriosAlertasPage() {
                   {filtrados.map((a) => {
                     const lid = (a as any).laboratorio_id as string | null;
                     const lab = lid ? labById.get(lid) : null;
+                    const vr = variedadeDoAlerta(a);
                     return (
                       <TableRow key={a.id}>
                         <TableCell className="whitespace-nowrap text-xs tabular-nums">
                           {fmtDataHora(a.created_at)}
                         </TableCell>
                         <TableCell className="text-xs">{a.bancada_nome ?? "-"}</TableCell>
+                        <TableCell className="text-xs">
+                          {vr ? (
+                            <Badge variant="secondary" className="text-[10px]">{vr}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs">{lab?.nome ?? "-"}</TableCell>
+
                         <TableCell>
                           <Badge variant="outline" className="text-[10px]">
                             {TIPO_LABEL[a.tipo] ?? a.tipo}
