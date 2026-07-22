@@ -332,12 +332,25 @@ function RelatoriosAlertasPage() {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label className="text-xs">Variedade</Label>
+            <Select value={variedade} onValueChange={setVariedade}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODAS_VARIEDADES}>Todas</SelectItem>
+                {variedadesDisponiveis.map((v) => (
+                  <SelectItem key={v} value={v}>{v}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="md:col-span-6">
             <Button size="sm" onClick={carregar} disabled={loading}>
               {loading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
               Atualizar
             </Button>
           </div>
+
         </CardContent>
       </Card>
 
