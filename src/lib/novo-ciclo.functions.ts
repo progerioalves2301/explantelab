@@ -77,8 +77,11 @@ export const iniciarNovoCiclo = createServerFn({ method: "POST" })
     if (mErr) throw new Error(`Falha ao encerrar muda: ${mErr.message}`);
 
     // 4. Marca início do novo ciclo.
+    // Usa cliente admin pois RLS de `bancadas` só permite UPDATE para admin;
+    // o papel do chamador (tecnico/admin) já foi validado por `requireTecnico`.
     const agora = new Date().toISOString();
-    const { error: uErr } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: uErr } = await supabaseAdmin
       .from("bancadas")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({ ciclo_iniciado_em: agora } as any)
