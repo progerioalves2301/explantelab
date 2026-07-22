@@ -741,9 +741,8 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           </DialogHeader>
           <div className="space-y-2 py-2">
             <Label htmlFor="senha-novo-ciclo">Senha</Label>
-            <Input
+            <PasswordInput
               id="senha-novo-ciclo"
-              type="password"
               autoComplete="current-password"
               value={senhaNovoCiclo}
               onChange={(e) => setSenhaNovoCiclo(e.target.value)}
