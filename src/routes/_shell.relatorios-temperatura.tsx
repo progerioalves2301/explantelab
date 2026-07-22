@@ -519,6 +519,19 @@ function RelatorioTemperaturaPage() {
               <ArrowLeft className="mr-1.5 h-4 w-4" /> Ciclos
             </Link>
           </Button>
+          <Select value={variedade} onValueChange={setVariedade}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Variedade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODAS_VARIEDADES}>Todas as variedades</SelectItem>
+              {variedadesDisponiveis.map((v) => (
+                <SelectItem key={v} value={v}>
+                  {v}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select
             value={periodo}
             onValueChange={(v) => setPeriodo(v as PeriodoKey)}
@@ -538,12 +551,15 @@ function RelatorioTemperaturaPage() {
             variant="outline"
             size="sm"
             disabled={loading || grupos.length === 0}
-            onClick={() => gerarPdf(PERIODOS[periodo].label, grupos, seriesPorLab)}
+            onClick={() =>
+              gerarPdf(PERIODOS[periodo].label, grupos, seriesPorLab, variedade)
+            }
           >
             <FileText className="mr-1.5 h-4 w-4" /> Salvar PDF
           </Button>
         </div>
       </div>
+
 
       {loading ? (
         <div className="flex items-center gap-2 py-10 text-muted-foreground">
