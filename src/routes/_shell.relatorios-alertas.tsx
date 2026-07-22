@@ -119,7 +119,7 @@ function RelatoriosAlertasPage() {
 
   const variedadesDisponiveis = useMemo(() => {
     const set = new Set<string>();
-    for (const m of mudas) set.add(m.identificador);
+    for (const m of mudas) if (m.ativa) set.add(m.identificador);
     return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
   }, [mudas]);
 
