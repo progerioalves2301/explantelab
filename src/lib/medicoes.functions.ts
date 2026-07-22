@@ -134,12 +134,8 @@ export const listarRelatorioTemperatura = createServerFn({ method: "GET" })
 
     const medicoesPorBancada = await Promise.all(
       bancadas.map(async (bancada) => {
-        const desde =
-          bancada.ciclo_iniciado_em &&
-          new Date(bancada.ciclo_iniciado_em).getTime() >
-            new Date(desdePeriodo).getTime()
-            ? bancada.ciclo_iniciado_em
-            : desdePeriodo;
+        const desde = desdePeriodo;
+
         const rows: { bancada_id: string; valor: number; minuto: string }[] = [];
         const pageSize = 1000;
 
