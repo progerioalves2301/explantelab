@@ -51,13 +51,18 @@ export const listarAlertasPeriodo = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<Alerta[]> => {
     const { data: rows, error } = await context.supabase
       .from("alertas")
-      .select("*, bancadas(nome, laboratorio_id)")
+      .select("*, bancadas(nome, laboratorio_id, ciclo_iniciado_em)")
       .gte("created_at", data.desde)
       .lte("created_at", data.ate)
       .order("created_at", { ascending: false })
       .limit(5000);
     if (error) throw new Error(error.message);
-    return (rows ?? []).map((a: any) => ({
+    const filtered = (rows ?? []).filter((a: any) => {
+      const ini = a.bancadas?.ciclo_iniciado_em as string | null | undefined;
+      if (!ini) return true;
+      return new Date(a.created_at).getTime() >= new Date(ini).getTime();
+    });
+    return filtered.map((a: any) => ({
       ...a,
       bancada_nome: a.bancadas?.nome ?? null,
       laboratorio_id: a.bancadas?.laboratorio_id ?? null,
