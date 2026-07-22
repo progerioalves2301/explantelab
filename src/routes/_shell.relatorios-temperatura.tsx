@@ -276,27 +276,74 @@ function RelatorioTemperaturaPage() {
   const [medicoes, setMedicoes] = useState<
     { bancada_id: string; valor: number; minuto: string }[]
   >([]);
+  const [mudas, setMudas] = useState<MudaPeriodo[]>([]);
+  const [variedade, setVariedade] = useState<string>(TODAS_VARIEDADES);
   const [loading, setLoading] = useState(true);
   const carregarRelatorio = useServerFn(listarRelatorioTemperatura);
+  const carregarMudas = useServerFn(listarMudasPeriodo);
 
   useEffect(() => {
     let alive = true;
     const load = async () => {
       setLoading(true);
       const horas = PERIODOS[periodo].horas;
-      const dados = await carregarRelatorio({ data: { horas } });
+      const desde = new Date(Date.now() - horas * 3_600_000).toISOString();
+      const ate = new Date().toISOString();
+      const [dados, ms] = await Promise.all([
+        carregarRelatorio({ data: { horas } }),
+        carregarMudas({ data: { desde, ate } }),
+      ]);
       if (!alive) return;
       const bancadasData = dados.bancadas as unknown as Bancada[];
       setLabs(dados.laboratorios as unknown as Laboratorio[]);
       setBancadas(bancadasData);
       setMedicoes(dados.medicoes);
+      setMudas(ms);
       setLoading(false);
     };
     void load();
     return () => {
       alive = false;
     };
-  }, [periodo, carregarRelatorio]);
+  }, [periodo, carregarRelatorio, carregarMudas]);
+
+  // Mudas indexadas por bancada, ordenadas por data_inicio DESC (mais recente
+  // primeiro) — usadas para descobrir qual variedade estava ativa em cada ts.
+  const mudasPorBancada = useMemo(() => {
+    const map = new Map<string, MudaPeriodo[]>();
+    for (const m of mudas) {
+      if (!m.bancada_id) continue;
+      const arr = map.get(m.bancada_id) ?? [];
+      arr.push(m);
+      map.set(m.bancada_id, arr);
+    }
+    for (const arr of map.values()) {
+      arr.sort(
+        (a, b) =>
+          new Date(b.data_inicio).getTime() - new Date(a.data_inicio).getTime(),
+      );
+    }
+    return map;
+  }, [mudas]);
+
+  const variedadesDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    for (const m of mudas) set.add(m.identificador);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [mudas]);
+
+  // Aplica o filtro de variedade sobre as medições: só passam pontos cuja
+  // muda ativa naquele instante tenha o identificador selecionado.
+  const medicoesFiltradas = useMemo(() => {
+    if (variedade === TODAS_VARIEDADES) return medicoes;
+    return medicoes.filter((m) => {
+      const mudasB = mudasPorBancada.get(m.bancada_id);
+      if (!mudasB) return false;
+      const ativa = mudaAtivaEm(mudasB, new Date(m.minuto).getTime());
+      return ativa?.identificador === variedade;
+    });
+  }, [medicoes, mudasPorBancada, variedade]);
+
 
   // Séries temporais agregadas por sala (média das prateleiras por bucket)
   const seriesPorLab = useMemo(() => {
