@@ -117,6 +117,7 @@ export type Database = {
           histerese: number
           id: string
           intervalo_min_comando_s: number
+          ir_learn_debug: Json | null
           ir_protocol: string
           laboratorio_id: string
           ligado: boolean
@@ -141,6 +142,7 @@ export type Database = {
           histerese?: number
           id?: string
           intervalo_min_comando_s?: number
+          ir_learn_debug?: Json | null
           ir_protocol?: string
           laboratorio_id: string
           ligado?: boolean
@@ -165,6 +167,7 @@ export type Database = {
           histerese?: number
           id?: string
           intervalo_min_comando_s?: number
+          ir_learn_debug?: Json | null
           ir_protocol?: string
           laboratorio_id?: string
           ligado?: boolean
@@ -915,6 +918,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bench_ir_debug: {
+        Args: {
+          _ar_id: string
+          _bancada_id: string
+          _device_token: string
+          _evento: string
+          _extra?: Json
+          _pulsos?: number
+        }
+        Returns: Json
+      }
       bench_ir_save_raw: {
         Args: {
           _ar_id: string
