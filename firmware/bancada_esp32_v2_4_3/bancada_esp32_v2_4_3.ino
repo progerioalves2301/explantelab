@@ -890,6 +890,23 @@ bool enviarTelemetria() {
 // -------- Loop timers (declarados aqui p/ tratarComando poder forçar telemetria) --------
 unsigned long lastTelem = 0, lastCmd = 0, lastTick = 0, lastTemp = 0;
 
+// v2.4.3 — Reporta evento do aprendizado IR pro painel (RPC bench_ir_debug),
+// pra UI mostrar em tempo real o que o receptor captou (ou não captou).
+void reportarIrDebug(const char* evento, uint16_t pulsos) {
+  if (ir_learn_ar_id.length() == 0) return;
+  JsonDocument body;
+  body["_ar_id"]        = ir_learn_ar_id;
+  body["_bancada_id"]   = creds.bancada_id;
+  body["_device_token"] = creds.device_token;
+  body["_evento"]       = evento;
+  body["_pulsos"]       = pulsos;
+  JsonObject extra = body["_extra"].to<JsonObject>();
+  extra["modo"] = ir_learn_modo;
+  String bodyStr; serializeJson(body, bodyStr);
+  String resp;
+  supabaseRpc("bench_ir_debug", bodyStr, resp); // best-effort
+}
+
 // v2.2.0 — Captura IR e envia array raw pro backend via RPC bench_ir_save_raw.
 void tickIrLearn() {
   if (!ir_learn_ativo) return;
@@ -897,6 +914,7 @@ void tickIrLearn() {
   // Timeout — desiste da captura e libera receptor.
   if ((long)(millis() - ir_learn_deadline_ms) >= 0) {
     Serial.println("[IR_LEARN] timeout — nenhum código recebido");
+    reportarIrDebug("timeout", 0);
     irrecv.disableIRIn();
     ir_learn_ativo = false;
     ir_learn_ar_id = "";
@@ -914,6 +932,7 @@ void tickIrLearn() {
 
   if (n < IR_MIN_UNKNOWN_SIZE) {
     Serial.println("[IR_LEARN] frame muito curto — descartado, aguardando outro");
+    reportarIrDebug("curto", n);
     irrecv.resume();
     return;
   }
@@ -937,11 +956,14 @@ void tickIrLearn() {
 
   String resp;
   const char* rpc = (ir_learn_modo == "heat") ? "bench_ir_save_raw_heat" : "bench_ir_save_raw";
-  if (supabaseRpc(rpc, bodyStr, resp)) {
+  bool ok = supabaseRpc(rpc, bodyStr, resp);
+  if (ok) {
     Serial.printf("[IR_LEARN] gravado com sucesso (%u pulsos, modo=%s)\n",
                   (unsigned)n, ir_learn_modo.c_str());
+    reportarIrDebug("gravado", n);
   } else {
     Serial.println("[IR_LEARN] falha ao gravar no backend — tentará no próximo boot");
+    reportarIrDebug("falha_gravar", n);
   }
 
   irrecv.disableIRIn();
