@@ -1233,6 +1233,7 @@ void tratarComando(JsonObject cmd) {
       ir_learn_ativo = true;
       Serial.printf("[IR_LEARN] aguardando código do controle por %us (ar=%s, modo=%s)\n",
                     (unsigned)timeout_s, ar_id, modo);
+      reportarIrDebug("iniciado", 0); // v2.4.3 — avisa UI que receptor está escutando
     }
   } else if (strcmp(tipo, "OTA_UPDATE") == 0) {
     // Payload: { "url": "<https signed url>", "filename": "..." }
