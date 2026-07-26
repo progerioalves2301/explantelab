@@ -463,8 +463,12 @@ function ArCondicionadoPage() {
                 <div>{ctrl?.nome ?? <span className="text-red-600">Não definida</span>}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Faixa</div>
-                <div>{ar.setpoint_min}°C – {ar.setpoint_max}°C</div>
+                <div className="text-xs text-muted-foreground">Faixa (da prateleira)</div>
+                <div>
+                  {ctrl?.temp_min != null && ctrl?.temp_max != null
+                    ? `${ctrl.temp_min}°C – ${ctrl.temp_max}°C`
+                    : <span className="text-red-600">Configure na prateleira</span>}
+                </div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Última temp (sala)</div>
