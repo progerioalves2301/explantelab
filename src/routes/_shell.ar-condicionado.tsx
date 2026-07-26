@@ -134,8 +134,7 @@ function ArCondicionadoPage() {
     if (!editing.laboratorio_id) return toast.error("Escolha uma sala");
     if (!editing.bancada_controladora_id)
       return toast.error("Escolha a prateleira que vai controlar o ar (emissor IR no GPIO 32)");
-    if (editing.setpoint_min >= editing.setpoint_max)
-      return toast.error("Setpoint mín deve ser menor que máx");
+    // Faixa vem da prateleira controladora — não valida setpoints aqui.
     setSaving(true);
     try {
       await salvar({
