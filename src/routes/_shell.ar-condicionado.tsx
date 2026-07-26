@@ -575,23 +575,35 @@ function ArCondicionadoPage() {
               </div>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-4">
-              <div className="grid gap-1.5">
-                <Label>Setpoint mín (°C)</Label>
-                <Input
-                  type="number" step="0.5" min={16} max={30}
-                  value={editing.setpoint_min}
-                  onChange={(e) => setEditing({ ...editing, setpoint_min: Number(e.target.value) })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Setpoint máx (°C)</Label>
-                <Input
-                  type="number" step="0.5" min={16} max={30}
-                  value={editing.setpoint_max}
-                  onChange={(e) => setEditing({ ...editing, setpoint_max: Number(e.target.value) })}
-                />
-              </div>
+            {(() => {
+              const ctrl = bancadas.find((b) => b.id === editing.bancada_controladora_id);
+              const temMin = ctrl?.temp_min != null;
+              const temMax = ctrl?.temp_max != null;
+              return (
+                <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">
+                  <div className="text-xs font-semibold text-primary">
+                    Faixa de temperatura (unificada com o alerta da prateleira)
+                  </div>
+                  <div className="mt-1 text-muted-foreground">
+                    {ctrl ? (
+                      temMin && temMax ? (
+                        <>Ar liga em <b>frio</b> acima de <b>{ctrl.temp_max}°C</b> e em{" "}
+                        <b>quente</b> abaixo de <b>{ctrl.temp_min}°C</b>. Para mudar, edite
+                        a prateleira <b>{ctrl.nome}</b> (temp mín/máx).</>
+                      ) : (
+                        <span className="text-red-600">
+                          A prateleira {ctrl.nome} está sem temp mín/máx — configure lá antes.
+                        </span>
+                      )
+                    ) : (
+                      <span>Escolha a prateleira controladora acima.</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-1.5">
                 <Label>Histerese (°C)</Label>
                 <Input
