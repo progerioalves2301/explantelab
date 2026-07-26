@@ -202,14 +202,74 @@ function ArCondicionadoPage() {
 
   const handleAprender = async (id: string, modo: "cool" | "heat" = "cool") => {
     setTestingId(id);
+    const toastId = `aprender-${id}-${modo}`;
+    // Guarda o estado inicial pra detectar quando um novo código chegar.
+    const arAntes = ars.find((a) => a.id === id);
+    const campo = modo === "heat" ? "codigo_ir_raw_heat" : "codigo_ir_raw";
+    const tamanhoAntes = arAntes?.[campo]?.length ?? 0;
     try {
       const r = await aprender({ data: { id, timeout_s: 30, modo } });
-      toast.success(`Aprender IR (${modo === "heat" ? "quente" : "frio"}) ativado`, {
-        description: `Aponte o controle e aperte LIGAR ${modo === "heat" ? "no modo quente" : "no modo frio"} nos próximos ${r.timeout_s}s.`,
-      });
-      setTimeout(() => { void reload(); }, (r.timeout_s + 3) * 1000);
+      const total = r.timeout_s;
+      const t0 = Date.now();
+      toast.loading(
+        `Aguardando sinal do controle (${modo === "heat" ? "quente" : "frio"})…`,
+        {
+          id: toastId,
+          description: `Aponte o controle para o receptor e aperte LIGAR ${modo === "heat" ? "modo quente" : "modo frio"}. Restam ${total}s.`,
+          duration: (total + 5) * 1000,
+        },
+      );
+
+      // Poll a cada 1.5s até detectar novo código ou estourar o timeout.
+      let capturado: { pulsos: number } | null = null;
+      while (Date.now() - t0 < total * 1000) {
+        await new Promise((res) => setTimeout(res, 1500));
+        try {
+          const lista = await listAr();
+          const atual = lista.find((a) => a.id === id);
+          const tamanhoAgora = atual?.[campo]?.length ?? 0;
+          const restante = Math.max(
+            0,
+            Math.ceil(total - (Date.now() - t0) / 1000),
+          );
+          if (tamanhoAgora > 0 && tamanhoAgora !== tamanhoAntes) {
+            capturado = { pulsos: tamanhoAgora };
+            setArs(lista);
+            break;
+          }
+          toast.loading(
+            `Aguardando sinal do controle (${modo === "heat" ? "quente" : "frio"})…`,
+            {
+              id: toastId,
+              description: `Aponte o controle para o receptor e aperte LIGAR. Restam ${restante}s.`,
+            },
+          );
+        } catch {
+          // ignora falha de poll pontual
+        }
+      }
+
+      if (capturado) {
+        toast.success(
+          `Sinal IR ${modo === "heat" ? "quente" : "frio"} capturado!`,
+          {
+            id: toastId,
+            description: `${capturado.pulsos} pulsos recebidos e gravados. Use "Testar" para confirmar que o ar responde.`,
+          },
+        );
+      } else {
+        toast.error("Nenhum sinal IR recebido", {
+          id: toastId,
+          description:
+            "Verifique se o receptor VS1838B está no GPIO 33, se a prateleira controladora está online e mire o controle direto no sensor. Tente de novo.",
+        });
+      }
+      await reload();
     } catch (e) {
-      toast.error("Falha ao aprender IR", { description: String(e) });
+      toast.error("Falha ao iniciar aprendizado IR", {
+        id: toastId,
+        description: String(e),
+      });
     } finally {
       setTestingId(null);
     }
