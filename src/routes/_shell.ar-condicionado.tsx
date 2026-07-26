@@ -222,6 +222,7 @@ function ArCondicionadoPage() {
 
       // Poll a cada 1.5s até detectar novo código ou estourar o timeout.
       let capturado: { pulsos: number } | null = null;
+      let ultimoDebugEm: string | null = arAntes?.ir_learn_debug?.em ?? null;
       while (Date.now() - t0 < total * 1000) {
         await new Promise((res) => setTimeout(res, 1500));
         try {
@@ -237,11 +238,28 @@ function ArCondicionadoPage() {
             setArs(lista);
             break;
           }
+          // v2.4.3 — reflete evento reportado pelo firmware em tempo real
+          const dbg = atual?.ir_learn_debug;
+          let statusLinha = "Aponte o controle para o receptor e aperte LIGAR.";
+          if (dbg && dbg.em !== ultimoDebugEm) {
+            ultimoDebugEm = dbg.em;
+          }
+          if (dbg) {
+            if (dbg.evento === "iniciado") {
+              statusLinha = "Receptor IR ativo, esperando comando do controle…";
+            } else if (dbg.evento === "curto") {
+              statusLinha = `Recebi um sinal de ${dbg.pulsos} pulsos, mas foi curto demais. Aperte de novo, mais próximo do sensor.`;
+            } else if (dbg.evento === "falha_gravar") {
+              statusLinha = `Sinal recebido (${dbg.pulsos} pulsos), mas falhou ao gravar. Nova tentativa em andamento…`;
+            } else if (dbg.evento === "timeout") {
+              statusLinha = "Timeout: nenhum sinal chegou ao receptor.";
+            }
+          }
           toast.loading(
             `Aguardando sinal do controle (${modo === "heat" ? "quente" : "frio"})…`,
             {
               id: toastId,
-              description: `Aponte o controle para o receptor e aperte LIGAR. Restam ${restante}s.`,
+              description: `${statusLinha} Restam ${restante}s.`,
             },
           );
         } catch {
@@ -258,10 +276,22 @@ function ArCondicionadoPage() {
           },
         );
       } else {
-        toast.error("Nenhum sinal IR recebido", {
+        // Puxa uma última vez pra dar um motivo específico se o firmware reportou algo.
+        let motivo = "Verifique se o receptor VS1838B está no GPIO 33, se a prateleira controladora está online e mire o controle direto no sensor.";
+        try {
+          const lista = await listAr();
+          const dbg = lista.find((a) => a.id === id)?.ir_learn_debug;
+          if (dbg?.evento === "curto") {
+            motivo = `Recebi ${dbg.pulsos} pulsos, mas o frame ficou curto demais para um comando de ar. Mire mais próximo do sensor e aperte novamente.`;
+          } else if (dbg?.evento === "iniciado") {
+            motivo = "O receptor iniciou, mas nenhum pulso chegou. Confira alimentação 3.3V do VS1838B, GND comum, e se o LED do controle está funcionando (dá pra ver o LED IR pela câmera do celular).";
+          } else if (dbg?.evento === "falha_gravar") {
+            motivo = "O firmware recebeu o sinal, mas falhou ao enviar pro backend. Verifique a internet da prateleira e tente de novo.";
+          }
+        } catch { /* ignore */ }
+        toast.error("Nenhum sinal IR gravado", {
           id: toastId,
-          description:
-            "Verifique se o receptor VS1838B está no GPIO 33, se a prateleira controladora está online e mire o controle direto no sensor. Tente de novo.",
+          description: motivo,
         });
       }
       await reload();
