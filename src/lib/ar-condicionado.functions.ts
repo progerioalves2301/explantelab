@@ -136,10 +136,11 @@ export const testarArCondicionado = createServerFn({ method: "POST" })
     if (modo === "heat" && !arRow.suporta_aquecimento) {
       throw new Error("Este ar não está marcado como suporte a aquecimento");
     }
+    // Alvo = limite que dispara: no frio o teto (setpoint_max), no quente o piso
+    // (setpoint_min). Como o comando é IR RAW aprendido, esse valor é só
+    // informativo pra UI — o replay envia exatamente o código capturado.
     const setpoint = data.acao === "on"
-      ? (modo === "heat"
-          ? Math.max(16, Math.min(30, Number(arRow.setpoint_max) - 1))
-          : Math.max(16, Math.min(30, Number(arRow.setpoint_min) + 1)))
+      ? (modo === "heat" ? Number(arRow.setpoint_min) : Number(arRow.setpoint_max))
       : null;
     const raw = modo === "heat" ? arRow.codigo_ir_raw_heat : arRow.codigo_ir_raw;
     const { error: cmdErr } = await supabaseAdmin.from("comandos").insert({
