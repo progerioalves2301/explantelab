@@ -23,6 +23,7 @@ export interface ArCondicionado {
   codigo_ir_raw: number[] | null;
   codigo_ir_raw_heat: number[] | null;
   suporta_aquecimento: boolean;
+  ir_learn_debug: { evento: string; pulsos: number; extra?: Record<string, string | number | boolean | null>; em: string } | null;
   created_at: string;
   updated_at: string;
 }
