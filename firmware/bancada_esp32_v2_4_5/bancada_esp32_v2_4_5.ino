@@ -1618,20 +1618,40 @@ void lerTemperatura() {
   // SCD41 está ativo, usamos a temperatura reportada pelo SCD41 no lugar. Assim
   // o backend continua recebendo `_temperatura_planta` normalmente e todos os
   // alertas / controle de ar-condicionado seguem funcionando sem alteração.
-  float t;
+  float t = DEVICE_DISCONNECTED_C;
+
+  // v2.4.5 — se o DS18B20 não foi visto no boot (fio solto, energia instável,
+  // sensor plugado depois), tenta redetectar periodicamente em vez de ficar
+  // preso em "sem sensor" até o próximo reboot.
+  static uint32_t ultimoRescan = 0;
+  if (!g_tem_ds18b20 && millis() - ultimoRescan > 30000UL) {
+    ultimoRescan = millis();
+    dsSensor.begin();
+    dsSensor.setResolution(12);
+    dsSensor.setWaitForConversion(true);
+    g_tem_ds18b20 = dsSensor.getAddress(g_ds18b20_addr, 0);
+    if (g_tem_ds18b20) Serial.println("[TEMP] DS18B20 redetectado no barramento");
+  }
+
   if (g_tem_ds18b20) {
     // Leitura padrão do DS18B20 (igual ao teste simples da IDE Arduino).
-    dsSensor.requestTemperatures();
-    t = dsSensor.getTempCByIndex(0);
-  } else if (g_tem_scd41 && !isnan(g_scd41_temp_c)) {
-    // Fallback: SCD41 já roda em modo periódico (uma leitura a cada 5 s) em
-    // tickCo2(). Aqui apenas reaproveitamos o último valor cacheado.
-    t = g_scd41_temp_c;
-  } else {
-    // Nenhum sensor disponível — marca como leitura inválida.
-    t = DEVICE_DISCONNECTED_C;
+    // Até 2 tentativas: uma leitura isolada com CRC ruim não vira falha.
+    for (int tent = 0; tent < 2; tent++) {
+      dsSensor.requestTemperatures();
+      t = dsSensor.getTempCByIndex(0);
+      if (t != DEVICE_DISCONNECTED_C && t > -50.0 && t < 125.0 && t != 85.0) break;
+      delay(60);
+    }
   }
+
   bool valida = t != DEVICE_DISCONNECTED_C && t > -50.0 && t < 125.0;
+
+  // v2.4.5 — fallback para o SCD41 sempre que o DS18B20 não entregar leitura
+  // válida (antes só valia quando o DS18B20 nunca havia sido detectado).
+  if (!valida && g_tem_scd41 && !isnan(g_scd41_temp_c)) {
+    t = g_scd41_temp_c;
+    valida = t > -50.0 && t < 125.0;
+  }
 
   if (valida) {
     bool estavaInvalida = !g_temperatura_valida;
