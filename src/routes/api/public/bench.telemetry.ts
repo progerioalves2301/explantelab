@@ -33,6 +33,7 @@ const telemetrySchema = z.object({
   temperatura_valida: z.boolean().optional(),
   luz_ligada: z.boolean().optional(),
   tem_rtc: z.boolean().optional(),
+  rtc_bateria_fraca: z.boolean().optional(),
   sensor_travado: z.boolean().optional(),
   sensor_reinicios: z.number().int().min(0).max(1_000_000).optional(),
 });
