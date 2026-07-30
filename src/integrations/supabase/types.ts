@@ -439,6 +439,7 @@ export type Database = {
           offline_threshold_segundos: number
           posicao: number | null
           proximo_ciclo_segundos: number
+          rtc_bateria_fraca: boolean | null
           sensor_reinicios: number | null
           sensor_travado: boolean | null
           status: string
@@ -464,6 +465,7 @@ export type Database = {
           offline_threshold_segundos?: number
           posicao?: number | null
           proximo_ciclo_segundos?: number
+          rtc_bateria_fraca?: boolean | null
           sensor_reinicios?: number | null
           sensor_travado?: boolean | null
           status?: string
@@ -489,6 +491,7 @@ export type Database = {
           offline_threshold_segundos?: number
           posicao?: number | null
           proximo_ciclo_segundos?: number
+          rtc_bateria_fraca?: boolean | null
           sensor_reinicios?: number | null
           sensor_travado?: boolean | null
           status?: string
@@ -952,24 +955,44 @@ export type Database = {
         Args: { _bancada_id: string; _device_token: string }
         Returns: Json
       }
-      bench_push_telemetry: {
-        Args: {
-          _bancada_id: string
-          _device_token: string
-          _firmware_version: string
-          _ip_local: string
-          _luz_ligada?: boolean
-          _proximo_ciclo_segundos: number
-          _sensor_reinicios?: number
-          _sensor_travado?: boolean
-          _status: string
-          _tem_rtc?: boolean
-          _temperatura_planta?: number
-          _temperatura_valida?: boolean
-          _valvulas: Json
-        }
-        Returns: Json
-      }
+      bench_push_telemetry:
+        | {
+            Args: {
+              _bancada_id: string
+              _device_token: string
+              _firmware_version: string
+              _ip_local: string
+              _luz_ligada?: boolean
+              _proximo_ciclo_segundos: number
+              _sensor_reinicios?: number
+              _sensor_travado?: boolean
+              _status: string
+              _tem_rtc?: boolean
+              _temperatura_planta?: number
+              _temperatura_valida?: boolean
+              _valvulas: Json
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _bancada_id: string
+              _device_token: string
+              _firmware_version: string
+              _ip_local: string
+              _luz_ligada?: boolean
+              _proximo_ciclo_segundos: number
+              _rtc_bateria_fraca?: boolean
+              _sensor_reinicios?: number
+              _sensor_travado?: boolean
+              _status: string
+              _tem_rtc?: boolean
+              _temperatura_planta?: number
+              _temperatura_valida?: boolean
+              _valvulas: Json
+            }
+            Returns: Json
+          }
       check_rate_limit: {
         Args: { _bancada_id: string; _max?: number }
         Returns: boolean

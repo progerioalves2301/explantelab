@@ -69,6 +69,7 @@ export interface Bancada {
   posicao: number | null;
   luz_ligada: boolean;
   tem_rtc?: boolean | null;
+  rtc_bateria_fraca?: boolean | null;
   sensor_travado?: boolean | null;
   sensor_reinicios?: number | null;
   ciclo_iniciado_em?: string | null;

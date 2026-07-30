@@ -33,6 +33,7 @@ const telemetrySchema = z.object({
   temperatura_valida: z.boolean().optional(),
   luz_ligada: z.boolean().optional(),
   tem_rtc: z.boolean().optional(),
+  rtc_bateria_fraca: z.boolean().optional(),
   sensor_travado: z.boolean().optional(),
   sensor_reinicios: z.number().int().min(0).max(1_000_000).optional(),
 });
@@ -89,6 +90,10 @@ export const Route = createFileRoute("/api/public/bench/telemetry")({
         if (payload.tem_rtc !== undefined) {
           updatePayload.tem_rtc = payload.tem_rtc;
         }
+        if (payload.rtc_bateria_fraca !== undefined) {
+          updatePayload.rtc_bateria_fraca = payload.rtc_bateria_fraca;
+        }
+
         if (payload.sensor_reinicios !== undefined) {
           updatePayload.sensor_reinicios = payload.sensor_reinicios;
         }
