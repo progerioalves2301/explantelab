@@ -107,7 +107,12 @@ export const Route = createFileRoute("/api/public/bench/telemetry")({
         } else if (payload.temperatura_valida !== false && payload.temperatura_planta != null) {
           updatePayload.temperatura_planta = payload.temperatura_planta;
           updatePayload.sensor_travado = false;
+        } else if (payload.temperatura_valida === false) {
+          // Prateleira sem sensor (ou sensor com falha): limpa o valor para não
+          // exibir uma leitura antiga congelada no painel.
+          updatePayload.temperatura_planta = null;
         }
+
 
         const { error: updErr } = await supabaseAdmin
           .from("bancadas")
