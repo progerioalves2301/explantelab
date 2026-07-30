@@ -283,13 +283,11 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
 
   return (
     <Card className="card-elevated overflow-hidden transition hover:border-primary/40">
-      {laboratorio && (
-        <div
-          className="h-1.5 w-full"
-          style={{ background: laboratorio.cor }}
-          aria-hidden
-        />
-      )}
+      <div
+        className="h-1.5 w-full"
+        style={{ background: laboratorio?.cor ?? "transparent" }}
+        aria-hidden
+      />
       <CardHeader className="flex flex-col gap-2 space-y-0 p-4 pb-3 sm:p-6 sm:pb-3">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="min-w-0 flex-1 break-words text-base font-semibold leading-tight">
