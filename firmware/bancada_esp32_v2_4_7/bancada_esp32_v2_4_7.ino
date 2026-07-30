@@ -1637,7 +1637,7 @@ void setup() {
     if (g_rtc.lostPower()) {
       Serial.println("[RTC] perdeu energia — aguardando NTP p/ ajustar");
     }
-    tickBateriaRtc();   // v2.4.6: primeira avaliação da bateria (OSF)
+    avaliarBateriaRtcNoBoot();   // v2.4.7: avaliação persistente da bateria (OSF + carimbo)
   } else {
     Serial.println("[RTC] DS3231 não encontrado — usando NTP + millis()");
   }
@@ -1873,7 +1873,8 @@ void loop() {
   tickIrLearn();          // v2.2.0 — captura IR do controle quando ativo
   tickCo2(now);           // v2.4.0 — amostra e envia CO2 se SCD41 presente
   tickBalanca(now);       // v2.4.0 — amostra e envia peso se HX711 presente
-  tickBateriaRtc();       // v2.4.6 — checa OSF do DS3231 (bateria CR2032) a cada 10 min
+  tickBateriaRtc();       // v2.4.7 — OSF do DS3231 a cada 10 min
+  tickCarimboHoraRtc();   // v2.4.7 — carimbo de hora na NVS (detecta perda de hora no boot)
 
   if (now - lastTick > 1000)          { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); sincronizarNtpParaRtc(); }
   if (now - lastTemp > 3000)          { lastTemp  = now; lerTemperatura(); }  // 3s p/ detectar variação rápido
