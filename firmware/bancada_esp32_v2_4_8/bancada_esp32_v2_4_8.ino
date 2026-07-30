@@ -92,7 +92,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.4.7";
+static const char* FIRMWARE_VERSION = "2.4.8";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -1632,6 +1632,11 @@ void setup() {
   Serial.printf("[RELAY] polaridade: ACTIVE_%s\n", RELAY_ACTIVE_LOW ? "LOW" : "HIGH");
 
   pinMode(PIN_RESET_BTN, INPUT_PULLUP);
+
+  // v2.4.8: marca o instante do boot — o fallback de agenda por intervalo
+  // fica em carência e não dispara ciclo ao religar a energia.
+  g_boot_ms = millis();
+  g_ultimo_disparo_ms = g_boot_ms;
 
   dsSensor.begin();
   dsSensor.setResolution(12);
