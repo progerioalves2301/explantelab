@@ -283,13 +283,11 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
 
   return (
     <Card className="card-elevated overflow-hidden transition hover:border-primary/40">
-      {laboratorio && (
-        <div
-          className="h-1.5 w-full"
-          style={{ background: laboratorio.cor }}
-          aria-hidden
-        />
-      )}
+      <div
+        className="h-1.5 w-full"
+        style={{ background: laboratorio?.cor ?? "transparent" }}
+        aria-hidden
+      />
       <CardHeader className="flex flex-col gap-2 space-y-0 p-4 pb-3 sm:p-6 sm:pb-3">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="min-w-0 flex-1 break-words text-base font-semibold leading-tight">
@@ -372,9 +370,11 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
 
 
       <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
-        {segments && segments.length > 0 && (
-          <StatusTimeline segments={segments} now={clock} />
-        )}
+        <div className="h-1.5">
+          {segments && segments.length > 0 && (
+            <StatusTimeline segments={segments} now={clock} />
+          )}
+        </div>
 
         <Tabs
           value={tab}
@@ -421,7 +421,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               </div>
               <div
                 className={cn(
-                  "col-span-2 flex items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-2 text-muted-foreground",
+                  "col-span-2 flex min-h-[58px] items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-2 text-muted-foreground",
                   sensorComFalha && "border-destructive/40 bg-destructive/5",
                   sensorComAviso && "border-amber-500/40 bg-amber-500/5",
                 )}
