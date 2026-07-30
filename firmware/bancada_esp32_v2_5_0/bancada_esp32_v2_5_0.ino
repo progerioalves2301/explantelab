@@ -92,7 +92,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.4.9";
+static const char* FIRMWARE_VERSION = "2.5.0";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -135,6 +135,8 @@ float g_temperatura_planta = NAN;
 float g_ultima_temperatura_valida = NAN; // diagnóstico local; não é reenviada como leitura nova
 float g_temperatura_publicada = NAN;   // último valor efetivamente enviado
 bool  g_temperatura_valida = false;    // informa ao backend se a leitura atual é válida
+bool  g_sem_sensor_temp = false;       // v2.5.0: prateleira sem sensor de temperatura
+uint16_t g_temp_sem_leitura_seguidas = 0;
 const float TEMP_DELTA_PUSH = 0.2f;    // °C — variação que força telemetria imediata
 
 // v1.9.9 — falha do sensor é leitura inválida real, não temperatura estável.
@@ -1737,6 +1739,7 @@ void setup() {
   Serial.printf("[TEMP] DS18B20 %s — sensores encontrados: %u\n",
                 g_tem_ds18b20 ? "detectado" : "NAO detectado",
                 (unsigned)dsSensor.getDeviceCount());
+  if (!g_tem_ds18b20) Serial.println("[TEMP] sem DS18B20 no boot — ok, prateleira pode operar sem temperatura");
 
   // DS3231 opcional (I²C em SDA=21 / SCL=22). Se não responder, seguimos sem ele.
   Wire.begin();
@@ -1837,14 +1840,23 @@ void lerTemperatura() {
   // v2.4.5 — se o DS18B20 não foi visto no boot (fio solto, energia instável,
   // sensor plugado depois), tenta redetectar periodicamente em vez de ficar
   // preso em "sem sensor" até o próximo reboot.
+  // v2.5.0 — prateleiras SEM sensor de temperatura são suportadas oficialmente.
+  // Depois de várias tentativas frustradas de re-scan, espaçamos a busca para
+  // 5 min e paramos de tratar a ausência de sensor como falha (sem log a cada
+  // leitura, sem "sensor travado", sem telemetria forçada).
   static uint32_t ultimoRescan = 0;
-  if (!g_tem_ds18b20 && millis() - ultimoRescan > 30000UL) {
+  const uint32_t intervaloRescan = g_sem_sensor_temp ? 300000UL : 30000UL;
+  if (!g_tem_ds18b20 && millis() - ultimoRescan > intervaloRescan) {
     ultimoRescan = millis();
     dsSensor.begin();
     dsSensor.setResolution(12);
     dsSensor.setWaitForConversion(true);
     g_tem_ds18b20 = dsSensor.getAddress(g_ds18b20_addr, 0);
-    if (g_tem_ds18b20) Serial.println("[TEMP] DS18B20 redetectado no barramento");
+    if (g_tem_ds18b20) {
+      Serial.println("[TEMP] DS18B20 redetectado no barramento");
+      g_sem_sensor_temp = false;
+      g_temp_sem_leitura_seguidas = 0;
+    }
   }
 
   if (g_tem_ds18b20) {
@@ -1881,15 +1893,31 @@ void lerTemperatura() {
     if (estavaInvalida) lastTelem = 0;
     Serial.printf("[TEMP] %.4f C\n", g_temperatura_planta);
   } else {
+    bool estavaValida = g_temperatura_valida;
     g_temp_falhas_seguidas++;
     if (g_temp_invalidas_consecutivas < 255) g_temp_invalidas_consecutivas++;
-    Serial.printf("[TEMP] leitura invalida (t=%.4f, falhas=%u, ultima=%.4f)\n",
-                  t, (unsigned)g_temp_falhas_seguidas,
-                  g_ultima_temperatura_valida);
+    if (g_temp_sem_leitura_seguidas < 65535) g_temp_sem_leitura_seguidas++;
+
+    // v2.5.0 — se nunca houve DS18B20 nem SCD41 e já falhamos muitas vezes,
+    // esta prateleira simplesmente não tem sensor: modo silencioso.
+    if (!g_tem_ds18b20 && !g_tem_scd41 && g_temp_sem_leitura_seguidas >= 5 &&
+        !g_sem_sensor_temp) {
+      g_sem_sensor_temp = true;
+      Serial.println("[TEMP] nenhum sensor presente — prateleira operando sem temperatura");
+    }
+
+    if (!g_sem_sensor_temp) {
+      Serial.printf("[TEMP] leitura invalida (t=%.4f, falhas=%u, ultima=%.4f)\n",
+                    t, (unsigned)g_temp_falhas_seguidas,
+                    g_ultima_temperatura_valida);
+    }
     g_temperatura_planta = NAN;
     g_temperatura_valida = false;
-    lastTelem = 0; // publica null/estado atual para não parecer congelado
-    if (g_temp_falhas_seguidas >= 3 && g_tem_ds18b20) {
+    // v2.5.0 — só força telemetria na TRANSIÇÃO válida→inválida. Antes isso
+    // acontecia a cada leitura, o que em prateleiras sem sensor gerava push a
+    // cada 3 s e estourava o rate limit do backend.
+    if (estavaValida) lastTelem = 0;
+    if (g_temp_falhas_seguidas >= 3 && g_tem_ds18b20 && !g_sem_sensor_temp) {
       // Só reinicia 1-Wire se realmente havia DS18B20 detectado no boot.
       g_sensor_travado = true;
       reiniciarBarramento1Wire();
