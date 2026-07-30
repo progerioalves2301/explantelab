@@ -457,11 +457,16 @@ void sincronizarNtpParaRtc() {
   Serial.println("[RTC] DS3231 sincronizado a partir do NTP");
 }
 
-// v2.4.6 — Saúde da bateria do DS3231.
-// O DS3231 não mede a tensão da CR2032, mas expõe o OSF (Oscillator Stop Flag,
-// bit 7 do registrador 0x0F). Ele liga sempre que o oscilador parou, ou seja,
-// quando a bateria não conseguiu manter o relógio sem alimentação principal.
-// Lemos o registrador direto (sem limpar o bit) para poder reportar no painel.
+// v2.4.7 — Saúde da bateria do DS3231 (detecção persistente).
+// O DS3231 não mede a tensão da CR2032. Duas evidências indiretas são usadas:
+//   1) OSF (Oscillator Stop Flag, bit 7 do reg. 0x0F): liga quando o oscilador
+//      parou, ou seja, faltou VCC e a bateria não segurou o relógio.
+//   2) "Carimbo de hora" salvo na NVS a cada 5 min: se, no boot, o RTC voltar
+//      com uma hora ANTERIOR ao último carimbo (ou muito fora), ele perdeu a
+//      hora — mesmo que o OSF já tenha sido limpo por um adjust() anterior.
+// O resultado é gravado na NVS, porque adjust()/NTP limpa o OSF e o alerta
+// sumiria no próximo boot mesmo com a bateria morta. O aviso só é zerado num
+// boot por energia (ESP_RST_POWERON) em que ambas as evidências estejam OK.
 bool lerOsfDs3231() {
   Wire.beginTransmission(0x68);
   Wire.write(0x0F);
@@ -471,25 +476,85 @@ bool lerOsfDs3231() {
   return (status & 0x80) != 0;
 }
 
-void tickBateriaRtc() {
-  if (!g_tem_rtc) { g_rtc_bat_fraca = false; return; }
+static void salvarFlagBateriaRtc(bool fraca) {
+  prefs.begin("genelab", false);
+  prefs.putBool("rtc_bat", fraca);
+  prefs.end();
+}
+
+static bool lerFlagBateriaRtc() {
+  prefs.begin("genelab", true);
+  bool v = prefs.getBool("rtc_bat", false);
+  prefs.end();
+  return v;
+}
+
+// Carimbo de hora — chamado periodicamente no loop quando a hora é confiável.
+void tickCarimboHoraRtc() {
+  if (!g_tem_rtc) return;
   uint32_t agora = millis();
-  // 1ª vez no boot e depois a cada 10 minutos.
-  if (g_ultimo_check_bat != 0 && (agora - g_ultimo_check_bat) < 600UL * 1000UL) return;
-  g_ultimo_check_bat = agora;
+  if (g_ultimo_save_epoch != 0 && (agora - g_ultimo_save_epoch) < 300UL * 1000UL) return;
+  DateTime now = g_rtc.now();
+  if (!now.isValid() || now.year() < 2024) return;
+  g_ultimo_save_epoch = agora;
+  prefs.begin("genelab", false);
+  prefs.putULong("rtc_ts", (uint32_t)now.unixtime());
+  prefs.end();
+}
+
+// Avaliação completa, feita UMA vez no boot (antes de qualquer adjust()).
+void avaliarBateriaRtcNoBoot() {
+  if (!g_tem_rtc) { g_rtc_bat_fraca = false; return; }
 
   bool osf = lerOsfDs3231();
   DateTime now = g_rtc.now();
   bool hora_ruim = !now.isValid() || now.year() < 2024;
-  // Sticky dentro da sessão: depois que o NTP grava a hora, o OSF é limpo,
-  // então mantemos o aviso até o próximo boot para não esconder o problema.
-  bool fraca = g_rtc_bat_fraca || osf || hora_ruim;
-  if (fraca != g_rtc_bat_fraca) {
-    Serial.printf("[RTC] bateria %s (OSF=%d hora_ruim=%d)\n",
-                  fraca ? "FRACA/AUSENTE — trocar CR2032" : "OK",
-                  (int)osf, (int)hora_ruim);
+
+  prefs.begin("genelab", true);
+  uint32_t ultimo_ts = prefs.getULong("rtc_ts", 0);
+  prefs.end();
+
+  // Relógio "andou para trás" em relação ao último carimbo => perdeu a hora.
+  bool retrocedeu = false;
+  if (!hora_ruim && ultimo_ts > 0) {
+    uint32_t atual = (uint32_t)now.unixtime();
+    if (atual + 60 < ultimo_ts) retrocedeu = true;
   }
+
+  bool anterior = lerFlagBateriaRtc();
+  bool poweron  = (esp_reset_reason() == ESP_RST_POWERON);
+  bool falha    = osf || hora_ruim || retrocedeu;
+
+  bool fraca;
+  if (falha) {
+    fraca = true;                 // evidência direta de perda de hora
+  } else if (poweron) {
+    fraca = false;                // passou por um corte de energia real e manteve a hora
+  } else {
+    fraca = anterior;             // reset de software não prova nada: mantém o histórico
+  }
+
+  Serial.printf("[RTC] bateria %s (OSF=%d hora_ruim=%d retrocedeu=%d poweron=%d anterior=%d)\n",
+                fraca ? "FRACA/AUSENTE — trocar CR2032" : "OK",
+                (int)osf, (int)hora_ruim, (int)retrocedeu, (int)poweron, (int)anterior);
+
   g_rtc_bat_fraca = fraca;
+  if (fraca != anterior) salvarFlagBateriaRtc(fraca);
+}
+
+void tickBateriaRtc() {
+  if (!g_tem_rtc) { g_rtc_bat_fraca = false; return; }
+  uint32_t agora = millis();
+  // Reavaliação leve a cada 10 minutos: só pode PIORAR (OSF ligou em runtime).
+  if (g_ultimo_check_bat != 0 && (agora - g_ultimo_check_bat) < 600UL * 1000UL) return;
+  g_ultimo_check_bat = agora;
+
+  if (g_rtc_bat_fraca) return;
+  if (lerOsfDs3231()) {
+    Serial.println("[RTC] bateria FRACA/AUSENTE — OSF ligou em runtime");
+    g_rtc_bat_fraca = true;
+    salvarFlagBateriaRtc(true);
+  }
 }
 
 String serializarHorarios() {
