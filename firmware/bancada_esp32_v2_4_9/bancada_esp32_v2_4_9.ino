@@ -493,6 +493,24 @@ bool lerOsfDs3231() {
   return (status & 0x80) != 0;
 }
 
+// v2.4.9 — o OSF é "sticky": uma vez ligado, permanece ligado até ser zerado
+// por software. Sem esta limpeza o aviso de bateria NUNCA sumia, mesmo depois
+// de trocar a CR2032. Limpamos o bit após cada avaliação, para que uma nova
+// ativação signifique de fato uma nova parada do oscilador.
+void limparOsfDs3231() {
+  Wire.beginTransmission(0x68);
+  Wire.write(0x0F);
+  if (Wire.endTransmission() != 0) return;
+  if (Wire.requestFrom((uint8_t)0x68, (uint8_t)1) != 1) return;
+  uint8_t status = Wire.read();
+  if ((status & 0x80) == 0) return;
+  Wire.beginTransmission(0x68);
+  Wire.write(0x0F);
+  Wire.write((uint8_t)(status & 0x7F));
+  Wire.endTransmission();
+}
+
+
 static void salvarFlagBateriaRtc(bool fraca) {
   prefs.begin("genelab", false);
   prefs.putBool("rtc_bat", fraca);
