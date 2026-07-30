@@ -82,7 +82,7 @@ static const int PIN_V3 = PIN_V2_V3;
 static const int PIN_LUZ       = 27;   // relé das luzes da bancada (timer HH:MM)
 static const int PIN_LED = 2;
 static const int PIN_RESET_BTN = 0;
-static const int PIN_DS18B20 = 4;
+static const int PIN_DS18B20 = 14;  // v2.4.5: DATA do DS18B20 movido do GPIO 4 para o GPIO 14
 static const int PIN_IR_LED = 32;   // LED IR p/ ar-condicionado (v2.1.0)
 static const int PIN_IR_RX  = 33;   // Receptor IR VS1838B/TL1838 (v2.2.0)
 
