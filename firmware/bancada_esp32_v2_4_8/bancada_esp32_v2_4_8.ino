@@ -415,6 +415,13 @@ extern unsigned long lastTelem;
 int  g_ultimo_disparo_min      = -1;   // minuto absoluto (dia*1440+min) do último disparo
 uint32_t g_ultimo_disparo_ms   = 0;    // fallback quando NTP nunca sincronizou
 bool     g_ntp_ja_sincronizou  = false;
+// v2.4.8: o fallback por intervalo NUNCA pode disparar logo após o boot.
+// Antes, com o relógio inválido (RTC sem bateria / sem NTP ainda), o teste
+// "g_ultimo_disparo_ms == 0" fazia o ESP injetar imediatamente ao religar.
+// Agora o boot conta como "último disparo" e ainda exigimos um período de
+// carência para dar tempo do NTP/RTC entregar a hora certa.
+const uint32_t BOOT_CARENCIA_MS = 10UL * 60UL * 1000UL;  // 10 min
+uint32_t g_boot_ms             = 0;
 
 void aplicarTz(const char* tz) {
   const char* z = (tz && *tz) ? tz : DEFAULT_TZ;
