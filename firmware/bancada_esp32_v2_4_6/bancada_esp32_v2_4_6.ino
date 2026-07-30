@@ -480,7 +480,9 @@ void tickBateriaRtc() {
   bool osf = lerOsfDs3231();
   DateTime now = g_rtc.now();
   bool hora_ruim = !now.isValid() || now.year() < 2024;
-  bool fraca = osf || hora_ruim;
+  // Sticky dentro da sessão: depois que o NTP grava a hora, o OSF é limpo,
+  // então mantemos o aviso até o próximo boot para não esconder o problema.
+  bool fraca = g_rtc_bat_fraca || osf || hora_ruim;
   if (fraca != g_rtc_bat_fraca) {
     Serial.printf("[RTC] bateria %s (OSF=%d hora_ruim=%d)\n",
                   fraca ? "FRACA/AUSENTE — trocar CR2032" : "OK",
@@ -1805,6 +1807,7 @@ void loop() {
   tickIrLearn();          // v2.2.0 — captura IR do controle quando ativo
   tickCo2(now);           // v2.4.0 — amostra e envia CO2 se SCD41 presente
   tickBalanca(now);       // v2.4.0 — amostra e envia peso se HX711 presente
+  tickBateriaRtc();       // v2.4.6 — checa OSF do DS3231 (bateria CR2032) a cada 10 min
 
   if (now - lastTick > 1000)          { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); sincronizarNtpParaRtc(); }
   if (now - lastTemp > 3000)          { lastTemp  = now; lerTemperatura(); }  // 3s p/ detectar variação rápido
