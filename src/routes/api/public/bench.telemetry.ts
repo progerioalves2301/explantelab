@@ -90,6 +90,10 @@ export const Route = createFileRoute("/api/public/bench/telemetry")({
         if (payload.tem_rtc !== undefined) {
           updatePayload.tem_rtc = payload.tem_rtc;
         }
+        if (payload.rtc_bateria_fraca !== undefined) {
+          updatePayload.rtc_bateria_fraca = payload.rtc_bateria_fraca;
+        }
+
         if (payload.sensor_reinicios !== undefined) {
           updatePayload.sensor_reinicios = payload.sensor_reinicios;
         }
