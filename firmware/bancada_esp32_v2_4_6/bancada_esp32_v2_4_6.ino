@@ -91,7 +91,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.4.5";
+static const char* FIRMWARE_VERSION = "2.4.6";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -150,6 +150,8 @@ uint8_t       g_temp_invalidas_consecutivas = 0; // falhas acumuladas até uma l
 // Se o módulo não estiver presente, o firmware cai automaticamente no NTP+millis.
 RTC_DS3231 g_rtc;
 bool       g_tem_rtc          = false;   // detectado no boot
+bool       g_rtc_bat_fraca    = false;   // v2.4.6: OSF ligado => bateria CR2032 fraca/ausente
+uint32_t   g_ultimo_check_bat = 0;       // millis() da última leitura do OSF
 uint32_t   g_ultima_sync_rtc  = 0;       // millis() da última gravação NTP -> RTC
 
 // -------- SCD41 (CO2 ambiente — v2.4.0) --------
@@ -452,6 +454,39 @@ void sincronizarNtpParaRtc() {
   g_rtc.adjust(DateTime((uint32_t)utc));
   g_ultima_sync_rtc = agora;
   Serial.println("[RTC] DS3231 sincronizado a partir do NTP");
+}
+
+// v2.4.6 — Saúde da bateria do DS3231.
+// O DS3231 não mede a tensão da CR2032, mas expõe o OSF (Oscillator Stop Flag,
+// bit 7 do registrador 0x0F). Ele liga sempre que o oscilador parou, ou seja,
+// quando a bateria não conseguiu manter o relógio sem alimentação principal.
+// Lemos o registrador direto (sem limpar o bit) para poder reportar no painel.
+bool lerOsfDs3231() {
+  Wire.beginTransmission(0x68);
+  Wire.write(0x0F);
+  if (Wire.endTransmission() != 0) return false;
+  if (Wire.requestFrom(0x68, (uint8_t)1) != 1) return false;
+  uint8_t status = Wire.read();
+  return (status & 0x80) != 0;
+}
+
+void tickBateriaRtc() {
+  if (!g_tem_rtc) { g_rtc_bat_fraca = false; return; }
+  uint32_t agora = millis();
+  // 1ª vez no boot e depois a cada 10 minutos.
+  if (g_ultimo_check_bat != 0 && (agora - g_ultimo_check_bat) < 600UL * 1000UL) return;
+  g_ultimo_check_bat = agora;
+
+  bool osf = lerOsfDs3231();
+  DateTime now = g_rtc.now();
+  bool hora_ruim = !now.isValid() || now.year() < 2024;
+  bool fraca = osf || hora_ruim;
+  if (fraca != g_rtc_bat_fraca) {
+    Serial.printf("[RTC] bateria %s (OSF=%d hora_ruim=%d)\n",
+                  fraca ? "FRACA/AUSENTE — trocar CR2032" : "OK",
+                  (int)osf, (int)hora_ruim);
+  }
+  g_rtc_bat_fraca = fraca;
 }
 
 String serializarHorarios() {
@@ -837,6 +872,7 @@ bool enviarTelemetria() {
 
 
   doc["_tem_rtc"]                = g_tem_rtc;
+  doc["_rtc_bateria_fraca"]      = g_rtc_bat_fraca;
   doc["_ip_local"]               = WiFi.localIP().toString();
   doc["_luz_ligada"]             = g_luz_ligada;
   doc["_sensor_travado"]         = g_sensor_travado;
@@ -1533,6 +1569,7 @@ void setup() {
     if (g_rtc.lostPower()) {
       Serial.println("[RTC] perdeu energia — aguardando NTP p/ ajustar");
     }
+    tickBateriaRtc();   // v2.4.6: primeira avaliação da bateria (OSF)
   } else {
     Serial.println("[RTC] DS3231 não encontrado — usando NTP + millis()");
   }
