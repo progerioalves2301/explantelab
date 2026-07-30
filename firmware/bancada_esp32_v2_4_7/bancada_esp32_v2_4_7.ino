@@ -38,6 +38,7 @@
 #include <WiFiManager.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>
+#include <esp_system.h>   // v2.4.7: esp_reset_reason() p/ distinguir boot por energia
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <time.h>            // NTP + horário local p/ timer das luzes
