@@ -310,6 +310,14 @@ void restaurarCiclo() {
   if (iniEp > 0 && nowEp > 1700000000 && (uint32_t)nowEp > iniEp) {
     decorrido = (uint32_t)nowEp - iniEp;
   }
+  // v2.4.8: sem relógio confiável (RTC sem bateria e NTP ainda indisponível)
+  // não dá para saber quanto tempo passou — retomar reiniciaria a fase inteira.
+  // Nesse caso vamos para REPOUSO e esperamos o próximo horário programado.
+  if (decorrido == 0 && (iniEp == 0 || nowEp <= 1700000000)) {
+    Serial.println("[CICLO] estado salvo ignorado: relogio invalido no boot -> REPOUSO");
+    aplicarFase(REPOUSO);
+    return;
+  }
   Serial.printf("[CICLO] retomando %s (decorrido=%us)\n", faseNome(f), (unsigned)decorrido);
 
   // Avança fases consumindo o tempo decorrido
