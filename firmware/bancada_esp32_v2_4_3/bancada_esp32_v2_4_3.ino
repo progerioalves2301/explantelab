@@ -1736,9 +1736,13 @@ void loop() {
   // instância Supabase. Em REPOUSO (>99% do tempo) reduz drasticamente
   // requisições; durante ciclo ativo / manual mantém responsividade.
   // v1.9.3 — leitura de temperatura sobe pra 3s e há push imediato por delta.
+  // v2.4.4 — o backend limita 60 req/min por prateleira (telemetria + comandos
+  // somados). Com 2s/1.5s dava ~70 req/min e gerava "rate_limit_exceeded".
+  // Agora: ativo = 3s + 3s (~40 req/min), repouso = 15s + 5s (~16 req/min).
   bool ativo = (fase != REPOUSO) || pausado_manual;
-  unsigned long intervaloTelem = ativo ? 2000UL  : 15000UL;  // 2s ativo / 15s parado (delta força push)
-  unsigned long intervaloCmd   = ativo ? 1500UL  : 5000UL;   // 1.5s ativo / 5s parado
+  unsigned long intervaloTelem = ativo ? 3000UL  : 15000UL;  // 3s ativo / 15s parado (delta força push)
+  unsigned long intervaloCmd   = ativo ? 3000UL  : 5000UL;   // 3s ativo / 5s parado
+
 
   tickWifiWatchdog(now); // v2.1.2 — reengata rápido quando o Wi-Fi/roteador volta
   tickIrLearn();          // v2.2.0 — captura IR do controle quando ativo
