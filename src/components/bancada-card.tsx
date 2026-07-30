@@ -421,7 +421,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               </div>
               <div
                 className={cn(
-                  "col-span-2 flex items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-2 text-muted-foreground",
+                  "col-span-2 flex min-h-[58px] items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-2 text-muted-foreground",
                   sensorComFalha && "border-destructive/40 bg-destructive/5",
                   sensorComAviso && "border-amber-500/40 bg-amber-500/5",
                 )}
