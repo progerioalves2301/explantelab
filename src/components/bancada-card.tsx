@@ -370,9 +370,11 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
 
 
       <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
-        {segments && segments.length > 0 && (
-          <StatusTimeline segments={segments} now={clock} />
-        )}
+        <div className="h-1.5">
+          {segments && segments.length > 0 && (
+            <StatusTimeline segments={segments} now={clock} />
+          )}
+        </div>
 
         <Tabs
           value={tab}
