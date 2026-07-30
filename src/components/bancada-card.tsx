@@ -460,7 +460,10 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             </div>
           </TabsContent>
 
-          <TabsContent value="manual" className="mt-3 space-y-4">
+          <TabsContent
+            value="manual"
+            className="mt-3 min-h-[208px] space-y-4"
+          >
 
             <div
               className={cn(
