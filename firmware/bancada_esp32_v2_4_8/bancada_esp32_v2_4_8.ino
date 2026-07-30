@@ -487,7 +487,8 @@ bool lerOsfDs3231() {
   Wire.beginTransmission(0x68);
   Wire.write(0x0F);
   if (Wire.endTransmission() != 0) return false;
-  if (Wire.requestFrom(0x68, (uint8_t)1) != 1) return false;
+  // casts explícitos evitam o aviso de sobrecarga ambígua do Wire.h (ESP32 core)
+  if (Wire.requestFrom((uint8_t)0x68, (uint8_t)1) != 1) return false;
   uint8_t status = Wire.read();
   return (status & 0x80) != 0;
 }
