@@ -9,6 +9,7 @@ import {
   Leaf,
   Lightbulb,
   LineChart,
+  BatteryWarning,
   Clock3,
   RotateCcw,
   SlidersHorizontal,
