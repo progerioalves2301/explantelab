@@ -111,8 +111,8 @@ static String        ir_learn_modo  = "cool";  // v2.3.0 — 'cool' ou 'heat'
 static unsigned long ir_learn_deadline_ms = 0;
 
 // -------- Polaridade dos relés (v1.9.5+) --------
-// v1.9.5: mudado para ACTIVE_HIGH para uso com SSR industrial tipo Fotek
-// SSR-xxDA (entrada 3–32 VDC) acionado direto pelo GPIO do ESP32 (3.3V).
+// v1.9.5: ACTIVE_HIGH para SSR industrial tipo Fotek SSR-xxDA (entrada 3–32 VDC)
+// acionado direto pelo GPIO do ESP32 (3.3V).
 // GPIO HIGH => corrente pelo LED do opto do SSR => carga LIGA.
 // Se voltar a usar módulo "Low Level Trigger" de 4 canais, troque para true.
 static const bool RELAY_ACTIVE_LOW = false;
