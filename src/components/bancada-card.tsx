@@ -386,7 +386,10 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             <TabsTrigger value="manual">Manual</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="status" className="mt-3 space-y-4">
+          <TabsContent
+            value="status"
+            className="mt-3 min-h-[208px] space-y-4"
+          >
             <div className="rounded-lg border bg-muted/40 p-3">
               <ValveIndicator valvulas={valvulas} mode={mode} />
             </div>
@@ -457,7 +460,10 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             </div>
           </TabsContent>
 
-          <TabsContent value="manual" className="mt-3 space-y-4">
+          <TabsContent
+            value="manual"
+            className="mt-3 min-h-[208px] space-y-4"
+          >
 
             <div
               className={cn(
