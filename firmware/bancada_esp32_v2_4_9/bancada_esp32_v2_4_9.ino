@@ -538,6 +538,10 @@ void tickCarimboHoraRtc() {
 }
 
 // Avaliação completa, feita UMA vez no boot (antes de qualquer adjust()).
+// v2.4.9: o OSF sozinho não condena mais a bateria no boot — ele é sticky e
+// ficava ligado para sempre depois de uma queda, mantendo o alerta aceso mesmo
+// com uma CR2032 nova. A prova real de bateria ruim é o RELÓGIO ter perdido a
+// hora (inválida ou anterior ao carimbo). O OSF continua valendo em runtime.
 void avaliarBateriaRtcNoBoot() {
   if (!g_tem_rtc) { g_rtc_bat_fraca = false; return; }
 
@@ -558,23 +562,36 @@ void avaliarBateriaRtcNoBoot() {
 
   bool anterior = lerFlagBateriaRtc();
   bool poweron  = (esp_reset_reason() == ESP_RST_POWERON);
-  bool falha    = osf || hora_ruim || retrocedeu;
+  bool falha    = hora_ruim || retrocedeu;
 
   bool fraca;
   if (falha) {
     fraca = true;                 // evidência direta de perda de hora
   } else if (poweron) {
-    fraca = false;                // passou por um corte de energia real e manteve a hora
+    fraca = false;                // corte de energia real e o relógio manteve a hora
+  } else if (!osf) {
+    fraca = false;                // relógio íntegro e oscilador nunca parou desde o último check
   } else {
-    fraca = anterior;             // reset de software não prova nada: mantém o histórico
+    fraca = anterior;             // reset de software: mantém o histórico
   }
 
   Serial.printf("[RTC] bateria %s (OSF=%d hora_ruim=%d retrocedeu=%d poweron=%d anterior=%d)\n",
                 fraca ? "FRACA/AUSENTE — trocar CR2032" : "OK",
                 (int)osf, (int)hora_ruim, (int)retrocedeu, (int)poweron, (int)anterior);
 
+  // Zera o flag sticky para que uma nova ativação signifique uma nova parada.
+  limparOsfDs3231();
+
   g_rtc_bat_fraca = fraca;
   if (fraca != anterior) salvarFlagBateriaRtc(fraca);
+
+  // Bateria OK: descarta carimbo antigo para não reavaliar com dado obsoleto.
+  if (!fraca) {
+    prefs.begin("genelab", false);
+    prefs.remove("rtc_ts");
+    prefs.end();
+    g_ultimo_save_epoch = 0;
+  }
 }
 
 void tickBateriaRtc() {
@@ -587,10 +604,12 @@ void tickBateriaRtc() {
   if (g_rtc_bat_fraca) return;
   if (lerOsfDs3231()) {
     Serial.println("[RTC] bateria FRACA/AUSENTE — OSF ligou em runtime");
+    limparOsfDs3231();
     g_rtc_bat_fraca = true;
     salvarFlagBateriaRtc(true);
   }
 }
+
 
 String serializarHorarios() {
   String out = "[";
