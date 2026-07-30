@@ -348,21 +348,36 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             <span
               className={cn(
                 "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
-                bancada.tem_rtc
-                  ? "border-emerald-500/60 bg-emerald-400/15 text-emerald-700 dark:text-emerald-300"
-                  : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
+                bancada.tem_rtc && bancada.rtc_bateria_fraca
+                  ? "border-amber-500/70 bg-amber-400/20 text-amber-700 dark:text-amber-300"
+                  : bancada.tem_rtc
+                    ? "border-emerald-500/60 bg-emerald-400/15 text-emerald-700 dark:text-emerald-300"
+                    : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
               )}
               title={
-                bancada.tem_rtc
-                  ? "DS3231 detectado — hora local independente de internet"
-                  : "Sem DS3231 — hora vem do NTP + millis()"
+                bancada.tem_rtc && bancada.rtc_bateria_fraca
+                  ? "DS3231 perdeu a hora sem energia — troque a bateria CR2032"
+                  : bancada.tem_rtc
+                    ? "DS3231 detectado — hora local independente de internet"
+                    : "Sem DS3231 — hora vem do NTP + millis()"
               }
-              aria-label={bancada.tem_rtc ? "RTC físico ativo" : "Sem RTC físico"}
+              aria-label={
+                bancada.tem_rtc && bancada.rtc_bateria_fraca
+                  ? "Bateria do RTC fraca"
+                  : bancada.tem_rtc
+                    ? "RTC físico ativo"
+                    : "Sem RTC físico"
+              }
             >
-              <Clock3 className="h-3 w-3" />
-              RTC
+              {bancada.tem_rtc && bancada.rtc_bateria_fraca ? (
+                <BatteryWarning className="h-3 w-3" />
+              ) : (
+                <Clock3 className="h-3 w-3" />
+              )}
+              {bancada.tem_rtc && bancada.rtc_bateria_fraca ? "RTC · bateria" : "RTC"}
             </span>
           )}
+
           <StatusBadge status={bancada.status} />
         </div>
       </CardHeader>
