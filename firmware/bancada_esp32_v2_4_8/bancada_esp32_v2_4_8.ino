@@ -606,8 +606,30 @@ bool horarioBate(const char* hhmm, const struct tm& ti) {
   return (ti.tm_hour * 60 + ti.tm_min) == m;
 }
 
+// v2.4.8 — memória (NVS) do último disparo real, em epoch UTC.
+// Serve para "recuperar" um horário que caiu durante a queda de energia/boot
+// sem correr o risco de repetir um ciclo que já rodou.
+uint32_t lerUltimoDisparoEpoch() {
+  Preferences p;
+  p.begin("ciclo", true);
+  uint32_t v = p.getULong("ult_disp_ep", 0);
+  p.end();
+  return v;
+}
+void salvarUltimoDisparoEpoch(uint32_t ep) {
+  Preferences p;
+  p.begin("ciclo", false);
+  p.putULong("ult_disp_ep", ep);
+  p.end();
+}
+
+// Janela de recuperação: se o ESP estava reiniciando exatamente na hora de um
+// ciclo, ele ainda dispara ao voltar, desde que dentro deste atraso.
+const uint32_t AGENDA_CATCHUP_S = 15UL * 60UL;   // 15 min
+
 // Dispara automaticamente o ciclo:
-//  - Se NTP sincronizou: quando o relógio local bate em um horário programado.
+//  - Se NTP/RTC tem hora: quando o relógio local bate em um horário programado
+//    (ou quando um horário foi perdido há menos de 15 min por queda/boot).
 //  - Fallback: se nunca sincronizou, dispara a cada intervalo_ciclo_horas horas.
 void tickAgendaCiclo() {
   // Não sobrepor: só dispara quando está em REPOUSO e sem pausa manual.
@@ -620,11 +642,34 @@ void tickAgendaCiclo() {
   if (temHora) {
     int minutoAbs = ti.tm_yday * 1440 + ti.tm_hour * 60 + ti.tm_min;
     if (minutoAbs == g_ultimo_disparo_min) return;   // já disparou neste minuto
+    time_t nowEp    = time(nullptr);
+    int    minAgora = ti.tm_hour * 60 + ti.tm_min;
     for (uint8_t i = 0; i < cfg.horarios_n && i < MAX_HORARIOS; i++) {
-      if (horarioBate(cfg.horarios_disparo[i], ti)) {
+      int mProg = hhmmParaMinutos(cfg.horarios_disparo[i]);
+      if (mProg < 0) continue;
+
+      bool bateAgora = (mProg == minAgora);
+
+      // Recuperação de horário perdido (queda de energia / boot em cima da hora).
+      bool recuperar = false;
+      if (!bateAgora && nowEp > 1700000000) {
+        int atrasoMin = minAgora - mProg;
+        if (atrasoMin < 0) atrasoMin += 1440;                 // virou o dia
+        uint32_t atrasoS = (uint32_t)atrasoMin * 60UL;
+        if (atrasoS > 0 && atrasoS <= AGENDA_CATCHUP_S) {
+          uint32_t horaProgEp = (uint32_t)nowEp - atrasoS - (uint32_t)ti.tm_sec;
+          uint32_t ultEp      = lerUltimoDisparoEpoch();
+          // só recupera se aquele horário ainda não tinha sido executado
+          if (ultEp + 60 < horaProgEp) recuperar = true;
+        }
+      }
+
+      if (bateAgora || recuperar) {
         g_ultimo_disparo_min = minutoAbs;
         g_ultimo_disparo_ms  = millis();
-        Serial.printf("[AGENDA] disparo local %02d:%02d (horario %s)\n",
+        if (nowEp > 1700000000) salvarUltimoDisparoEpoch((uint32_t)nowEp);
+        Serial.printf("[AGENDA] disparo %s %02d:%02d (horario %s)\n",
+                      recuperar ? "RECUPERADO" : "local",
                       ti.tm_hour, ti.tm_min, cfg.horarios_disparo[i]);
         aplicarFase(INJETANDO);
         lastTelem = 0;
@@ -633,6 +678,7 @@ void tickAgendaCiclo() {
     }
     return;
   }
+
 
   // Sem NTP/RTC válido: fallback por intervalo (millis).
   // v2.4.8: só entra em ação depois da carência de boot e nunca dispara
