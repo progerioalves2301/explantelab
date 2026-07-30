@@ -152,6 +152,7 @@ RTC_DS3231 g_rtc;
 bool       g_tem_rtc          = false;   // detectado no boot
 bool       g_rtc_bat_fraca    = false;   // v2.4.6: OSF ligado => bateria CR2032 fraca/ausente
 uint32_t   g_ultimo_check_bat = 0;       // millis() da última leitura do OSF
+uint32_t   g_ultimo_save_epoch = 0;      // v2.4.7: millis() do último "carimbo" de hora na NVS
 uint32_t   g_ultima_sync_rtc  = 0;       // millis() da última gravação NTP -> RTC
 
 // -------- SCD41 (CO2 ambiente — v2.4.0) --------
