@@ -626,11 +626,15 @@ void tickAgendaCiclo() {
     return;
   }
 
-  // Sem NTP: fallback por intervalo (millis).
+  // Sem NTP/RTC válido: fallback por intervalo (millis).
+  // v2.4.8: só entra em ação depois da carência de boot e nunca dispara
+  // imediatamente ao religar a energia.
   uint32_t intervalo_ms = cfg.intervalo_ciclo_horas * 3600UL * 1000UL;
   if (intervalo_ms == 0) return;
   uint32_t agora = millis();
-  if (g_ultimo_disparo_ms == 0 || (agora - g_ultimo_disparo_ms) >= intervalo_ms) {
+  if ((agora - g_boot_ms) < BOOT_CARENCIA_MS) return;   // carência pós-boot
+  if (g_ultimo_disparo_ms == 0) { g_ultimo_disparo_ms = agora; return; }
+  if ((agora - g_ultimo_disparo_ms) >= intervalo_ms) {
     g_ultimo_disparo_ms = agora;
     Serial.printf("[AGENDA] disparo por intervalo (sem NTP) cada %uh\n",
                   (unsigned)cfg.intervalo_ciclo_horas);
