@@ -15,7 +15,7 @@ import {
   SlidersHorizontal,
   Sprout,
   Square,
-  ThermometerOff,
+  Thermometer,
   Timer,
   Trash2,
 } from "lucide-react";
