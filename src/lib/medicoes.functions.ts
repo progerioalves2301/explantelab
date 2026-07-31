@@ -75,6 +75,8 @@ export const listarHistoricoTemperatura = createServerFn({ method: "GET" })
         .select("minuto, valor")
         .eq("bancada_id", data.bancada_id)
         .gte("minuto", desde)
+        .gt("valor", -10)
+        .lt("valor", 85)
         .order("minuto", { ascending: true })
         .range(offset, offset + pageSize - 1);
       if (error) throw new Error(error.message);
