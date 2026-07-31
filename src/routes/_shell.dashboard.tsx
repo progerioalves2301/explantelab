@@ -347,6 +347,7 @@ function DashboardPage() {
               clock={clock}
               laboratorio={labs.find((l) => l.id === b.laboratorio_id) ?? null}
               variedade={mudasByBancada[b.id] ?? null}
+              extremos30d={extremos30d[b.id] ?? null}
             />
           ))}
         </div>
