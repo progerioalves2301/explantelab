@@ -307,8 +307,12 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               </span>
             )}
           </CardTitle>
-          <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
-            há {formatShortDuration(tempoNoEstado(bancada, clock))}
+          <span
+            className="shrink-0 text-[10px] tabular-nums text-muted-foreground"
+            title={`Tempo no estado atual (${bancada.status}). A comunicação com o dispositivo é mostrada em "Última sync".`}
+          >
+            {bancada.status} há {formatShortDuration(tempoNoEstado(bancada, clock))}
+
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
