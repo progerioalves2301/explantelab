@@ -457,7 +457,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                 ) : sensorComAviso ? (
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
                 ) : semSensor ? (
-                  <ThermometerOff className="h-4 w-4 text-muted-foreground" />
+                  <Thermometer className="h-4 w-4 text-muted-foreground" />
                 ) : (
                   <Sprout className="h-4 w-4 text-emerald-500" />
                 )}
