@@ -67,6 +67,8 @@ interface Props {
   clock?: number;
   laboratorio?: Laboratorio | null;
   variedade?: string | null;
+  /** Mínima e máxima registradas nos últimos 30 dias */
+  extremos30d?: { min: number; max: number } | null;
 }
 
 
