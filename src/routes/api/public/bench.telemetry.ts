@@ -111,6 +111,10 @@ export const Route = createFileRoute("/api/public/bench/telemetry")({
           // Prateleira sem sensor (ou sensor com falha): limpa o valor para não
           // exibir uma leitura antiga congelada no painel.
           updatePayload.temperatura_planta = null;
+          // Sem nenhum reinício de sensor não é "travado", é ausência de sensor.
+          if (!payload.sensor_reinicios) {
+            updatePayload.sensor_travado = false;
+          }
         }
 
 
