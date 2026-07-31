@@ -117,8 +117,9 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
   const temTemperatura = bancada.temperatura_planta != null;
   // Sem leitura + sem indicação de sensor travado/reinícios = prateleira sem
   // sensor instalado. Isso é normal, não é falha: mostramos em cinza.
-  const semSensor =
-    !temTemperatura && !bancada.sensor_travado && sensorReinicios === 0;
+  // Um sensor só é considerado "travado" se já houve leituras/reinícios antes.
+  // Sem nenhuma leitura e sem reinícios = prateleira sem sensor instalado.
+  const semSensor = !temTemperatura && sensorReinicios === 0;
   const sensorComFalha = !temTemperatura && !semSensor;
   const sensorComAviso = temTemperatura && Boolean(bancada.sensor_travado);
   const textoTemperaturaIndisponivel = semSensor
