@@ -486,6 +486,16 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                       ? textoTemperaturaIndisponivel
                       : `${bancada.temperatura_planta!.toFixed(1)} °C`}
                   </div>
+                  {extremos30d && !semSensor && (
+                    <div className="mt-0.5 flex items-center gap-2 font-mono text-[10px] text-muted-foreground">
+                      <span className="text-sky-600 dark:text-sky-400">
+                        mín 30d {extremos30d.min.toFixed(1)} °C
+                      </span>
+                      <span className="text-orange-600 dark:text-orange-400">
+                        máx 30d {extremos30d.max.toFixed(1)} °C
+                      </span>
+                    </div>
+                  )}
                   {sensorComAviso && (
                     <div className="text-[10px] text-amber-600 dark:text-amber-400">
                       Última leitura; sensor sem leitura nova
