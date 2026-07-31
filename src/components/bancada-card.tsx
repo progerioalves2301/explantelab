@@ -100,7 +100,7 @@ function eq(a: ValvulasEstado, b: ValvulasEstado) {
   );
 }
 
-export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio, variedade }: Props) {
+export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio, variedade, extremos30d }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [sending, setSending] = useState(false);
