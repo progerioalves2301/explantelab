@@ -15,6 +15,7 @@ import {
   SlidersHorizontal,
   Sprout,
   Square,
+  Thermometer,
   Timer,
   Trash2,
 } from "lucide-react";
@@ -114,9 +115,15 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
   const novoCiclo = useServerFn(iniciarNovoCiclo);
   const sensorReinicios = bancada.sensor_reinicios ?? 0;
   const temTemperatura = bancada.temperatura_planta != null;
-  const sensorComFalha = !temTemperatura;
+  // Sem leitura + sem indicação de sensor travado/reinícios = prateleira sem
+  // sensor instalado. Isso é normal, não é falha: mostramos em cinza.
+  const semSensor =
+    !temTemperatura && !bancada.sensor_travado && sensorReinicios === 0;
+  const sensorComFalha = !temTemperatura && !semSensor;
   const sensorComAviso = temTemperatura && Boolean(bancada.sensor_travado);
-  const textoTemperaturaIndisponivel = "Sem temperatura recebida";
+  const textoTemperaturaIndisponivel = semSensor
+    ? "Sem sensor instalado"
+    : "Sem temperatura recebida";
 
   const abrirPareamento = async () => {
     setPairOpen(true);
@@ -449,6 +456,8 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                   <AlertTriangle className="h-4 w-4 text-destructive" />
                 ) : sensorComAviso ? (
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
+                ) : semSensor ? (
+                  <Thermometer className="h-4 w-4 text-muted-foreground" />
                 ) : (
                   <Sprout className="h-4 w-4 text-emerald-500" />
                 )}
@@ -456,8 +465,17 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                   <div className="text-[10px] uppercase tracking-wide">
                     Temperatura planta
                   </div>
-                  <div className={cn("font-mono text-sm", sensorComFalha ? "text-destructive" : "text-foreground")}>
-                    {sensorComFalha
+                  <div
+                    className={cn(
+                      "font-mono text-sm",
+                      sensorComFalha
+                        ? "text-destructive"
+                        : semSensor
+                          ? "text-muted-foreground"
+                          : "text-foreground",
+                    )}
+                  >
+                    {!temTemperatura
                       ? textoTemperaturaIndisponivel
                       : `${bancada.temperatura_planta!.toFixed(1)} °C`}
                   </div>
