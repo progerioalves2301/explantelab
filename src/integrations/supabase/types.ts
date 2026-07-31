@@ -1000,6 +1000,14 @@ export type Database = {
         }
         Returns: Json
       }
+      temp_extremos_30d: {
+        Args: never
+        Returns: {
+          bancada_id: string
+          maximo: number
+          minimo: number
+        }[]
+      }
       trigger_scheduled_cycles: { Args: never; Returns: undefined }
     }
     Enums: {
