@@ -55,6 +55,33 @@ function DashboardPage() {
     { bancada_id: string; status: string; changed_at: string }[]
   >([]);
   const [mudasByBancada, setMudasByBancada] = useState<Record<string, string>>({});
+  const [extremos30d, setExtremos30d] = useState<
+    Record<string, { min: number; max: number }>
+  >({});
+
+  useEffect(() => {
+    let alive = true;
+    const carregar = async () => {
+      const { data } = await supabase.rpc("temp_extremos_30d");
+      if (!alive || !data) return;
+      const map: Record<string, { min: number; max: number }> = {};
+      for (const r of data as {
+        bancada_id: string;
+        minimo: number | null;
+        maximo: number | null;
+      }[]) {
+        if (r.minimo == null || r.maximo == null) continue;
+        map[r.bancada_id] = { min: Number(r.minimo), max: Number(r.maximo) };
+      }
+      setExtremos30d(map);
+    };
+    void carregar();
+    const id = setInterval(() => void carregar(), 5 * 60_000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
