@@ -455,6 +455,8 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                   <AlertTriangle className="h-4 w-4 text-destructive" />
                 ) : sensorComAviso ? (
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
+                ) : semSensor ? (
+                  <ThermometerOff className="h-4 w-4 text-muted-foreground" />
                 ) : (
                   <Sprout className="h-4 w-4 text-emerald-500" />
                 )}
@@ -462,8 +464,17 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                   <div className="text-[10px] uppercase tracking-wide">
                     Temperatura planta
                   </div>
-                  <div className={cn("font-mono text-sm", sensorComFalha ? "text-destructive" : "text-foreground")}>
-                    {sensorComFalha
+                  <div
+                    className={cn(
+                      "font-mono text-sm",
+                      sensorComFalha
+                        ? "text-destructive"
+                        : semSensor
+                          ? "text-muted-foreground"
+                          : "text-foreground",
+                    )}
+                  >
+                    {!temTemperatura
                       ? textoTemperaturaIndisponivel
                       : `${bancada.temperatura_planta!.toFixed(1)} °C`}
                   </div>
