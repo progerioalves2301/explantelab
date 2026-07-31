@@ -148,6 +148,8 @@ export const listarRelatorioTemperatura = createServerFn({ method: "GET" })
             .select("bancada_id, valor, minuto")
             .eq("bancada_id", bancada.id)
             .gte("minuto", desde)
+            .gt("valor", -10)
+            .lt("valor", 85)
             .order("minuto", { ascending: true })
             .range(inicio, inicio + pageSize - 1);
           if (error) throw new Error(error.message);
