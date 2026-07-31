@@ -1,0 +1,1 @@
+UPDATE public.bancadas SET sensor_travado = false WHERE temperatura_planta IS NULL AND COALESCE(sensor_reinicios, 0) = 0;
