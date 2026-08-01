@@ -199,22 +199,32 @@ function ArCondicionadoPage() {
     }
   };
 
-  const handleAprender = async (id: string, modo: "cool" | "heat" = "cool") => {
+  const handleAprender = async (
+    id: string,
+    modo: "cool" | "heat" | "off" = "cool",
+  ) => {
     setTestingId(id);
     const toastId = `aprender-${id}-${modo}`;
     // Guarda o estado inicial pra detectar quando um novo código chegar.
     const arAntes = ars.find((a) => a.id === id);
-    const campo = modo === "heat" ? "codigo_ir_raw_heat" : "codigo_ir_raw";
+    const campo =
+      modo === "heat"
+        ? "codigo_ir_raw_heat"
+        : modo === "off"
+          ? "codigo_ir_raw_off"
+          : "codigo_ir_raw";
+    const rotulo =
+      modo === "heat" ? "quente" : modo === "off" ? "desligar" : "frio";
     const tamanhoAntes = arAntes?.[campo]?.length ?? 0;
     try {
       const r = await aprender({ data: { id, timeout_s: 30, modo } });
       const total = r.timeout_s;
       const t0 = Date.now();
       toast.loading(
-        `Aguardando sinal do controle (${modo === "heat" ? "quente" : "frio"})…`,
+        `Aguardando sinal do controle (${rotulo})…`,
         {
           id: toastId,
-          description: `Aponte o controle para o receptor e aperte LIGAR ${modo === "heat" ? "modo quente" : "modo frio"}. Restam ${total}s.`,
+          description: `Aponte o controle para o receptor e aperte ${modo === "off" ? "DESLIGAR" : modo === "heat" ? "LIGAR modo quente" : "LIGAR modo frio"}. Restam ${total}s.`,
           duration: (total + 5) * 1000,
         },
       );
@@ -255,7 +265,7 @@ function ArCondicionadoPage() {
             }
           }
           toast.loading(
-            `Aguardando sinal do controle (${modo === "heat" ? "quente" : "frio"})…`,
+            `Aguardando sinal do controle (${rotulo})…`,
             {
               id: toastId,
               description: `${statusLinha} Restam ${restante}s.`,
@@ -268,7 +278,7 @@ function ArCondicionadoPage() {
 
       if (capturado) {
         toast.success(
-          `Sinal IR ${modo === "heat" ? "quente" : "frio"} capturado!`,
+          `Sinal IR ${rotulo} capturado!`,
           {
             id: toastId,
             description: `${capturado.pulsos} pulsos recebidos e gravados. Use "Testar" para confirmar que o ar responde.`,
@@ -377,6 +387,14 @@ function ArCondicionadoPage() {
                     IR FRIO
                   </span>
                 )}
+                {ar.codigo_ir_raw_off && ar.codigo_ir_raw_off.length > 0 && (
+                  <span
+                    className="rounded-full bg-slate-500/15 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-300"
+                    title={`${ar.codigo_ir_raw_off.length} pulsos (desligar)`}
+                  >
+                    IR OFF
+                  </span>
+                )}
                 {ar.codigo_ir_raw_heat && ar.codigo_ir_raw_heat.length > 0 && (
                   <span
                     className="rounded-full bg-orange-500/15 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400"
@@ -396,6 +414,16 @@ function ArCondicionadoPage() {
                 >
                   <Radio className="mr-1 h-3.5 w-3.5" />
                   IR frio
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={testingId === ar.id}
+                  onClick={() => handleAprender(ar.id, "off")}
+                  title="Aprender código de DESLIGAR (aperte o botão de desligar do controle)"
+                >
+                  <Radio className="mr-1 h-3.5 w-3.5" />
+                  IR desligar
                 </Button>
                 {ar.suporta_aquecimento && (
                   <Button
