@@ -186,11 +186,11 @@ export const testarArCondicionado = createServerFn({ method: "POST" })
 // real, chama a RPC bench_ir_save_raw que grava em ar_condicionados.codigo_ir_raw.
 export const aprenderIr = createServerFn({ method: "POST" })
   .middleware([requireTecnico])
-  .inputValidator((data: { id: string; timeout_s?: number; modo?: "cool" | "heat" }) =>
+  .inputValidator((data: { id: string; timeout_s?: number; modo?: "cool" | "heat" | "off" }) =>
     z.object({
       id: z.string().uuid(),
       timeout_s: z.number().int().min(5).max(120).optional(),
-      modo: z.enum(["cool", "heat"]).optional(),
+      modo: z.enum(["cool", "heat", "off"]).optional(),
     }).parse(data),
   )
   .handler(async ({ data }) => {
