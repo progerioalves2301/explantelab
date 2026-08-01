@@ -113,6 +113,7 @@ export type Database = {
           bancada_controladora_id: string | null
           codigo_ir_raw: Json | null
           codigo_ir_raw_heat: Json | null
+          codigo_ir_raw_off: Json | null
           created_at: string
           histerese: number
           id: string
@@ -138,6 +139,7 @@ export type Database = {
           bancada_controladora_id?: string | null
           codigo_ir_raw?: Json | null
           codigo_ir_raw_heat?: Json | null
+          codigo_ir_raw_off?: Json | null
           created_at?: string
           histerese?: number
           id?: string
@@ -163,6 +165,7 @@ export type Database = {
           bancada_controladora_id?: string | null
           codigo_ir_raw?: Json | null
           codigo_ir_raw_heat?: Json | null
+          codigo_ir_raw_off?: Json | null
           created_at?: string
           histerese?: number
           id?: string
@@ -942,6 +945,15 @@ export type Database = {
         Returns: Json
       }
       bench_ir_save_raw_heat: {
+        Args: {
+          _ar_id: string
+          _bancada_id: string
+          _device_token: string
+          _raw: Json
+        }
+        Returns: Json
+      }
+      bench_ir_save_raw_off: {
         Args: {
           _ar_id: string
           _bancada_id: string

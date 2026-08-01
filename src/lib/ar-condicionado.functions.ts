@@ -22,6 +22,8 @@ export interface ArCondicionado {
   ultimo_temp_lida: number | null;
   codigo_ir_raw: number[] | null;
   codigo_ir_raw_heat: number[] | null;
+  /** Código IR aprendido do botão DESLIGAR do controle original */
+  codigo_ir_raw_off: number[] | null;
   suporta_aquecimento: boolean;
   ir_learn_debug: { evento: string; pulsos: number; extra?: Record<string, string | number | boolean | null>; em: string } | null;
   created_at: string;
@@ -142,7 +144,17 @@ export const testarArCondicionado = createServerFn({ method: "POST" })
     const setpoint = data.acao === "on"
       ? (modo === "heat" ? Number(arRow.setpoint_min) : Number(arRow.setpoint_max))
       : null;
-    const raw = modo === "heat" ? arRow.codigo_ir_raw_heat : arRow.codigo_ir_raw;
+    // Cada estado tem seu próprio código IR aprendido. Muitos aparelhos
+    // (Fujitsu, Consul…) usam frames diferentes pra ligar e desligar — se
+    // reenviarmos o código de LIGAR no OFF, o ar liga mas nunca desliga.
+    const raw = data.acao === "off"
+      ? arRow.codigo_ir_raw_off
+      : (modo === "heat" ? arRow.codigo_ir_raw_heat : arRow.codigo_ir_raw);
+    if (data.acao === "off" && arRow.ir_protocol === "RAW" && !raw) {
+      throw new Error(
+        "Nenhum código IR de DESLIGAR aprendido. Use \"IR desligar\" e aperte o botão de desligar do controle original.",
+      );
+    }
     const { error: cmdErr } = await supabaseAdmin.from("comandos").insert({
       bancada_id: arRow.bancada_controladora_id,
       tipo: "AC_CONTROL",
@@ -174,11 +186,11 @@ export const testarArCondicionado = createServerFn({ method: "POST" })
 // real, chama a RPC bench_ir_save_raw que grava em ar_condicionados.codigo_ir_raw.
 export const aprenderIr = createServerFn({ method: "POST" })
   .middleware([requireTecnico])
-  .inputValidator((data: { id: string; timeout_s?: number; modo?: "cool" | "heat" }) =>
+  .inputValidator((data: { id: string; timeout_s?: number; modo?: "cool" | "heat" | "off" }) =>
     z.object({
       id: z.string().uuid(),
       timeout_s: z.number().int().min(5).max(120).optional(),
-      modo: z.enum(["cool", "heat"]).optional(),
+      modo: z.enum(["cool", "heat", "off"]).optional(),
     }).parse(data),
   )
   .handler(async ({ data }) => {
