@@ -384,7 +384,7 @@ function ArCondicionadoPage() {
                     className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-400"
                     title={`${ar.codigo_ir_raw.length} pulsos (frio)`}
                   >
-                    IR FRIO
+                    IR ON
                   </span>
                 )}
                 {ar.codigo_ir_raw_off && ar.codigo_ir_raw_off.length > 0 && (
