@@ -384,7 +384,7 @@ function ArCondicionadoPage() {
                     className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-400"
                     title={`${ar.codigo_ir_raw.length} pulsos (frio)`}
                   >
-                    IR FRIO
+                    IR ON
                   </span>
                 )}
                 {ar.codigo_ir_raw_off && ar.codigo_ir_raw_off.length > 0 && (
@@ -410,10 +410,10 @@ function ArCondicionadoPage() {
                   variant="outline"
                   disabled={testingId === ar.id}
                   onClick={() => handleAprender(ar.id, "cool")}
-                  title="Aprender código de LIGAR FRIO"
+                  title="Aprender código de LIGAR (frio)"
                 >
                   <Radio className="mr-1 h-3.5 w-3.5" />
-                  IR frio
+                  IR ON
                 </Button>
                 <Button
                   size="sm"
@@ -423,7 +423,7 @@ function ArCondicionadoPage() {
                   title="Aprender código de DESLIGAR (aperte o botão de desligar do controle)"
                 >
                   <Radio className="mr-1 h-3.5 w-3.5" />
-                  IR desligar
+                  IR OFF
                 </Button>
                 {ar.suporta_aquecimento && (
                   <Button
@@ -435,7 +435,7 @@ function ArCondicionadoPage() {
                     className="border-orange-500/40"
                   >
                     <Radio className="mr-1 h-3.5 w-3.5" />
-                    IR quente
+                    IR ON quente
                   </Button>
                 )}
                 <Button
@@ -465,8 +465,10 @@ function ArCondicionadoPage() {
                   disabled={testingId === ar.id}
                   onClick={() => handleTestar(ar.id, "off")}
                 >
-                  OFF
+                  <Power className="mr-1 h-3.5 w-3.5" />
+                  Frio OFF
                 </Button>
+
                 <Button size="sm" variant="ghost" onClick={() => startEdit(ar)}>
                   Editar
                 </Button>
