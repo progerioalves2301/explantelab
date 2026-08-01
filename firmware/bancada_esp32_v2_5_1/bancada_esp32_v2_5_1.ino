@@ -92,7 +92,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.5.0";
+static const char* FIRMWARE_VERSION = "2.5.1";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -1165,7 +1165,10 @@ void tickIrLearn() {
   String bodyStr; serializeJson(body, bodyStr);
 
   String resp;
-  const char* rpc = (ir_learn_modo == "heat") ? "bench_ir_save_raw_heat" : "bench_ir_save_raw";
+  // v2.5.1 — cada estado tem seu proprio codigo aprendido: cool / heat / off.
+  const char* rpc = (ir_learn_modo == "heat") ? "bench_ir_save_raw_heat"
+                  : (ir_learn_modo == "off")  ? "bench_ir_save_raw_off"
+                                              : "bench_ir_save_raw";
   bool ok = supabaseRpc(rpc, bodyStr, resp);
   if (ok) {
     Serial.printf("[IR_LEARN] gravado com sucesso (%u pulsos, modo=%s)\n",
@@ -1348,17 +1351,34 @@ void tratarComando(JsonObject cmd) {
       }
       ac.send();
     } else if (strcasecmp(protocolo, "FUJITSU") == 0) {
-      IRFujitsuAC ac(PIN_IR_LED);
-      ac.begin();
+      // v2.5.1 — "liga mas nao desliga": o frame de OFF do Fujitsu e um frame
+      // curto (5 bytes) e depende do modelo do controle. ARRAH2E cobre a maioria
+      // dos splits BR; se nao responder, tentamos tambem ARDB1 (frame antigo).
+      // Enviamos o OFF duas vezes com pequeno intervalo, pois o frame curto e
+      // facilmente perdido se o receptor do split estiver em borda de alcance.
       if (ligar) {
+        IRFujitsuAC ac(PIN_IR_LED);
+        ac.begin();
+        ac.setModel(ARRAH2E);
         ac.setMode(kFujitsuAcModeCool);
         ac.setTemp((uint8_t)roundf(setpoint));
         ac.setFanSpeed(kFujitsuAcFanAuto);
         ac.setCmd(kFujitsuAcCmdTurnOn);
+        ac.send();
       } else {
-        ac.setCmd(kFujitsuAcCmdTurnOff);
+        const fujitsu_ac_remote_model_t modelos[] = { ARRAH2E, ARDB1 };
+        for (uint8_t m = 0; m < 2; m++) {
+          IRFujitsuAC ac(PIN_IR_LED);
+          ac.begin();
+          ac.setModel(modelos[m]);
+          ac.off();               // monta o frame curto de desligar
+          ac.send();
+          delay(120);
+          ac.send();              // repete — frame curto se perde facil
+          delay(200);
+        }
+        Serial.println("[AC] Fujitsu: OFF enviado (ARRAH2E + ARDB1, 2x cada)");
       }
-      ac.send();
     } else if (strcasecmp(protocolo, "MIDEA") == 0 ||
                strcasecmp(protocolo, "ELECTROLUX") == 0) {
       IRMideaAC ac(PIN_IR_LED);
