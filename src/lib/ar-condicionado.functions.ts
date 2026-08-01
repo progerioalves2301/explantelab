@@ -22,6 +22,8 @@ export interface ArCondicionado {
   ultimo_temp_lida: number | null;
   codigo_ir_raw: number[] | null;
   codigo_ir_raw_heat: number[] | null;
+  /** Código IR aprendido do botão DESLIGAR do controle original */
+  codigo_ir_raw_off: number[] | null;
   suporta_aquecimento: boolean;
   ir_learn_debug: { evento: string; pulsos: number; extra?: Record<string, string | number | boolean | null>; em: string } | null;
   created_at: string;
