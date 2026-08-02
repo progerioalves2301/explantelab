@@ -87,12 +87,13 @@ static const int PIN_DS18B20 = 14;  // v2.4.5: DATA do DS18B20 movido do GPIO 4 
 static const int PIN_IR_LED = 32;   // LED IR p/ ar-condicionado (v2.1.0)
 static const int PIN_IR_RX  = 33;   // Receptor IR VS1838B/TL1838 (v2.2.0)
 
-// v2.5.2 — Botão físico de ciclo manual na caixa.
+// v2.5.2 / v2.5.3 — Botão físico de ciclo manual na caixa.
 // Ligação: um lado do botão no GPIO 4, outro lado no GND (usa pull-up interno).
-// Aperto curto (>=60 ms): se estiver em REPOUSO, INICIA o ciclo; se um ciclo
-// estiver rodando (Injetando/Pausado/Retornando/Manual), CANCELA e volta ao
-// repouso com as válvulas fechadas. Funciona 100% offline.
+// v2.5.3: aperto CURTO (60 ms .. 2 s) INICIA o ciclo manual (se em REPOUSO);
+// aperto LONGO (>= 2 s) CANCELA o ciclo em andamento e volta ao repouso com as
+// válvulas fechadas. Isso evita cancelamento acidental. Funciona 100% offline.
 static const int PIN_BOTAO_CICLO = 4;
+static const unsigned long BOTAO_LONGO_MS = 2000;  // limiar do aperto longo
 
 // v2.4.0 — Balança HX711 (opcional, ativa se sensor responder)
 static const int PIN_HX_DOUT = 16;
