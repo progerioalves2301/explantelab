@@ -1754,7 +1754,7 @@ void setup() {
   Serial.printf("[RELAY] polaridade: ACTIVE_%s\n", RELAY_ACTIVE_LOW ? "LOW" : "HIGH");
 
   pinMode(PIN_RESET_BTN, INPUT_PULLUP);
-  // v2.5.2 — botão físico de ciclo manual (para GND)
+  // v2.5.3 — botão físico de ciclo manual (para GND)
   pinMode(PIN_BOTAO_CICLO, INPUT_PULLUP);
 
   // v2.4.8: marca o instante do boot — o fallback de agenda por intervalo
@@ -2089,7 +2089,7 @@ void loop() {
   unsigned long intervaloCmd   = ativo ? 3000UL  : 5000UL;   // 3s ativo / 5s parado
 
 
-  tickBotaoCiclo(now);    // v2.5.2 — botão físico: inicia/cancela ciclo offline
+  tickBotaoCiclo(now);    // v2.5.3 — botão: curto inicia, longo (2 s) cancela
   tickWifiWatchdog(now); // v2.1.2 — reengata rápido quando o Wi-Fi/roteador volta
   tickIrLearn();          // v2.2.0 — captura IR do controle quando ativo
   tickCo2(now);           // v2.4.0 — amostra e envia CO2 se SCD41 presente
