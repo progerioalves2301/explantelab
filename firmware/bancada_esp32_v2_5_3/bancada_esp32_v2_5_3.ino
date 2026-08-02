@@ -2021,37 +2021,58 @@ void tickWifiWatchdog(unsigned long now) {
   WiFi.reconnect();
 }
 
-// -------- v2.5.2 — Botão físico de ciclo manual --------
-// Debounce por tempo + detecção de borda. Não depende de internet: age direto
-// na máquina de estados local e persiste a fase na NVS.
+// -------- v2.5.3 — Botão físico: curto inicia, longo cancela --------
+// Debounce por tempo + medição da duração do aperto. Não depende de internet:
+// age direto na máquina de estados local e persiste a fase na NVS.
+//   - Aperto CURTO (60 ms .. 2 s) e em REPOUSO  -> inicia ciclo (Injetando)
+//   - Aperto LONGO (>= 2 s)                     -> cancela e volta ao Repouso
 void tickBotaoCiclo(unsigned long now) {
-  static int  ultimoNivel = HIGH;
+  static int  nivelEstavel = HIGH;
+  static int  nivelBruto   = HIGH;
   static unsigned long ultimaMudanca = 0;
-  static bool tratado = true;
+  static unsigned long inicioAperto  = 0;
+  static bool longoDisparado = false;
 
   int nivel = digitalRead(PIN_BOTAO_CICLO);
-  if (nivel != ultimoNivel) {
-    ultimoNivel = nivel;
+  if (nivel != nivelBruto) {
+    nivelBruto = nivel;
     ultimaMudanca = now;
-    tratado = false;
-    return;
   }
-  if (tratado) return;
-  if (now - ultimaMudanca < 60) return;   // debounce 60 ms
-  tratado = true;
-  if (nivel != LOW) return;               // só age ao pressionar
+  if (now - ultimaMudanca >= 60 && nivel != nivelEstavel) {   // debounce 60 ms
+    nivelEstavel = nivel;
+    if (nivel == LOW) {
+      inicioAperto = now;
+      longoDisparado = false;
+    } else {
+      // Soltou: se não virou aperto longo, trata como curto
+      if (!longoDisparado) {
+        if (cicloEmAndamento() || fase == MANUAL) {
+          Serial.println("[BOTAO] curto ignorado (ciclo em andamento) — segure 2 s p/ cancelar");
+        } else {
+          Serial.println("[BOTAO] curto -> iniciando ciclo manual (Injetando)");
+          pausado_manual = false;
+          aplicarFase(INJETANDO);
+          lastTelem = 0;
+        }
+      }
+    }
+  }
 
-  if (cicloEmAndamento() || fase == MANUAL) {
-    Serial.printf("[BOTAO] cancelando ciclo (%s) -> Repouso\n", faseNome(fase));
-    pausado_manual = false;               // não trava o agendamento futuro
-    aplicarFase(REPOUSO);
-  } else {
-    Serial.println("[BOTAO] iniciando ciclo manual -> Injetando");
-    pausado_manual = false;
-    aplicarFase(INJETANDO);
+  // Enquanto segurado: dispara o cancelamento ao cruzar o limiar
+  if (nivelEstavel == LOW && !longoDisparado &&
+      (now - inicioAperto) >= BOTAO_LONGO_MS) {
+    longoDisparado = true;
+    if (cicloEmAndamento() || fase == MANUAL) {
+      Serial.printf("[BOTAO] longo -> cancelando ciclo (%s) -> Repouso\n", faseNome(fase));
+      pausado_manual = false;               // não trava o agendamento futuro
+      aplicarFase(REPOUSO);
+      lastTelem = 0;                        // publica novo estado assim que houver rede
+    } else {
+      Serial.println("[BOTAO] longo sem ciclo ativo — nada a cancelar");
+    }
   }
-  lastTelem = 0;                          // publica novo estado assim que houver rede
 }
+
 
 void loop() {
   unsigned long now = millis();
