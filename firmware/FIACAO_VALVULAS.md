@@ -24,7 +24,8 @@ Este documento descreve como conectar o **ESP32** aos módulos de relé mecânic
 ## 2. Diagrama de Fiação (Esquemático)
 
 ### Alimentação do ESP32 e Relés
-> **IMPORTANTE:** Os módulos de relé operam em **5V**. Conecte o **VCC** dos módulos ao pino **VIN** (ou 5V) do ESP32 e o **GND** ao **GND** do ESP32.
+> **IMPORTANTE:** Os módulos de relé mecânico operam em **5V** e o sinal do ESP32 é **3.3V**. Embora muitos módulos de relé 5V com optoacoplador (como os das fotos) funcionem com 3.3V, se você encontrar instabilidade no disparo, **vai precisar de transistores BC337** para acionar o sinal de 5V a partir do GPIO de 3.3V do ESP32.
+
 
 ```mermaid
 graph TD
