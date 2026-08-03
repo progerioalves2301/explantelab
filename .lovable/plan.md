@@ -1,101 +1,40 @@
-# Controle de ar-condicionado (IR, por sala bioreator)
+# Diagrama de fiação e endereçamento das válvulas
 
-## Arquitetura
+Objetivo: documentar, de forma clara e imprimível, como ligar as 4 válvulas de uma prateleira (ESP32) — fonte, relés SSR, solenoides — e qual GPIO comanda cada par.
 
-Como 1 ar atende várias bancadas da mesma sala, uma bancada por sala é eleita **"controladora IR"** — ela recebe o LED IR no GPIO 32 e é quem dispara os comandos para o ar. O backend agrega a temperatura de todas as bancadas da sala e decide o comando; o firmware apenas recebe e emite o IR.
+## O que será entregue
 
-```text
-Bancadas da sala → telemetria (temp) → Backend agrega (média/máx)
-                                              ↓
-                                     Decide: LIGAR/DESLIGAR/AJUSTAR
-                                              ↓
-                                     Comando AC_CONTROL → bancada controladora
-                                              ↓
-                                     ESP32 emite IR → Ar-condicionado
-```
+1. **Documento novo** `firmware/FIACAO_VALVULAS.md` contendo:
+   - Tabela de endereçamento (GPIO → par de válvulas → função no ciclo).
+   - Diagrama ASCII do circuito completo: fonte 12/24 V, ESP32, canais SSR, solenoides.
+   - Diagrama Mermaid do mesmo circuito (renderiza no GitHub/preview).
+   - Notas de instalação: polaridade, snubber/diodo de retorno, aterramento comum, seção de cabo, fusível.
+   - Aviso sobre `RELAY_ACTIVE_LOW` (hoje `true` no firmware v2.5.3 — GPIO em LOW liga a carga).
+   - Seção de expansão futura (8 válvulas) usando GPIOs livres.
 
-## Hardware por sala
+2. **Arquivo de diagrama** `/mnt/documents/Fiacao_Valvulas_Prateleira.mmd`, entregue como artefato baixável/visualizável no chat.
 
-- 1× LED IR de alta potência (940nm) + resistor 100Ω
-- 1× transistor 2N2222 ou BC337 (chaveia o LED com corrente > GPIO)
-- Fio até "enxergar" o receptor IR do split (≤ 5m em linha reta)
-- GPIO 32 da bancada controladora
+## Endereçamento (conforme firmware v2.5.3)
 
-## Banco de dados
+| GPIO | Canal SSR | Válvulas | Papel no ciclo |
+|------|-----------|----------|----------------|
+| 25   | CH1       | V1 + V4  | Injeção — Meio → Planta |
+| 26   | CH2       | V2 + V3  | Retorno — Planta → Meio |
+| 27   | CH3       | Luzes    | Timer HH:MM (janelas de luz) |
+| 4    | —         | Botão físico | Curto: inicia ciclo / Longo (2 s): cancela |
 
-Nova tabela `ar_condicionados` (1 por sala):
-- `laboratorio_id` (unique — 1 ar por sala)
-- `bancada_controladora_id` — quem tem o LED IR
-- `marca`, `modelo` — para escolher protocolo IR (LG, Samsung, Fujitsu, Midea, Electrolux…)
-- `ir_protocol` — enum do IRremoteESP8266
-- `modo` — auto/cool/off/manual
-- `setpoint_min`, `setpoint_max` (default puxado dos limites da bancada)
-- `histerese` — zona morta em °C (default 1.0)
-- `intervalo_min_comando_s` — default 180 (proteção compressor)
-- `agregacao` — "media" | "maxima" (default: máxima — mais conservador para plantas)
-- Estado atual reportado: `ligado`, `setpoint_atual`, `ultimo_comando_em`
+GPIOs já ocupados por outras funções e que não devem ser reutilizados: 2 (LED), 0 (BOOT/reset), 14 (DS18B20), 16/17 (balança HX711), 21/22 (I²C DS3231), 32 (IR TX), 33 (IR RX).
 
-Novo tipo de comando: `AC_CONTROL` com payload `{ acao: "on"|"off", modo: "cool", setpoint: 22, protocolo: "LG" }`.
+## Componentes listados no documento
 
-## Lógica de controle (server-side)
-
-Função `decidir_ar_condicionado()` roda no cron a cada 1 min (junto com `detectar_alertas`):
-
-1. Para cada sala com ar cadastrado:
-   - Pega temperaturas válidas das bancadas ativas (últimos 3 min)
-   - Aplica agregação (máx ou média)
-2. Aplica histerese:
-   - `temp > setpoint_max` → liga em COOL, setpoint = `setpoint_min + 1`
-   - `temp < setpoint_min` → desliga
-   - Zona intermediária → mantém estado atual
-3. Só enfileira comando se:
-   - Estado desejado ≠ estado atual
-   - `now() - ultimo_comando_em > intervalo_min_comando_s`
-
-## Firmware v2.1.0
-
-- Adiciona `IRremoteESP8266` (~200 marcas suportadas)
-- `PIN_IR_LED = 32`
-- Handler para `AC_CONTROL`: seleciona protocolo do payload e emite comando
-- Reporta estado do ar nos campos de telemetria (`_ac_ligado`, `_ac_setpoint`)
-- Roda apenas se a bancada estiver marcada como controladora (backend só envia para ela)
-
-## UI
-
-- Nova página admin `/_shell/ar-condicionado`:
-  - Lista salas com/sem ar
-  - Formulário: escolher bancada controladora, marca/protocolo, setpoints, agregação
-  - Botão "testar IR" (envia comando manual on/off)
-- No card da bancada controladora: badge "Controla AC"
-- No dashboard: status do ar por sala (ligado/desligado + setpoint atual)
-
-## Segurança de comando
-
-- Comando IR não tem feedback — mantemos `intervalo_min_comando_s` para evitar rajadas
-- Se `sensor_travado` da controladora → não envia comando (falha para seguro: mantém estado)
-- Se sala sem telemetria válida > 5 min → desliga o ar (evita compressor rodando sem controle)
+- ESP32 DevKit (alimentação 5 V regulada, GND comum com o módulo SSR).
+- Módulo relé de estado sólido 4 canais (Fotek SSR-xxDA ou módulo 4ch), entrada 3–32 VDC.
+- Fonte dedicada para as solenoides (12 V ou 24 V DC conforme a válvula).
+- Diodo de retorno (1N4007) ou snubber RC em cada solenoide DC.
+- Fusível / disjuntor na entrada da fonte e borneira de distribuição.
 
 ## Detalhes técnicos
 
-**Migração**:
-- `CREATE TABLE public.ar_condicionados` + GRANTs + RLS (leitura auth, escrita admin)
-- Nova função `decidir_ar_condicionado()` SECURITY DEFINER
-- Atualizar cron da rota `/api/public/hooks/check-alerts` para chamar também `decidir_ar_condicionado()`
-
-**Servidor**:
-- `src/lib/ar-condicionado.functions.ts` — CRUD + `testarIR`
-- Nova coluna em telemetria: `_ac_ligado`, `_ac_setpoint` (opcional; só a controladora reporta)
-
-**Firmware**:
-- `firmware/bancada_esp32_v2_1_0/bancada_esp32_v2_1_0.ino`
-- Flag `EH_CONTROLADORA_IR` vinda da config
-- Suporte inicial: LG, Samsung, Fujitsu, Midea, Electrolux (cobre >90% do mercado BR)
-
-**Memória do projeto**: atualizar core com pinagem GPIO 32 = IR e nova regra de ar por sala.
-
-## Fora do escopo desta fase
-
-- Feedback real do ar (não temos sensor no ar) — assumimos que o comando foi aceito
-- Multi-zona (só 1 ar por sala)
-- Modo HEAT / DRY / FAN — só COOL e OFF inicialmente
-- Aprendizado de controle remoto customizado (usaremos protocolos pré-definidos)
+- O diagrama mostra que V1 e V4 compartilham fisicamente o mesmo canal de relé (paralelo elétrico), assim como V2 e V3 — refletindo a consolidação de GPIOs já feita no firmware.
+- Nada no app ou no banco muda; é documentação. O firmware não é alterado.
+- O `.mmd` usa apenas nós/labels neutros para permanecer legível em tema claro e escuro.
