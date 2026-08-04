@@ -120,10 +120,16 @@ static String        ir_learn_modo  = "cool";  // v2.3.0 — 'cool' ou 'heat'
 static unsigned long ir_learn_deadline_ms = 0;
 
 // -------- Polaridade dos relés (v1.9.5+) --------
-// Polaridade do acionamento dos relés/SSR.
+// Polaridade do acionamento dos relés/SSR das VÁLVULAS.
 // true  => ACTIVE_LOW : GPIO LOW liga a carga (módulos "Low Level Trigger").
 // false => ACTIVE_HIGH: GPIO HIGH liga a carga (SSR industrial tipo Fotek).
 static const bool RELAY_ACTIVE_LOW = true;
+
+// Polaridade INDEPENDENTE do relé da LUZ (GPIO 27).
+// >>> AQUI se inverte a lógica da luz sem mexer nas válvulas. <<<
+// true  => GPIO 27 em LOW  liga a luz
+// false => GPIO 27 em HIGH liga a luz
+static const bool LUZ_ACTIVE_LOW = false;
 
 
 // Macros (não geram protótipo automático no Arduino IDE — evita ordem de tipo).
@@ -131,6 +137,11 @@ static const bool RELAY_ACTIVE_LOW = true;
 #define RELAY_OFF_LEVEL (RELAY_ACTIVE_LOW ? HIGH : LOW)
 #define relayWrite(pin, on) digitalWrite((pin), (on) ? RELAY_ON_LEVEL : RELAY_OFF_LEVEL)
 #define relayRead(pin)      (digitalRead(pin) == RELAY_ON_LEVEL)
+
+#define LUZ_ON_LEVEL  (LUZ_ACTIVE_LOW ? LOW  : HIGH)
+#define LUZ_OFF_LEVEL (LUZ_ACTIVE_LOW ? HIGH : LOW)
+#define luzWrite(on)  digitalWrite(PIN_LUZ, (on) ? LUZ_ON_LEVEL : LUZ_OFF_LEVEL)
+
 
 
 
