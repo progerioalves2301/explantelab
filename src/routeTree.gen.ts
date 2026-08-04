@@ -22,6 +22,7 @@ import { Route as ShellPrivacidadeDadosRouteImport } from './routes/_shell.priva
 import { Route as ShellMudasRouteImport } from './routes/_shell.mudas'
 import { Route as ShellLaboratoriosRouteImport } from './routes/_shell.laboratorios'
 import { Route as ShellDashboardRouteImport } from './routes/_shell.dashboard'
+import { Route as ShellDadosRouteImport } from './routes/_shell.dados'
 import { Route as ShellConfiguracoesRouteImport } from './routes/_shell.configuracoes'
 import { Route as ShellCo2RouteImport } from './routes/_shell.co2'
 import { Route as ShellAtualizacaoRouteImport } from './routes/_shell.atualizacao'
@@ -102,6 +103,11 @@ const ShellLaboratoriosRoute = ShellLaboratoriosRouteImport.update({
 const ShellDashboardRoute = ShellDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellDadosRoute = ShellDadosRouteImport.update({
+  id: '/dados',
+  path: '/dados',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellConfiguracoesRoute = ShellConfiguracoesRouteImport.update({
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/atualizacao': typeof ShellAtualizacaoRoute
   '/co2': typeof ShellCo2Route
   '/configuracoes': typeof ShellConfiguracoesRoute
+  '/dados': typeof ShellDadosRoute
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
   '/mudas': typeof ShellMudasRouteWithChildren
@@ -224,6 +231,7 @@ export interface FileRoutesByTo {
   '/atualizacao': typeof ShellAtualizacaoRoute
   '/co2': typeof ShellCo2Route
   '/configuracoes': typeof ShellConfiguracoesRoute
+  '/dados': typeof ShellDadosRoute
   '/dashboard': typeof ShellDashboardRoute
   '/laboratorios': typeof ShellLaboratoriosRoute
   '/mudas': typeof ShellMudasRouteWithChildren
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/_shell/atualizacao': typeof ShellAtualizacaoRoute
   '/_shell/co2': typeof ShellCo2Route
   '/_shell/configuracoes': typeof ShellConfiguracoesRoute
+  '/_shell/dados': typeof ShellDadosRoute
   '/_shell/dashboard': typeof ShellDashboardRoute
   '/_shell/laboratorios': typeof ShellLaboratoriosRoute
   '/_shell/mudas': typeof ShellMudasRouteWithChildren
@@ -288,6 +297,7 @@ export interface FileRouteTypes {
     | '/atualizacao'
     | '/co2'
     | '/configuracoes'
+    | '/dados'
     | '/dashboard'
     | '/laboratorios'
     | '/mudas'
@@ -318,6 +328,7 @@ export interface FileRouteTypes {
     | '/atualizacao'
     | '/co2'
     | '/configuracoes'
+    | '/dados'
     | '/dashboard'
     | '/laboratorios'
     | '/mudas'
@@ -349,6 +360,7 @@ export interface FileRouteTypes {
     | '/_shell/atualizacao'
     | '/_shell/co2'
     | '/_shell/configuracoes'
+    | '/_shell/dados'
     | '/_shell/dashboard'
     | '/_shell/laboratorios'
     | '/_shell/mudas'
@@ -477,6 +489,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof ShellDashboardRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/dados': {
+      id: '/_shell/dados'
+      path: '/dados'
+      fullPath: '/dados'
+      preLoaderRoute: typeof ShellDadosRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/configuracoes': {
@@ -611,6 +630,7 @@ interface ShellRouteChildren {
   ShellAtualizacaoRoute: typeof ShellAtualizacaoRoute
   ShellCo2Route: typeof ShellCo2Route
   ShellConfiguracoesRoute: typeof ShellConfiguracoesRoute
+  ShellDadosRoute: typeof ShellDadosRoute
   ShellDashboardRoute: typeof ShellDashboardRoute
   ShellLaboratoriosRoute: typeof ShellLaboratoriosRoute
   ShellMudasRoute: typeof ShellMudasRouteWithChildren
@@ -631,6 +651,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellAtualizacaoRoute: ShellAtualizacaoRoute,
   ShellCo2Route: ShellCo2Route,
   ShellConfiguracoesRoute: ShellConfiguracoesRoute,
+  ShellDadosRoute: ShellDadosRoute,
   ShellDashboardRoute: ShellDashboardRoute,
   ShellLaboratoriosRoute: ShellLaboratoriosRoute,
   ShellMudasRoute: ShellMudasRouteWithChildren,
