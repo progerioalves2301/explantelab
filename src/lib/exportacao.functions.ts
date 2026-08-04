@@ -39,9 +39,12 @@ const inputSchema = z.object({
   dias: z.union([z.literal(7), z.literal(30), z.literal(90), z.literal(0)]),
 });
 
+export type CelulaCsv = string | number | boolean | null;
+
 export interface ResultadoExportacao {
   tabela: string;
-  linhas: Record<string, unknown>[];
+  colunas: string[];
+  linhas: CelulaCsv[][];
   truncado: boolean;
 }
 
@@ -75,7 +78,17 @@ export const exportarTabela = createServerFn({ method: "POST" })
 
     const todas = (rows ?? []) as Record<string, unknown>[];
     const truncado = todas.length > LIMITE_LINHAS;
-    const linhas = truncado ? todas.slice(0, LIMITE_LINHAS) : todas;
+    const registros = truncado ? todas.slice(0, LIMITE_LINHAS) : todas;
+    const colunas = registros.length > 0 ? Object.keys(registros[0]!) : [];
+    const linhas: CelulaCsv[][] = registros.map((r) =>
+      colunas.map((c) => {
+        const v = r[c];
+        if (v === null || v === undefined) return null;
+        if (typeof v === "object") return JSON.stringify(v);
+        if (typeof v === "number" || typeof v === "boolean") return v;
+        return String(v);
+      }),
+    );
 
     if (TABELAS_SENSIVEIS.includes(data.tabela)) {
       await supabaseAdmin.from("auditoria").insert({
@@ -90,5 +103,5 @@ export const exportarTabela = createServerFn({ method: "POST" })
       });
     }
 
-    return { tabela: data.tabela, linhas, truncado };
+    return { tabela: data.tabela, colunas, linhas, truncado };
   });
