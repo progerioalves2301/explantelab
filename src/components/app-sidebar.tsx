@@ -13,6 +13,7 @@ import {
   AirVent,
   ShieldCheck,
   Sprout,
+  Database,
   Wind,
 } from "lucide-react";
 import {
@@ -45,6 +46,7 @@ const items: readonly Item[] = [
   { title: "Configurações", url: "/configuracoes", icon: Settings },
   { title: "Privacidade e meus dados", url: "/privacidade-dados", icon: ShieldCheck },
   { title: "Usuários", url: "/usuarios", icon: Users, adminOnly: true },
+  { title: "Dados e exportação", url: "/dados", icon: Database, adminOnly: true },
   { title: "Atualização", url: "/atualizacao", icon: DownloadCloud, adminOnly: true },
 ] as const;
 
