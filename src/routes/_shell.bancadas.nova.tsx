@@ -98,7 +98,7 @@ function NovaBancadaPage() {
           <CardHeader>
             <CardTitle>Identificação</CardTitle>
             <CardDescription>
-              Dê um nome e escolha o sala bioreator onde ela ficará.
+              Cada prateleira é formada por 4 válvulas. Teria como criar prateleiras com 8 válvulas, sendo que a programação de cada 4 válvulas fosse independente como já é hoje?
             </CardDescription>
           </CardHeader>
           <CardContent>
