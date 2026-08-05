@@ -98,7 +98,7 @@ function NovaBancadaPage() {
           <CardHeader>
             <CardTitle>Identificação</CardTitle>
             <CardDescription>
-              Cada prateleira é formada por 4 válvulas. Teria como criar prateleiras com 8 válvulas, sendo que a programação de cada 4 válvulas fosse independente como já é hoje?
+              É possível uma prateleira suportar 2 pares de válvulas, isso quer dizer 8 válvulas?
             </CardDescription>
           </CardHeader>
           <CardContent>
