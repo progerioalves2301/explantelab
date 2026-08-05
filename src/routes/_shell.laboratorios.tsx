@@ -153,7 +153,7 @@ function LaboratoriosPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Salas Bioreator</h1>
         <p className="text-sm text-muted-foreground">
-          Agrupe as prateleiras por sala. Sugerimos até 8 prateleiras por sala bioreator.
+          Cada prateleira é formada por 4 válvulas. Teria como criar prateleiras com 8 válvulas, sendo que a programação de cada 4 válvulas fosse independente como já é hoje?
         </p>
       </div>
 
@@ -186,7 +186,7 @@ function LaboratoriosPage() {
               </Label>
               <Input
                 id="descricao"
-                placeholder="Sala refrigerada, 8 prateleiras"
+                placeholder="Cada prateleira é formada por 4 válvulas. Teria como criar prateleiras com 8 válvulas, sendo que a programação de cada 4 válvulas fosse independente como já é hoje?"
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
                 maxLength={200}

@@ -190,7 +190,7 @@ function ConfigPage() {
           <CardHeader>
             <CardTitle>Ciclo pneumático padrão</CardTitle>
             <CardDescription>
-              Repouso → Injeção (V1+V4) → Pausa → Retorno (V2+V3) → Repouso.
+              Cada prateleira é formada por 4 válvulas. Teria como criar prateleiras com 8 válvulas, sendo que a programação de cada 4 válvulas fosse independente como já é hoje?
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-5">
