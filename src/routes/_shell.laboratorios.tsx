@@ -153,7 +153,7 @@ function LaboratoriosPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Salas Bioreator</h1>
         <p className="text-sm text-muted-foreground">
-          É possível uma prateleira suportar 2 pares de válvulas, isso quer dizer 8 válvulas?
+          Agrupe as prateleiras por sala. Sugerimos até 8 prateleiras por sala bioreator.
         </p>
       </div>
 
@@ -186,7 +186,7 @@ function LaboratoriosPage() {
               </Label>
               <Input
                 id="descricao"
-                placeholder="É possível uma prateleira suportar 2 pares de válvulas, isso quer dizer 8 válvulas?"
+                placeholder="Sala refrigerada, 8 prateleiras"
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
                 maxLength={200}

@@ -190,7 +190,7 @@ function ConfigPage() {
           <CardHeader>
             <CardTitle>Ciclo pneumático padrão</CardTitle>
             <CardDescription>
-              É possível uma prateleira suportar 2 pares de válvulas, isso quer dizer 8 válvulas?
+              Repouso → Injeção (V1+V4) → Pausa → Retorno (V2+V3) → Repouso.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-5">
