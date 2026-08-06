@@ -259,13 +259,14 @@ export const atualizarBancada = createServerFn({ method: "POST" })
       nome?: string;
       laboratorio_id?: string | null;
       posicao?: number | null;
-    }) =>
+    } & AcessoriosBancada) =>
       z
         .object({
           id: z.string().uuid(),
           nome: z.string().min(2).max(60).optional(),
           laboratorio_id: z.string().uuid().nullable().optional(),
           posicao: z.number().int().min(1).max(999).nullable().optional(),
+          ...acessoriosSchema,
         })
         .parse(data),
   )
@@ -279,6 +280,15 @@ export const atualizarBancada = createServerFn({ method: "POST" })
     if (rest.laboratorio_id !== undefined)
       patch.laboratorio_id = rest.laboratorio_id;
     if (rest.posicao !== undefined) patch.posicao = rest.posicao;
+    for (const k of [
+      "tem_sensor_temp",
+      "tem_luz",
+      "tem_balanca",
+      "tem_co2",
+      "controla_ar",
+    ] as const) {
+      if (rest[k] !== undefined) patch[k] = rest[k];
+    }
     if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await supabaseAdmin
       .from("bancadas")
