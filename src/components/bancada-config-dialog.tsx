@@ -53,6 +53,10 @@ export function BancadaConfigDialog({
   const [offlineThr, setOfflineThr] = useState<string>("300");
   const salvar = useServerFn(salvarConfig);
   const salvarLimites = useServerFn(salvarLimitesAlerta);
+  // Mesma regra do card: sem leitura e sem reinícios = sem sensor instalado.
+  const semSensor =
+    bancada.temperatura_planta == null && (bancada.sensor_reinicios ?? 0) === 0;
+
   const atualizar = useServerFn(atualizarBancada);
   const cmd = useServerFn(enviarComando);
 
