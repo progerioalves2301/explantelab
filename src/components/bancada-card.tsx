@@ -342,6 +342,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
+          {temLuz && (
           <span
             className={cn(
               "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors",
@@ -360,6 +361,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             />
             {bancada.luz_ligada ? "ON" : "OFF"}
           </span>
+          )}
           {bancada.tem_rtc != null && (
             <span
               className={cn(
