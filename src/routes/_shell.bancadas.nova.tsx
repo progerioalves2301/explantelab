@@ -38,6 +38,42 @@ export const Route = createFileRoute("/_shell/bancadas/nova")({
   component: NovaBancadaPage,
 });
 
+const ACESSORIOS = [
+  {
+    key: "tem_sensor_temp" as const,
+    label: "Sensor de temperatura",
+    hint: "DS18B20 na planta — habilita alertas e gráficos de temperatura.",
+  },
+  {
+    key: "tem_luz" as const,
+    label: "Controle de luz",
+    hint: "Timer das luzes (GPIO 27).",
+  },
+  {
+    key: "tem_balanca" as const,
+    label: "Balança",
+    hint: "Célula de carga associada a esta prateleira.",
+  },
+  {
+    key: "tem_co2" as const,
+    label: "Sensor de CO₂",
+    hint: "Medição de CO₂ ligada a esta prateleira.",
+  },
+  {
+    key: "controla_ar" as const,
+    label: "Controla ar-condicionado",
+    hint: "Emissor IR instalado — pode comandar o ar da sala.",
+  },
+];
+
+type Acessorios = {
+  tem_sensor_temp: boolean;
+  tem_luz: boolean;
+  tem_balanca: boolean;
+  tem_co2: boolean;
+  controla_ar: boolean;
+};
+
 function NovaBancadaPage() {
   const criar = useServerFn(criarBancada);
   const [nome, setNome] = useState("");
@@ -45,6 +81,13 @@ function NovaBancadaPage() {
   const [posicao, setPosicao] = useState<string>("");
   const [labs, setLabs] = useState<Laboratorio[]>([]);
   const [loading, setLoading] = useState(false);
+  const [acess, setAcess] = useState<Acessorios>({
+    tem_sensor_temp: true,
+    tem_luz: true,
+    tem_balanca: false,
+    tem_co2: false,
+    controla_ar: false,
+  });
   const [result, setResult] = useState<{
     bancada: Bancada;
     pairing_code: string;
@@ -67,6 +110,7 @@ function NovaBancadaPage() {
           nome,
           laboratorio_id: labId === "nenhum" ? null : labId,
           posicao: posicao ? Number(posicao) : null,
+          ...acess,
         },
       });
       setResult(r);
