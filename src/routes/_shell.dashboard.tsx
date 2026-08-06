@@ -224,14 +224,22 @@ function DashboardPage() {
     }
     return map;
   }, [bancadasComStatus, logs, clock]);
+const filtradas = useMemo(() => {
+    let lista = bancadasComStatus;
+    
+    if (labFiltro === "sem") {
+      lista = bancadasComStatus.filter((b) => !b.laboratorio_id);
+    } else if (labFiltro !== "todos") {
+      lista = bancadasComStatus.filter((b) => b.laboratorio_id === labFiltro);
+    }
 
-  const filtradas = useMemo(() => {
-    if (labFiltro === "todos") return bancadasComStatus;
-    if (labFiltro === "sem")
-      return bancadasComStatus.filter((b) => !b.laboratorio_id);
-    return bancadasComStatus.filter((b) => b.laboratorio_id === labFiltro);
+    return [...lista].sort((a, b) => {
+      const nomeA = a.nome || "";
+      const nomeB = b.nome || "";
+      return String(nomeA).localeCompare(String(nomeB), undefined, { numeric: true });
+    });
   }, [bancadasComStatus, labFiltro]);
-
+  
   const stats = useMemo(() => {
     const active = filtradas.filter(
       (b) => b.status === "Injetando" || b.status === "Retornando",
