@@ -411,6 +411,7 @@ export function BancadaConfigDialog({
               ))}
             </div>
           </div>
+          )}
 
 
 
