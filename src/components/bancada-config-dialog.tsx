@@ -352,7 +352,35 @@ export function BancadaConfigDialog({
             </div>
           </div>
 
+          <div className="grid gap-2 rounded-md border bg-muted/30 p-3">
+            <Label className="text-xs font-semibold">
+              Acessórios instalados
+            </Label>
+            <p className="text-[10px] text-muted-foreground">
+              Só o que estiver marcado aparece no card e gera alertas.
+            </p>
+            <div className="grid gap-2">
+              {ACESSORIOS.map((a) => (
+                <div
+                  key={a.key}
+                  className="flex items-center justify-between gap-3"
+                >
+                  <Label htmlFor={`ac-${a.key}`} className="text-xs font-normal">
+                    {a.label}
+                  </Label>
+                  <Switch
+                    id={`ac-${a.key}`}
+                    checked={acess[a.key]}
+                    onCheckedChange={(v: boolean) =>
+                      setAcess((prev) => ({ ...prev, [a.key]: v }))
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
 
+          {acess.tem_luz && (
           <div className="grid gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3">
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-1.5 text-xs font-semibold text-yellow-700 dark:text-yellow-400">
