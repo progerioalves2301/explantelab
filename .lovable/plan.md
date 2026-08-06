@@ -1,33 +1,44 @@
-# Migrar o backend para a sua conta Supabase
+# Acessórios por prateleira (perfil de hardware)
 
-## Situação atual
+Faz sentido, sim — e não gera conflito, desde que os campos sejam **declarativos** (o que a prateleira tem) e a lógica atual continue sendo a fonte da verdade do que está acontecendo. Hoje o sistema tenta *adivinhar* isso (ex.: "sem sensor" é inferido de `temperatura_planta == null`), o que já causou alertas falsos. Declarar explicitamente resolve isso.
 
-Este projeto usa o backend gerenciado do Lovable Cloud. Ele **não pode ser desconectado** para colocar a sua conta no lugar — essa troca não é reversível nem suportada no projeto atual. O que dá para fazer é **reproduzir o backend inteiro na sua conta**, com schema e dados, e você passa a ter acesso total (dashboard, psql, backups).
+## O que muda
 
-Como você deixou a escolha comigo, vou pelo caminho mais seguro e sem quebrar nada que está rodando: **gerar um pacote de migração completo**. O app atual continua funcionando no Cloud enquanto você valida a sua cópia.
+Ao cadastrar (e depois editar) uma prateleira, marcar quais acessórios ela possui:
 
-## O que será entregue
+- Sensor de temperatura (DS18B20)
+- Controle de luz (timer)
+- Balança
+- Sensor de CO2
+- Controla ar-condicionado (IR)
 
-Uma pasta `migracao-supabase/` no projeto com:
+Padrão para prateleiras já existentes: sensor de temperatura e luz ligados, balança/CO2/AC desligados — mantendo o comportamento atual.
 
-1. `01_schema.sql` — recriação completa e na ordem correta:
-   - tipo `app_role`
-   - 22 tabelas (`bancadas`, `laboratorios`, `mudas`, `ar_condicionados`, `balancas`, `sensores_co2`, `medicoes_*`, `alertas`, `comandos`, `auditoria`, `user_roles`, `bancada_*`, `termos_aceites`, `solicitacoes_lgpd`, `app_settings`, `alerta_destinos`, `bench_rate_state`)
-   - chaves estrangeiras, índices e defaults
-   - GRANTs por tabela, RLS habilitado e todas as políticas atuais
-2. `02_funcoes_triggers.sql` — as 24 funções do banco (telemetria das prateleiras, pareamento, aprendizado IR, `decidir_ar_condicionado`, `detectar_alertas`, balança, CO2, auditoria, `has_role`) e os triggers correspondentes.
-3. `03_cron.sql` — os dois agendamentos de minuto: disparo de ciclos programados e verificação de alertas (o segundo aponta para uma URL do app, que você troca pela sua).
-4. `04_storage.sql` — criação dos buckets privados `firmware` e `lgpd-exports` com as políticas de acesso.
-5. `dados/*.csv` — export dos dados atuais de cada tabela, prontos para importar, com a ordem de carga documentada para não violar chaves estrangeiras.
-6. `README.md` — passo a passo: aplicar os SQLs na ordem, importar os CSVs, recriar os usuários de autenticação, refazer os `device_token` das prateleiras/balanças/sensores e apontar o firmware ESP32 para a nova URL.
+## Efeitos na interface
 
-## Pontos que exigem atenção (estarão no README)
+- **Card da prateleira**: badge de luz, temperatura, extremos 30d e mini-status só aparecem se o acessório existir. Sem sensor → nada de "sensor travado"/alerta vermelho, apenas ausência do bloco.
+- **Configurações da prateleira**: limites de alerta de temperatura só se tiver sensor (hoje isso já é inferido — passa a usar a flag); janelas de luz só se tiver controle de luz.
+- **Ar-condicionado**: o seletor de prateleira controladora lista apenas prateleiras marcadas como "controla AC" e com sensor de temperatura (é de lá que vem a temperatura de referência).
+- **Balança / CO2**: na associação de balança e sensor de CO2, filtrar prateleiras compatíveis.
+- **Relatórios de temperatura e alertas**: ignoram prateleiras sem sensor (hoje aparecem como linhas vazias).
 
-- **Usuários e senhas** de autenticação não são exportáveis; os usuários serão recriados na sua conta e os papéis (admin/operador/visualizador) reaplicados via `user_roles`.
-- **Firmware ESP32**: cada dispositivo aponta para a URL e a chave pública do backend atual. Depois de migrar, é preciso atualizar essas duas constantes e reflashar/OTA. O pareamento por código de 6 dígitos continua funcionando.
-- **Segredos** (Telegram, chave de IA) precisam ser cadastrados de novo no seu projeto.
-- Enquanto os dois backends existirem, mantenha apenas um recebendo telemetria para não duplicar medições.
+## Efeitos no firmware / backend
+
+- A detecção de alertas de temperatura passa a pular prateleiras sem sensor declarado (evita alerta de "sem leitura").
+- O firmware continua igual na v2.5.3: as flags são metadados de UI/alertas. Opcionalmente, num passo seguinte, elas podem viajar no `UPDATE_CONFIG` para o ESP32 desabilitar a leitura do DS18B20 e o pino de luz — mas isso não é necessário agora e fica fora deste escopo.
+
+## Possíveis conflitos (e como tratamos)
+
+- Prateleira marcada "sem sensor" mas que envia temperatura: a leitura ainda é gravada; a UI mostra um aviso discreto sugerindo marcar o acessório, sem quebrar nada.
+- Prateleira marcada "sem luz" com janelas de luz salvas: as janelas ficam preservadas no banco, só somem da UI.
+- AC apontando para prateleira que depois é desmarcada: o vínculo é mantido e a tela de AC mostra aviso de configuração inconsistente.
 
 ## Detalhes técnicos
 
-O schema será extraído do catálogo atual (`pg_dump` lógico reconstruído por consulta), preservando `security definer` e `set search_path` nas funções, que são o que permite o ESP32 gravar telemetria sem login. Os CSVs saem via consultas de leitura, com corte opcional por período nas tabelas de medição (que são as maiores) para o arquivo não ficar gigante.
+- Migração: colunas booleanas em `public.bancadas` — `tem_sensor_temp` (default true), `tem_luz` (default true), `tem_balanca` (default false), `tem_co2` (default false), `controla_ar` (default false); mais um backfill para prateleiras existentes com `temperatura_planta IS NULL AND sensor_reinicios = 0` → `tem_sensor_temp = false`.
+- `src/lib/types.ts`: campos novos em `Bancada`.
+- `src/lib/bancadas.functions.ts`: `criarBancada` e `atualizarBancada` aceitam as flags (validação Zod).
+- `src/routes/_shell.bancadas.nova.tsx`: bloco "Acessórios" com switches.
+- `src/components/bancada-config-dialog.tsx`: mesmos switches + troca do `semSensor` inferido pela flag.
+- `src/components/bancada-card.tsx`, `_shell.ar-condicionado.tsx`, `_shell.co2.tsx`, `_shell.relatorios-temperatura.tsx`: renderização/filtros condicionais.
+- Função `detectar_alertas()`: filtro por `tem_sensor_temp`.
