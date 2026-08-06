@@ -51,12 +51,17 @@ export function BancadaConfigDialog({
   const [tempMin, setTempMin] = useState<string>("");
   const [tempMax, setTempMax] = useState<string>("");
   const [offlineThr, setOfflineThr] = useState<string>("300");
+  const [acess, setAcess] = useState<Acessorios>({
+    tem_sensor_temp: true,
+    tem_luz: true,
+    tem_balanca: false,
+    tem_co2: false,
+    controla_ar: false,
+  });
   const salvar = useServerFn(salvarConfig);
   const salvarLimites = useServerFn(salvarLimitesAlerta);
-  // Mesma regra do card: sem leitura e sem reinícios = sem sensor instalado.
-  const semSensor =
-    bancada?.temperatura_planta == null && (bancada?.sensor_reinicios ?? 0) === 0;
-
+  // Perfil declarado da prateleira: sem sensor = sem alertas de temperatura.
+  const semSensor = !acess.tem_sensor_temp;
 
   const atualizar = useServerFn(atualizarBancada);
   const cmd = useServerFn(enviarComando);
@@ -70,6 +75,13 @@ export function BancadaConfigDialog({
       setTempMin(bancada.temp_min?.toString() ?? "");
       setTempMax(bancada.temp_max?.toString() ?? "");
       setOfflineThr((bancada.offline_threshold_segundos ?? 300).toString());
+      setAcess({
+        tem_sensor_temp: bancada.tem_sensor_temp ?? true,
+        tem_luz: bancada.tem_luz ?? true,
+        tem_balanca: bancada.tem_balanca ?? false,
+        tem_co2: bancada.tem_co2 ?? false,
+        controla_ar: bancada.controla_ar ?? false,
+      });
     }
   }, [bancada]);
 
