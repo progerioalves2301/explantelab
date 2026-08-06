@@ -200,6 +200,40 @@ function NovaBancadaPage() {
                 </div>
               </div>
 
+              <div className="grid gap-3 rounded-lg border bg-muted/30 p-3">
+                <div>
+                  <Label className="text-sm">Acessórios instalados</Label>
+                  <p className="text-[11px] text-muted-foreground">
+                    Marque só o que esta prateleira realmente possui. O que
+                    ficar desmarcado não aparece na tela nem gera alertas.
+                  </p>
+                </div>
+                {ACESSORIOS.map((a) => (
+                  <div
+                    key={a.key}
+                    className="flex items-start justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <Label htmlFor={a.key} className="text-xs">
+                        {a.label}
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        {a.hint}
+                      </p>
+                    </div>
+                    <Switch
+                      id={a.key}
+                      checked={acess[a.key]}
+                      onCheckedChange={(v) =>
+                        setAcess((prev) => ({ ...prev, [a.key]: v }))
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+
+
+
               <Button type="submit" disabled={loading}>
                 {loading ? "Criando…" : "Criar prateleira e gerar código"}
               </Button>
