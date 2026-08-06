@@ -53,6 +53,11 @@ export function BancadaConfigDialog({
   const [offlineThr, setOfflineThr] = useState<string>("300");
   const salvar = useServerFn(salvarConfig);
   const salvarLimites = useServerFn(salvarLimitesAlerta);
+  // Mesma regra do card: sem leitura e sem reinícios = sem sensor instalado.
+  const semSensor =
+    bancada?.temperatura_planta == null && (bancada?.sensor_reinicios ?? 0) === 0;
+
+
   const atualizar = useServerFn(atualizarBancada);
   const cmd = useServerFn(enviarComando);
 
@@ -140,8 +145,8 @@ export function BancadaConfigDialog({
       await salvarLimites({
         data: {
           bancada_id: bancada.id,
-          temp_min: tempMin === "" ? null : Number(tempMin),
-          temp_max: tempMax === "" ? null : Number(tempMax),
+          temp_min: semSensor || tempMin === "" ? null : Number(tempMin),
+          temp_max: semSensor || tempMax === "" ? null : Number(tempMax),
           offline_threshold_segundos: Math.max(30, Number(offlineThr) || 300),
         },
       });
@@ -385,17 +390,21 @@ export function BancadaConfigDialog({
             <Label className="text-xs font-semibold text-amber-700 dark:text-amber-400">
               Limites de alerta (Telegram)
             </Label>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="grid gap-1">
-                <Label htmlFor="tmin" className="text-[11px] text-muted-foreground">Temp mín (°C)</Label>
-                <Input id="tmin" type="number" step="0.1" placeholder="—"
-                  value={tempMin} onChange={(e) => setTempMin(e.target.value)} />
-              </div>
-              <div className="grid gap-1">
-                <Label htmlFor="tmax" className="text-[11px] text-muted-foreground">Temp máx (°C)</Label>
-                <Input id="tmax" type="number" step="0.1" placeholder="—"
-                  value={tempMax} onChange={(e) => setTempMax(e.target.value)} />
-              </div>
+            <div className={semSensor ? "grid gap-2" : "grid grid-cols-3 gap-2"}>
+              {!semSensor && (
+                <>
+                  <div className="grid gap-1">
+                    <Label htmlFor="tmin" className="text-[11px] text-muted-foreground">Temp mín (°C)</Label>
+                    <Input id="tmin" type="number" step="0.1" placeholder="—"
+                      value={tempMin} onChange={(e) => setTempMin(e.target.value)} />
+                  </div>
+                  <div className="grid gap-1">
+                    <Label htmlFor="tmax" className="text-[11px] text-muted-foreground">Temp máx (°C)</Label>
+                    <Input id="tmax" type="number" step="0.1" placeholder="—"
+                      value={tempMax} onChange={(e) => setTempMax(e.target.value)} />
+                  </div>
+                </>
+              )}
               <div className="grid gap-1">
                 <Label htmlFor="offthr" className="text-[11px] text-muted-foreground">Offline após (s)</Label>
                 <Input id="offthr" type="number" min={30} value={offlineThr}
@@ -403,9 +412,12 @@ export function BancadaConfigDialog({
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground">
-              Deixe temp em branco para desativar. Offline padrão: 300s (5 min).
+              {semSensor
+                ? "Prateleira sem sensor de temperatura: alertas de temperatura desativados. Offline padrão: 300s (5 min)."
+                : "Deixe temp em branco para desativar. Offline padrão: 300s (5 min)."}
             </p>
           </div>
+
 
 
           <div className="rounded-md border bg-muted/40 p-2 text-[11px] text-muted-foreground">
