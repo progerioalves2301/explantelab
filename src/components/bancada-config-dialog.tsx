@@ -168,6 +168,7 @@ export function BancadaConfigDialog({
           laboratorio_id: laboratorioId === SEM_LAB ? null : laboratorioId,
           posicao:
             posNum == null || Number.isNaN(posNum) ? null : Math.trunc(posNum),
+          ...acess,
         },
       });
       await salvar({ data: { bancada_id: bancada.id, config } });
