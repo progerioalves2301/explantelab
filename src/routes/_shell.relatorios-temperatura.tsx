@@ -315,7 +315,10 @@ function RelatorioTemperaturaPage() {
         carregarMudas({ data: { desde, ate } }),
       ]);
       if (!alive) return;
-      const bancadasData = dados.bancadas as unknown as Bancada[];
+      // Prateleiras sem sensor de temperatura declarado não entram no relatório.
+      const bancadasData = (dados.bancadas as unknown as Bancada[]).filter(
+        (b) => b.tem_sensor_temp !== false,
+      );
       setLabs(dados.laboratorios as unknown as Laboratorio[]);
       setBancadas(bancadasData);
       setMedicoes(dados.medicoes);
