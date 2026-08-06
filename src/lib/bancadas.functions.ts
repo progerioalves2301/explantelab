@@ -42,6 +42,23 @@ export const listBancadas = createServerFn({ method: "GET" }).handler(
   },
 );
 
+// Perfil de acessórios da prateleira (o que ela realmente possui).
+const acessoriosSchema = {
+  tem_sensor_temp: z.boolean().optional(),
+  tem_luz: z.boolean().optional(),
+  tem_balanca: z.boolean().optional(),
+  tem_co2: z.boolean().optional(),
+  controla_ar: z.boolean().optional(),
+};
+
+export type AcessoriosBancada = {
+  tem_sensor_temp?: boolean;
+  tem_luz?: boolean;
+  tem_balanca?: boolean;
+  tem_co2?: boolean;
+  controla_ar?: boolean;
+};
+
 // Cria bancada + device_token + código de pareamento de 6 dígitos.
 // O usuário digita esses 6 dígitos no portal AP do ESP32; o dispositivo
 // então troca o código pelas credenciais reais via /api/public/bench/pair.
@@ -52,12 +69,13 @@ export const criarBancada = createServerFn({ method: "POST" })
       nome: string;
       laboratorio_id?: string | null;
       posicao?: number | null;
-    }) =>
+    } & AcessoriosBancada) =>
       z
         .object({
           nome: z.string().min(2).max(60),
           laboratorio_id: z.string().uuid().nullable().optional(),
           posicao: z.number().int().min(1).max(999).nullable().optional(),
+          ...acessoriosSchema,
         })
         .parse(data),
   )
@@ -79,6 +97,11 @@ export const criarBancada = createServerFn({ method: "POST" })
       status: "Offline",
       laboratorio_id: data.laboratorio_id ?? null,
       posicao: data.posicao ?? null,
+      tem_sensor_temp: data.tem_sensor_temp ?? true,
+      tem_luz: data.tem_luz ?? true,
+      tem_balanca: data.tem_balanca ?? false,
+      tem_co2: data.tem_co2 ?? false,
+      controla_ar: data.controla_ar ?? false,
     };
     if (initialConfig) insertRow.config = initialConfig;
 
