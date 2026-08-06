@@ -38,6 +38,22 @@ interface Props {
 
 const SEM_LAB = "__sem__";
 
+type Acessorios = {
+  tem_sensor_temp: boolean;
+  tem_luz: boolean;
+  tem_balanca: boolean;
+  tem_co2: boolean;
+  controla_ar: boolean;
+};
+
+const ACESSORIOS: { key: keyof Acessorios; label: string }[] = [
+  { key: "tem_sensor_temp", label: "Sensor de temperatura" },
+  { key: "tem_luz", label: "Controle de luz" },
+  { key: "tem_balanca", label: "Balança" },
+  { key: "tem_co2", label: "Sensor de CO₂" },
+  { key: "controla_ar", label: "Controla ar-condicionado" },
+];
+
 export function BancadaConfigDialog({
   bancada,
   open,
