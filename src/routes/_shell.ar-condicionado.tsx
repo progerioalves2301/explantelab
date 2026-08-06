@@ -100,8 +100,14 @@ function ArCondicionadoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Só prateleiras declaradas como emissoras de IR podem controlar o ar.
+  // Prateleiras antigas (sem perfil declarado) continuam elegíveis.
   const bancadasDaSala = (labId: string) =>
-    bancadas.filter((b) => b.laboratorio_id === labId);
+    bancadas.filter(
+      (b) =>
+        b.laboratorio_id === labId &&
+        (b.controla_ar == null || b.controla_ar === true),
+    );
 
   const startNew = () => {
     if (labs.length === 0) {
@@ -557,7 +563,8 @@ function ArCondicionadoPage() {
                   <SelectContent>
                     {bancadasDaSala(editing.laboratorio_id).length === 0 && (
                       <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                        Nenhuma prateleira cadastrada nesta sala
+                        Nenhuma prateleira desta sala está marcada como
+                        “Controla ar-condicionado”
                       </div>
                     )}
                     {bancadasDaSala(editing.laboratorio_id).map((b) => (

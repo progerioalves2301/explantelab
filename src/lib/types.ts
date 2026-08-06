@@ -68,6 +68,12 @@ export interface Bancada {
   laboratorio_id: string | null;
   posicao: number | null;
   luz_ligada: boolean;
+  /** Perfil de acessórios instalados na prateleira. */
+  tem_sensor_temp?: boolean | null;
+  tem_luz?: boolean | null;
+  tem_balanca?: boolean | null;
+  tem_co2?: boolean | null;
+  controla_ar?: boolean | null;
   tem_rtc?: boolean | null;
   rtc_bateria_fraca?: boolean | null;
   sensor_travado?: boolean | null;

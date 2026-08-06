@@ -117,13 +117,14 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
   const novoCiclo = useServerFn(iniciarNovoCiclo);
   const sensorReinicios = bancada.sensor_reinicios ?? 0;
   const temTemperatura = bancada.temperatura_planta != null;
-  // Sem leitura + sem indicação de sensor travado/reinícios = prateleira sem
-  // sensor instalado. Isso é normal, não é falha: mostramos em cinza.
-  // Um sensor só é considerado "travado" se já houve leituras/reinícios antes.
-  // Sem nenhuma leitura e sem reinícios = prateleira sem sensor instalado.
-  const semSensor = !temTemperatura && sensorReinicios === 0;
+  // Perfil declarado da prateleira. Quando o acessório não foi declarado
+  // (registros antigos), cai no comportamento anterior de inferência.
+  const temLuz = bancada.tem_luz !== false;
+  const semSensor =
+    bancada.tem_sensor_temp === false ||
+    (bancada.tem_sensor_temp == null && !temTemperatura && sensorReinicios === 0);
   const sensorComFalha = !temTemperatura && !semSensor;
-  const sensorComAviso = temTemperatura && Boolean(bancada.sensor_travado);
+  const sensorComAviso = temTemperatura && !semSensor && Boolean(bancada.sensor_travado);
   const textoTemperaturaIndisponivel = semSensor
     ? "Sem sensor instalado"
     : "Sem temperatura recebida";
@@ -341,6 +342,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
+          {temLuz && (
           <span
             className={cn(
               "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors",
@@ -359,6 +361,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             />
             {bancada.luz_ligada ? "ON" : "OFF"}
           </span>
+          )}
           {bancada.tem_rtc != null && (
             <span
               className={cn(
@@ -501,9 +504,15 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                       Última leitura; sensor sem leitura nova
                     </div>
                   )}
-                  {sensorReinicios > 0 && (
+                  {sensorReinicios > 0 && !semSensor && (
                     <div className="text-[10px] text-muted-foreground">
                       Reinícios do sensor: {sensorReinicios}
+                    </div>
+                  )}
+                  {semSensor && temTemperatura && (
+                    <div className="text-[10px] text-muted-foreground">
+                      Recebendo leituras — marque “Sensor de temperatura” na
+                      configuração.
                     </div>
                   )}
                 </div>

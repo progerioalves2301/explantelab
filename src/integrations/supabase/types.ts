@@ -432,6 +432,7 @@ export type Database = {
           ciclo_iniciado_em: string | null
           config: Json
           config_version: number
+          controla_ar: boolean
           created_at: string
           firmware_version: string | null
           id: string
@@ -447,7 +448,11 @@ export type Database = {
           sensor_travado: boolean | null
           status: string
           status_desde: string | null
+          tem_balanca: boolean
+          tem_co2: boolean
+          tem_luz: boolean
           tem_rtc: boolean | null
+          tem_sensor_temp: boolean
           temp_max: number | null
           temp_min: number | null
           temperatura_planta: number | null
@@ -458,6 +463,7 @@ export type Database = {
           ciclo_iniciado_em?: string | null
           config?: Json
           config_version?: number
+          controla_ar?: boolean
           created_at?: string
           firmware_version?: string | null
           id?: string
@@ -473,7 +479,11 @@ export type Database = {
           sensor_travado?: boolean | null
           status?: string
           status_desde?: string | null
+          tem_balanca?: boolean
+          tem_co2?: boolean
+          tem_luz?: boolean
           tem_rtc?: boolean | null
+          tem_sensor_temp?: boolean
           temp_max?: number | null
           temp_min?: number | null
           temperatura_planta?: number | null
@@ -484,6 +494,7 @@ export type Database = {
           ciclo_iniciado_em?: string | null
           config?: Json
           config_version?: number
+          controla_ar?: boolean
           created_at?: string
           firmware_version?: string | null
           id?: string
@@ -499,7 +510,11 @@ export type Database = {
           sensor_travado?: boolean | null
           status?: string
           status_desde?: string | null
+          tem_balanca?: boolean
+          tem_co2?: boolean
+          tem_luz?: boolean
           tem_rtc?: boolean | null
+          tem_sensor_temp?: boolean
           temp_max?: number | null
           temp_min?: number | null
           temperatura_planta?: number | null

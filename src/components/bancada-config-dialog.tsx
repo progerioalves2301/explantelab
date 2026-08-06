@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -38,6 +39,22 @@ interface Props {
 
 const SEM_LAB = "__sem__";
 
+type Acessorios = {
+  tem_sensor_temp: boolean;
+  tem_luz: boolean;
+  tem_balanca: boolean;
+  tem_co2: boolean;
+  controla_ar: boolean;
+};
+
+const ACESSORIOS: { key: keyof Acessorios; label: string }[] = [
+  { key: "tem_sensor_temp", label: "Sensor de temperatura" },
+  { key: "tem_luz", label: "Controle de luz" },
+  { key: "tem_balanca", label: "Balança" },
+  { key: "tem_co2", label: "Sensor de CO₂" },
+  { key: "controla_ar", label: "Controla ar-condicionado" },
+];
+
 export function BancadaConfigDialog({
   bancada,
   open,
@@ -51,12 +68,17 @@ export function BancadaConfigDialog({
   const [tempMin, setTempMin] = useState<string>("");
   const [tempMax, setTempMax] = useState<string>("");
   const [offlineThr, setOfflineThr] = useState<string>("300");
+  const [acess, setAcess] = useState<Acessorios>({
+    tem_sensor_temp: true,
+    tem_luz: true,
+    tem_balanca: false,
+    tem_co2: false,
+    controla_ar: false,
+  });
   const salvar = useServerFn(salvarConfig);
   const salvarLimites = useServerFn(salvarLimitesAlerta);
-  // Mesma regra do card: sem leitura e sem reinícios = sem sensor instalado.
-  const semSensor =
-    bancada?.temperatura_planta == null && (bancada?.sensor_reinicios ?? 0) === 0;
-
+  // Perfil declarado da prateleira: sem sensor = sem alertas de temperatura.
+  const semSensor = !acess.tem_sensor_temp;
 
   const atualizar = useServerFn(atualizarBancada);
   const cmd = useServerFn(enviarComando);
@@ -70,6 +92,13 @@ export function BancadaConfigDialog({
       setTempMin(bancada.temp_min?.toString() ?? "");
       setTempMax(bancada.temp_max?.toString() ?? "");
       setOfflineThr((bancada.offline_threshold_segundos ?? 300).toString());
+      setAcess({
+        tem_sensor_temp: bancada.tem_sensor_temp ?? true,
+        tem_luz: bancada.tem_luz ?? true,
+        tem_balanca: bancada.tem_balanca ?? false,
+        tem_co2: bancada.tem_co2 ?? false,
+        controla_ar: bancada.controla_ar ?? false,
+      });
     }
   }, [bancada]);
 
@@ -139,6 +168,7 @@ export function BancadaConfigDialog({
           laboratorio_id: laboratorioId === SEM_LAB ? null : laboratorioId,
           posicao:
             posNum == null || Number.isNaN(posNum) ? null : Math.trunc(posNum),
+          ...acess,
         },
       });
       await salvar({ data: { bancada_id: bancada.id, config } });
@@ -324,7 +354,35 @@ export function BancadaConfigDialog({
             </div>
           </div>
 
+          <div className="grid gap-2 rounded-md border bg-muted/30 p-3">
+            <Label className="text-xs font-semibold">
+              Acessórios instalados
+            </Label>
+            <p className="text-[10px] text-muted-foreground">
+              Só o que estiver marcado aparece no card e gera alertas.
+            </p>
+            <div className="grid gap-2">
+              {ACESSORIOS.map((a) => (
+                <div
+                  key={a.key}
+                  className="flex items-center justify-between gap-3"
+                >
+                  <Label htmlFor={`ac-${a.key}`} className="text-xs font-normal">
+                    {a.label}
+                  </Label>
+                  <Switch
+                    id={`ac-${a.key}`}
+                    checked={acess[a.key]}
+                    onCheckedChange={(v: boolean) =>
+                      setAcess((prev) => ({ ...prev, [a.key]: v }))
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
 
+          {acess.tem_luz && (
           <div className="grid gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3">
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-1.5 text-xs font-semibold text-yellow-700 dark:text-yellow-400">
@@ -383,6 +441,7 @@ export function BancadaConfigDialog({
               ))}
             </div>
           </div>
+          )}
 
 
 
