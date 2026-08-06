@@ -563,7 +563,8 @@ function ArCondicionadoPage() {
                   <SelectContent>
                     {bancadasDaSala(editing.laboratorio_id).length === 0 && (
                       <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                        Nenhuma prateleira cadastrada nesta sala
+                        Nenhuma prateleira desta sala está marcada como
+                        “Controla ar-condicionado”
                       </div>
                     )}
                     {bancadasDaSala(editing.laboratorio_id).map((b) => (
