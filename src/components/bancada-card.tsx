@@ -504,9 +504,15 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                       Última leitura; sensor sem leitura nova
                     </div>
                   )}
-                  {sensorReinicios > 0 && (
+                  {sensorReinicios > 0 && !semSensor && (
                     <div className="text-[10px] text-muted-foreground">
                       Reinícios do sensor: {sensorReinicios}
+                    </div>
+                  )}
+                  {semSensor && temTemperatura && (
+                    <div className="text-[10px] text-muted-foreground">
+                      Recebendo leituras — marque “Sensor de temperatura” na
+                      configuração.
                     </div>
                   )}
                 </div>
