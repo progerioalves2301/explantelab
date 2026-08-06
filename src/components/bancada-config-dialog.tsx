@@ -145,8 +145,8 @@ export function BancadaConfigDialog({
       await salvarLimites({
         data: {
           bancada_id: bancada.id,
-          temp_min: tempMin === "" ? null : Number(tempMin),
-          temp_max: tempMax === "" ? null : Number(tempMax),
+          temp_min: semSensor || tempMin === "" ? null : Number(tempMin),
+          temp_max: semSensor || tempMax === "" ? null : Number(tempMax),
           offline_threshold_segundos: Math.max(30, Number(offlineThr) || 300),
         },
       });
