@@ -11,6 +11,15 @@ export interface UsuarioComPapeis {
   roles: AppRole[];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assertAdmin(context: any) {
+  const { data } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (!data) throw new Error("Acesso negado");
+}
+
 /** Retorna os papéis do usuário logado. Usado pelo cliente para gate de UI. */
 export const meusPapeis = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -23,31 +32,29 @@ export const meusPapeis = createServerFn({ method: "GET" })
     return (data ?? []).map((r) => r.role as AppRole);
   });
 
-/** Lista todos os usuários com seus papéis. Apenas admin. */
+/** Lista todos os usuários com seus papéis. Apenas admin.
+ *  Usa a sessão do próprio admin (RPC security definer + RLS), sem chave privilegiada. */
 export const listarUsuarios = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<UsuarioComPapeis[]> => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Acesso negado");
+    await assertAdmin(context);
 
-    const { data: rolesData, error: rolesErr } = await supabaseAdmin
+    const { data: usersData, error: usersErr } = await context.supabase.rpc(
+      "admin_listar_usuarios",
+    );
+    if (usersErr) throw new Error(usersErr.message);
+
+    const { data: rolesData, error: rolesErr } = await context.supabase
       .from("user_roles")
       .select("user_id, role");
     if (rolesErr) throw new Error(rolesErr.message);
 
-    const { data: usersData, error: usersErr } =
-      await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
-    if (usersErr) throw new Error(usersErr.message);
-
-    return usersData.users.map((u) => ({
-      user_id: u.id,
+    return (usersData ?? []).map((u) => ({
+      user_id: u.user_id,
       email: u.email ?? null,
       created_at: u.created_at,
       roles: (rolesData ?? [])
-        .filter((r) => r.user_id === u.id)
+        .filter((r) => r.user_id === u.user_id)
         .map((r) => r.role as AppRole),
     }));
   });
@@ -64,13 +71,8 @@ export const concederPapel = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Acesso negado");
-
-    const { error } = await supabaseAdmin
+    await assertAdmin(context);
+    const { error } = await context.supabase
       .from("user_roles")
       .insert({ user_id: data.user_id, role: data.role });
     if (error && !error.message.includes("duplicate"))
@@ -90,16 +92,11 @@ export const removerPapel = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Acesso negado");
-
+    await assertAdmin(context);
 
     // Proteção: nunca deixar o sistema sem admin
     if (data.role === "admin") {
-      const { count } = await supabaseAdmin
+      const { count } = await context.supabase
         .from("user_roles")
         .select("*", { count: "exact", head: true })
         .eq("role", "admin");
@@ -107,7 +104,7 @@ export const removerPapel = createServerFn({ method: "POST" })
         throw new Error("Não é possível remover o último admin");
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await context.supabase
       .from("user_roles")
       .delete()
       .eq("user_id", data.user_id)
@@ -116,7 +113,8 @@ export const removerPapel = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Cria novo usuário. Apenas admin. Email confirmado automaticamente. */
+/** Cria novo usuário. Apenas admin. Email confirmado automaticamente.
+ *  Requer chave de serviço no ambiente (Auth Admin API). */
 export const criarUsuario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { email: string; password: string; role: AppRole }) =>
@@ -129,12 +127,11 @@ export const criarUsuario = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Acesso negado");
+    await assertAdmin(context);
 
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
@@ -144,7 +141,10 @@ export const criarUsuario = createServerFn({ method: "POST" })
     if (!created.user) throw new Error("Falha ao criar usuário");
 
     // Remove papel default do trigger e aplica o escolhido
-    await supabaseAdmin.from("user_roles").delete().eq("user_id", created.user.id);
+    await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", created.user.id);
     const { error: roleErr } = await supabaseAdmin
       .from("user_roles")
       .insert({ user_id: created.user.id, role: data.role });
@@ -152,30 +152,26 @@ export const criarUsuario = createServerFn({ method: "POST" })
     return { ok: true, user_id: created.user.id };
   });
 
-/** Remove usuário completamente. Apenas admin. Não permite auto-remoção. */
+/** Remove usuário completamente. Apenas admin. Não permite auto-remoção.
+ *  Requer chave de serviço no ambiente (Auth Admin API). */
 export const removerUsuario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { user_id: string }) =>
     z.object({ user_id: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Acesso negado");
+    await assertAdmin(context);
     if (data.user_id === context.userId)
       throw new Error("Não é possível remover seu próprio usuário");
 
-
     // Proteção: nunca deixar o sistema sem admin
-    const { data: userRoles } = await supabaseAdmin
+    const { data: userRoles } = await context.supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", data.user_id);
     const isTargetAdmin = (userRoles ?? []).some((r) => r.role === "admin");
     if (isTargetAdmin) {
-      const { count } = await supabaseAdmin
+      const { count } = await context.supabase
         .from("user_roles")
         .select("*", { count: "exact", head: true })
         .eq("role", "admin");
@@ -183,14 +179,17 @@ export const removerUsuario = createServerFn({ method: "POST" })
         throw new Error("Não é possível remover o último admin");
     }
 
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 /** Redefine a senha de um usuário. Apenas admin.
- *  A senha nova NUNCA é armazenada em texto plano (Supabase Auth aplica hash bcrypt).
- *  A operação é registrada na tabela auditoria (art. 37 LGPD) via trigger. */
+ *  A senha nova NUNCA é armazenada em texto plano (hash bcrypt no Auth).
+ *  Requer chave de serviço no ambiente (Auth Admin API). */
 export const redefinirSenha = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { user_id: string; nova_senha: string }) =>
@@ -207,12 +206,11 @@ export const redefinirSenha = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Acesso negado");
+    await assertAdmin(context);
 
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
     const { error } = await supabaseAdmin.auth.admin.updateUserById(
       data.user_id,
       { password: data.nova_senha },
@@ -220,14 +218,13 @@ export const redefinirSenha = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     // Registro de auditoria (art. 37 LGPD) — nunca gravamos a senha
-    await supabaseAdmin.from("auditoria").insert({
+    await context.supabase.from("auditoria").insert({
       usuario_id: context.userId,
       tabela: "auth.users",
       operacao: "PASSWORD_RESET",
       registro_id: data.user_id,
-      dados_novos: { evento: "senha_redefinida_por_admin" },
+      dados_novos: { evento: "senha_redefinida_por_admin" } as never,
     });
 
     return { ok: true };
   });
-
