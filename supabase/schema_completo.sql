@@ -15,6 +15,94 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('firmware', 'firmware', false), ('lgpd-exports', 'lgpd-exports', false)
 ON CONFLICT (id) DO NOTHING;
 
+-- ============================================================
+-- Tabelas e funcoes criadas fora do fluxo de migrations
+-- (rate-limit do ESP32, auditoria/LGPD)
+-- ============================================================
+
+-- Tabela de rate-limit das bancadas/prateleiras
+CREATE TABLE IF NOT EXISTS public.bench_rate_state (
+  bancada_id uuid NOT NULL,
+  window_start timestamptz NOT NULL DEFAULT now(),
+  req_count integer NOT NULL DEFAULT 0
+);
+CREATE UNIQUE INDEX IF NOT EXISTS bench_rate_state_pkey ON public.bench_rate_state USING btree (bancada_id);
+ALTER TABLE public.bench_rate_state ENABLE ROW LEVEL SECURITY;
+
+-- Tabela de auditoria (LGPD)
+CREATE TABLE IF NOT EXISTS public.auditoria (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  criado_em timestamptz NOT NULL DEFAULT now(),
+  usuario_id uuid,
+  usuario_email text,
+  tabela text NOT NULL,
+  operacao text NOT NULL,
+  registro_id text,
+  dados_anteriores jsonb,
+  dados_novos jsonb
+);
+CREATE UNIQUE INDEX IF NOT EXISTS auditoria_pkey ON public.auditoria USING btree (id);
+CREATE INDEX IF NOT EXISTS idx_auditoria_criado_em ON public.auditoria USING btree (criado_em DESC);
+CREATE INDEX IF NOT EXISTS idx_auditoria_tabela ON public.auditoria USING btree (tabela);
+ALTER TABLE public.auditoria ENABLE ROW LEVEL SECURITY;
+
+-- Tabela de aceite dos termos (LGPD)
+CREATE TABLE IF NOT EXISTS public.termos_aceites (
+  user_id uuid NOT NULL,
+  aceito_em timestamptz NOT NULL DEFAULT now(),
+  versao text NOT NULL DEFAULT 'v1'
+);
+CREATE UNIQUE INDEX IF NOT EXISTS termos_aceites_pkey ON public.termos_aceites USING btree (user_id);
+ALTER TABLE public.termos_aceites ENABLE ROW LEVEL SECURITY;
+
+-- Funcao de rate-limit
+CREATE OR REPLACE FUNCTION public.check_rate_limit(_bancada_id uuid, _max integer DEFAULT 60)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = 'public'
+AS $function$
+DECLARE v_count int;
+BEGIN
+  INSERT INTO public.bench_rate_state (bancada_id, window_start, req_count)
+  VALUES (_bancada_id, now(), 1)
+  ON CONFLICT (bancada_id) DO UPDATE
+    SET window_start = CASE WHEN bench_rate_state.window_start < now() - interval '1 minute'
+                            THEN now() ELSE bench_rate_state.window_start END,
+        req_count    = CASE WHEN bench_rate_state.window_start < now() - interval '1 minute'
+                            THEN 1 ELSE bench_rate_state.req_count + 1 END
+  RETURNING req_count INTO v_count;
+  RETURN v_count <= _max;
+END;
+$function$;
+
+-- Funcao de auditoria
+CREATE OR REPLACE FUNCTION public.tg_auditoria()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = 'public'
+AS $function$
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_email text;
+  v_reg_id text;
+BEGIN
+  IF v_user_id IS NOT NULL THEN
+    SELECT email INTO v_email FROM auth.users WHERE id = v_user_id;
+  END IF;
+  v_reg_id := COALESCE((to_jsonb(NEW)->>'id'), (to_jsonb(OLD)->>'id'));
+
+  INSERT INTO public.auditoria(usuario_id, usuario_email, tabela, operacao, registro_id, dados_anteriores, dados_novos)
+  VALUES (
+    v_user_id, v_email, TG_TABLE_NAME, TG_OP, v_reg_id,
+    CASE WHEN TG_OP IN ('UPDATE','DELETE') THEN to_jsonb(OLD) ELSE NULL END,
+    CASE WHEN TG_OP IN ('INSERT','UPDATE') THEN to_jsonb(NEW) ELSE NULL END
+  );
+  RETURN COALESCE(NEW, OLD);
+END;
+$function$;
+
 
 
 -- ============================================================
