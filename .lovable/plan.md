@@ -1,69 +1,41 @@
-# Plano: Manter ESP32s conectados durante migração para Vercel/Supabase próprio
+# Independência total: sair do backend gerenciado
 
-## Resumo da situação
-Sim. Os ESP32 já em campo estão gravados com o **URL e anon key do Lovable Cloud** (`ftfboqlapblxndizyaxy.supabase.co`). Se você apontar o app para um novo Supabase sem atualizar os dispositivos, eles continuam enviando telemetria para o banco antigo, mas o app no Vercel não lê mais de lá — parece que "pararam de transmitir" na nova interface.
+Objetivo: o VitroCeres passa a rodar 100% no **seu** Supabase e no **seu** Vercel, com credenciais que são suas, sem depender deste editor para funcionar.
 
-A solução é dar aos ESP32 a capacidade de usar um backend configurável, migrando-os via OTA para o novo Supabase. Enquanto isso não acontece, o app no Vercel pode sincronizar/replicar os dados do banco antigo como ponte temporária.
+## Ponto importante, com honestidade
 
-## Estratégia escolhida (fallback para quem ainda não migrou)
+A chave `service_role` e a senha do banco do backend gerenciado **não podem ser exibidas** — não é escolha minha, o ambiente não expõe esses valores para ninguém, nem para mim. Por isso a saída não é "te entregar aquela chave": é **você passar a usar o seu próprio projeto Supabase**, onde você é o dono e tem todas as chaves (URL, anon, service_role, senha do banco, backups).
 
-1. **Firmware v2.5.4 — backend configurável**
-   - Criar `firmware/bancada_esp32_v2_5_4/bancada_esp32_v2_5_4.ino`.
-   - Tornar `SUPABASE_URL` e `SUPABASE_ANON_KEY` configuráveis via WiFiManager (campos extras no portal) e salvar em `Preferences` (NVS).
-   - Manter os valores atuais do Lovable Cloud como **fallback** caso nada seja configurado — assim dispositivos não atualizados continuam funcionando no banco antigo.
-   - Todas as chamadas RPC (`bench_push_telemetry`, `bench_pull_commands`, `bench_pair`, etc.) passam a usar a URL/anon configuráveis.
+Metade disso já está feito: o `supabase/schema_completo.sql` já rodou com sucesso no seu Supabase, então a estrutura já é sua.
 
-2. **OTA para o novo backend**
-   - A tela `/_shell/atualizacao` já envia OTA para prateleiras selecionadas ou todas.
-   - Gerar binário `.bin` da v2.5.4 e enviar para o bucket `firmware`.
-   - Disparar OTA em massa para as prateleiras. Cada ESP32 baixa o novo firmware, reinicia e passa a aceitar configuração de backend.
-   - Após OTA, a prateleira deve ser re-pareada ou receber um comando via app para gravar a nova URL/anon key do Supabase do Vercel.
+## O que falta para a independência
 
-3. **Configuração do novo backend no dispositivo**
-   - Adicionar um novo comando `SET_BACKEND` que permite o app enviar URL + anon key do Supabase novo para a prateleira.
-   - O ESP32 grava em `Preferences` e passa a usar o novo backend a partir do próximo boot/ciclo.
-   - Esse comando pode ser disparado automaticamente após OTA bem-sucedida ou manualmente pelo usuário.
+1. **Ativar extensões e agendamentos no seu Supabase**
+   - Ativar `pg_cron` e `pg_net`.
+   - Criar os cron jobs (ciclos agendados, detecção de alertas, decisão do ar-condicionado) apontando para o seu domínio.
 
-4. **Ponte temporária (opcional, mas recomendada para não perder dados durante transição)**
-   - Criar uma função simples de sincronização que copia telemetria recente do banco Lovable Cloud para o novo Supabase do Vercel.
-   - Isso mantém os dados visíveis no app mesmo para prateleiras que ainda não foram atualizadas.
-   - A ponte pode ser desativada assim que todos os dispositivos estiverem no novo backend.
+2. **Apontar o app do Vercel para o seu Supabase**
+   - Definir as variáveis de ambiente do seu projeto (URL, chave publicável e chave de serviço) no Vercel.
+   - Com a chave de serviço no seu Vercel, as abas **Usuários** (criar/remover usuário, redefinir senha), **Dados e exportação** e **Atualização** passam a funcionar de verdade, sem os contornos atuais.
 
-5. **Documentação da migração**
-   - Atualizar `MIGRACAO_SUPABASE.md` com o passo-a-passo:
-     a. Compilar a v2.5.4 e gerar `.bin`.
-     b. Fazer upload do binário na tela Atualização.
-     c. Disparar OTA para todas as prateleiras.
-     d. Enviar comando `SET_BACKEND` com URL/anon key do novo Supabase.
-     e. Verificar se as prateleiras aparecem online no app do Vercel.
-     f. (Opcional) Ligar a ponte de dados até que todos os dispositivos migrem.
+3. **Firmware v2.5.4 — backend configurável**
+   - Hoje a URL e a chave do backend estão fixas no código, é isso que prende as prateleiras ao backend antigo.
+   - Na v2.5.4 essas duas informações passam a ser gravadas na memória do ESP32 e configuráveis pela tela de Wi-Fi (portal VitroCeres) — assim, trocar de backend no futuro nunca mais exige recompilar.
+   - Enviar a v2.5.4 por OTA para as prateleiras já instaladas e, no primeiro boot, elas passam a gravar no seu banco.
 
-## O que muda no código
+4. **Migração dos dados históricos (opcional)**
+   - Exportar as leituras de temperatura, pesos, CO2 e histórico de status do banco atual e importar no seu, para os relatórios não começarem vazios.
 
-### Firmware v2.5.4
-- Novo arquivo `firmware/bancada_esp32_v2_5_4/bancada_esp32_v2_5_4.ino` baseado na v2.5.3.
-- Adicionar campos `custom_supabase_url` e `custom_supabase_anon` no WiFiManager.
-- Adicionar função `carregarBackendConfig()` que lê NVS e retorna URL/anon a serem usados.
-- Adicionar handler para comando `SET_BACKEND` que grava a nova configuração em NVS.
-- Atualizar a constante `FIRMWARE_VERSION` para `"2.5.4"`.
+5. **Documentação de operação própria**
+   - Atualizar o `MIGRACAO_SUPABASE.md` com: onde ficam suas chaves, como rodar o projeto localmente, como publicar no Vercel, como fazer backup do banco e como gerar novo firmware. Objetivo: você conseguir operar tudo sem depender deste editor.
 
-### Web app
-- No arquivo `src/lib/atualizacao.functions.ts` e/ou na tela `/_shell/atualizacao`, adicionar botão para enviar comando `SET_BACKEND` para uma prateleira ou todas, com os valores do novo Supabase lidos de variáveis de ambiente.
-- Criar (opcional) função server de sincronização de dados do banco Lovable para o novo Supabase, com endpoint agendado manualmente.
-- Atualizar documentação de migração.
+## Ordem sugerida
 
-### Banco de dados
-- Nenhuma alteração de schema é necessária. O comando `SET_BACKEND` é entregue pela tabela `comandos` existente, já que o payload é genérico (`tipo` + `payload`).
+Passos 1 e 2 podem ser feitos agora sem afetar nada em produção (as prateleiras continuam transmitindo no backend antigo). O passo 3 é o corte real e deve ser combinado com o cliente, porque durante a troca há uma janela curta em que os dados novos vão para o banco novo e os antigos ficam no antigo.
 
-## Critérios de conclusão
-- [ ] Firmware v2.5.4 compila sem erros e mantém todos os recursos da v2.5.3.
-- [ ] WiFiManager permite digitar URL e anon key do Supabase.
-- [ ] Comando `SET_BACKEND` é processado pelo ESP32 e persiste em NVS.
-- [ ] Tela OTA permite enviar `SET_BACKEND` em massa.
-- [ ] Documentação de migração atualizada.
-- [ ] (Opcional) Ponte de sincronização funcionando entre bancos.
+## Detalhes técnicos
 
-## Riscos e cuidados
-- OTA em campo pode falhar se a conexão Wi-Fi estiver instável. Recomenda-se atualizar uma prateleira de teste primeiro.
-- Se o anon key do novo Supabase estiver errado, a prateleira não conseguirá autenticar e ficará offline até ser reconfigurada (pode ser feito via WiFiManager resetando a configuração).
-- Durante a transição, a ponte temporária evita perda de visibilidade, mas não deve ser mantida indefinidamente para evitar duplicidade/confusão.
+- `src/integrations/supabase/client.ts` já lê `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY`, então no Vercel basta trocar os valores.
+- As rotas administrativas passam a usar a chave de serviço vinda do ambiente do Vercel, removendo os contornos client-side criados para contornar sua ausência.
+- Firmware: `SUPABASE_URL` e `SUPABASE_ANON_KEY` saem de `#define` e vão para `Preferences` (NVS), com campos extras no portal do WiFiManager e fallback para os valores atuais quando a NVS estiver vazia.
+- Cron jobs: mesmos blocos já comentados no fim do `schema_completo.sql`, com domínio e chave do seu projeto.
