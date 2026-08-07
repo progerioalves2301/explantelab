@@ -97,6 +97,27 @@ function UsersPage() {
   const [novaSenha, setNovaSenha] = useState("");
   const [redefinindo, setRedefinindo] = useState(false);
 
+  /** Ponte: lê a equipe direto pelo navegador com a sessão do admin (RLS +
+   *  função security definer). Não depende de variáveis de servidor. */
+  const carregarPeloNavegador = async (): Promise<UsuarioComPapeis[]> => {
+    const { data: users, error: usersErr } = await supabase.rpc(
+      "admin_listar_usuarios",
+    );
+    if (usersErr) throw new Error(usersErr.message);
+    const { data: roles, error: rolesErr } = await supabase
+      .from("user_roles")
+      .select("user_id, role");
+    if (rolesErr) throw new Error(rolesErr.message);
+    return (users ?? []).map((u) => ({
+      user_id: u.user_id,
+      email: u.email ?? null,
+      created_at: u.created_at,
+      roles: (roles ?? [])
+        .filter((r) => r.user_id === u.user_id)
+        .map((r) => r.role as AppRole),
+    }));
+  };
+
   const carregar = async () => {
     try {
       setLoading(true);
@@ -109,7 +130,13 @@ function UsersPage() {
       }
       setSemSessao(false);
       setCurrentUserId(sess.session.user.id);
-      const dados = await listar();
+      let dados: UsuarioComPapeis[];
+      try {
+        dados = await carregarPeloNavegador();
+      } catch {
+        // Plano B: função de servidor (exige variáveis de ambiente no host).
+        dados = await listar();
+      }
       setUsuarios(dados);
       setErro(null);
     } catch (e) {
@@ -130,7 +157,14 @@ function UsersPage() {
 
   const handleConceder = async (user_id: string, role: AppRole) => {
     try {
-      await conceder({ data: { user_id, role } });
+      const { error } = await supabase
+        .from("user_roles")
+        .insert({ user_id, role });
+      if (error) {
+        if (!error.message.toLowerCase().includes("duplicate")) {
+          await conceder({ data: { user_id, role } });
+        }
+      }
       toast.success(`Papel "${ROLE_LABEL[role]}" concedido`);
       await carregar();
     } catch (e) {
@@ -140,13 +174,29 @@ function UsersPage() {
 
   const handleRemover = async (user_id: string, role: AppRole) => {
     try {
-      await remover({ data: { user_id, role } });
+      if (role === "admin") {
+        const { count } = await supabase
+          .from("user_roles")
+          .select("*", { count: "exact", head: true })
+          .eq("role", "admin");
+        if ((count ?? 0) <= 1) {
+          toast.error("Não é possível remover o último admin");
+          return;
+        }
+      }
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", user_id)
+        .eq("role", role);
+      if (error) await remover({ data: { user_id, role } });
       toast.success(`Papel "${ROLE_LABEL[role]}" removido`);
       await carregar();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao remover");
     }
   };
+
 
   const handleCriar = async () => {
     if (!novoEmail || !novoSenha) {
