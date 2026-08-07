@@ -1,7 +1,5 @@
 # Migração do banco para a sua conta Supabase
 
-> **Revisado:** o `supabase/schema_completo.sql` foi atualizado para incluir objetos que estavam no banco atual mas não nas migrations (rate-limit `bench_rate_state`, função `check_rate_limit`, tabelas de LGPD `auditoria`/`termos_aceites`, trigger `tg_auditoria` e triggers de auditoria).
-
 Objetivo: rodar o app no Vercel com **criar usuário, remover usuário e redefinir senha** funcionando. Isso exige a chave privilegiada (*service role*), que só existe em um projeto Supabase da sua própria conta.
 
 ---
