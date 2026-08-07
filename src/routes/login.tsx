@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PasswordInput } from "@/components/ui/password-input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import logoVitroCeres from "@/assets/vitroceres-logo.asset.json";
+const LOGO_URL = "/vitroceres-logo.png";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -47,7 +47,7 @@ function LoginPage() {
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="rounded-xl bg-white px-6 py-4 shadow-lg ring-1 ring-border">
             <img
-              src={logoVitroCeres.url}
+              src={LOGO_URL}
               alt="VitroCeres OS by Explante Biotecnologia"
               className="h-[78px] w-auto object-contain"
             />

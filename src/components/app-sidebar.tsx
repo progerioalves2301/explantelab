@@ -28,7 +28,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import logoVitroCeres from "@/assets/vitroceres-logo.asset.json";
+const LOGO_URL = "/vitroceres-logo.png";
 import { meusPapeis } from "@/lib/roles.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -95,7 +95,7 @@ export function AppSidebar() {
           </div>
         ) : (
           <img
-            src={logoVitroCeres.url}
+            src={LOGO_URL}
             alt="VitroCeres OS by Explante Biotecnologia"
             className="block w-full object-contain"
           />
