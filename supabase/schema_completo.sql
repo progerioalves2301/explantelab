@@ -2579,6 +2579,60 @@ BEGIN
 END;
 $function$;
 
+-- ============================================================
+-- AUDITORIA (LGPD) - tabela e trigger function
+-- ============================================================
+CREATE TABLE public.auditoria (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  criado_em timestamptz NOT NULL DEFAULT now(),
+  usuario_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  usuario_email text,
+  tabela text NOT NULL,
+  operacao text NOT NULL,
+  registro_id text,
+  dados_anteriores jsonb,
+  dados_novos jsonb
+);
+
+GRANT SELECT, INSERT ON public.auditoria TO authenticated;
+GRANT ALL ON public.auditoria TO service_role;
+
+ALTER TABLE public.auditoria ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Apenas admins podem ver auditoria"
+  ON public.auditoria FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Usuario registra propria auditoria"
+  ON public.auditoria FOR INSERT TO authenticated
+  WITH CHECK (usuario_id = auth.uid());
+
+CREATE OR REPLACE FUNCTION public.tg_auditoria()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_email text;
+  v_reg_id text;
+BEGIN
+  IF v_user_id IS NOT NULL THEN
+    SELECT email INTO v_email FROM auth.users WHERE id = v_user_id;
+  END IF;
+  v_reg_id := COALESCE((to_jsonb(NEW)->>'id'), (to_jsonb(OLD)->>'id'));
+
+  INSERT INTO public.auditoria(usuario_id, usuario_email, tabela, operacao, registro_id, dados_anteriores, dados_novos)
+  VALUES (
+    v_user_id, v_email, TG_TABLE_NAME, TG_OP, v_reg_id,
+    CASE WHEN TG_OP IN ('UPDATE','DELETE') THEN to_jsonb(OLD) ELSE NULL END,
+    CASE WHEN TG_OP IN ('INSERT','UPDATE') THEN to_jsonb(NEW) ELSE NULL END
+  );
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
 
 -- ============================================================
 -- 20260718142715_e698e991-3e60-45c4-b19b-44eaaaf5000c.sql
