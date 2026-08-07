@@ -129,9 +129,8 @@ export const criarUsuario = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
 
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { getSupabaseAdmin } = await import("@/lib/admin-client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
@@ -179,9 +178,8 @@ export const removerUsuario = createServerFn({ method: "POST" })
         throw new Error("Não é possível remover o último admin");
     }
 
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { getSupabaseAdmin } = await import("@/lib/admin-client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -208,9 +206,8 @@ export const redefinirSenha = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
 
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { getSupabaseAdmin } = await import("@/lib/admin-client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin.auth.admin.updateUserById(
       data.user_id,
       { password: data.nova_senha },
