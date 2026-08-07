@@ -126,6 +126,43 @@ $$;
 REVOKE ALL ON FUNCTION public.bench_pair(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.bench_pair(text) TO anon, authenticated;
 
+-- Rate-limit por bancada (usado por bench_push_telemetry e bench_pull_commands)
+CREATE TABLE public.bench_rate_state (
+  bancada_id uuid PRIMARY KEY REFERENCES public.bancadas(id) ON DELETE CASCADE,
+  window_start timestamptz NOT NULL DEFAULT now(),
+  req_count integer NOT NULL DEFAULT 0
+);
+
+GRANT ALL ON public.bench_rate_state TO service_role;
+ALTER TABLE public.bench_rate_state ENABLE ROW LEVEL SECURITY;
+-- Sem policies para anon/authenticated: só service_role acessa via SECURITY DEFINER.
+
+CREATE OR REPLACE FUNCTION public.check_rate_limit(
+  _bancada_id uuid,
+  _max integer DEFAULT 60
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE v_count int;
+BEGIN
+  INSERT INTO public.bench_rate_state (bancada_id, window_start, req_count)
+  VALUES (_bancada_id, now(), 1)
+  ON CONFLICT (bancada_id) DO UPDATE
+    SET window_start = CASE WHEN bench_rate_state.window_start < now() - interval '1 minute'
+                            THEN now() ELSE bench_rate_state.window_start END,
+        req_count    = CASE WHEN bench_rate_state.window_start < now() - interval '1 minute'
+                            THEN 1 ELSE bench_rate_state.req_count + 1 END
+  RETURNING req_count INTO v_count;
+  RETURN v_count <= _max;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.check_rate_limit(uuid, integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.check_rate_limit(uuid, integer) TO anon, authenticated;
+
 -- bench_push_telemetry: recebe telemetria e devolve configuração
 CREATE OR REPLACE FUNCTION public.bench_push_telemetry(
   _bancada_id uuid,
@@ -2578,6 +2615,60 @@ BEGIN
   );
 END;
 $function$;
+
+-- ============================================================
+-- AUDITORIA (LGPD) - tabela e trigger function
+-- ============================================================
+CREATE TABLE public.auditoria (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  criado_em timestamptz NOT NULL DEFAULT now(),
+  usuario_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  usuario_email text,
+  tabela text NOT NULL,
+  operacao text NOT NULL,
+  registro_id text,
+  dados_anteriores jsonb,
+  dados_novos jsonb
+);
+
+GRANT SELECT, INSERT ON public.auditoria TO authenticated;
+GRANT ALL ON public.auditoria TO service_role;
+
+ALTER TABLE public.auditoria ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Apenas admins podem ver auditoria"
+  ON public.auditoria FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Usuario registra propria auditoria"
+  ON public.auditoria FOR INSERT TO authenticated
+  WITH CHECK (usuario_id = auth.uid());
+
+CREATE OR REPLACE FUNCTION public.tg_auditoria()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_email text;
+  v_reg_id text;
+BEGIN
+  IF v_user_id IS NOT NULL THEN
+    SELECT email INTO v_email FROM auth.users WHERE id = v_user_id;
+  END IF;
+  v_reg_id := COALESCE((to_jsonb(NEW)->>'id'), (to_jsonb(OLD)->>'id'));
+
+  INSERT INTO public.auditoria(usuario_id, usuario_email, tabela, operacao, registro_id, dados_anteriores, dados_novos)
+  VALUES (
+    v_user_id, v_email, TG_TABLE_NAME, TG_OP, v_reg_id,
+    CASE WHEN TG_OP IN ('UPDATE','DELETE') THEN to_jsonb(OLD) ELSE NULL END,
+    CASE WHEN TG_OP IN ('INSERT','UPDATE') THEN to_jsonb(NEW) ELSE NULL END
+  );
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
 
 
 -- ============================================================
