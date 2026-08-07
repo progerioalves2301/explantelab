@@ -1,29 +1,69 @@
-# Atualização do firmware ESP32 para o novo Supabase
+# Plano: Manter ESP32s conectados durante migração para Vercel/Supabase próprio
 
-Após rodar `supabase/schema_completo.sql` no seu projeto Supabase, os ESP32 precisam ser reapontados para o novo backend. O firmware atual (v2.5.3) está hardcoded com a URL e a chave do Lovable Cloud.
+## Resumo da situação
+Sim. Os ESP32 já em campo estão gravados com o **URL e anon key do Lovable Cloud** (`ftfboqlapblxndizyaxy.supabase.co`). Se você apontar o app para um novo Supabase sem atualizar os dispositivos, eles continuam enviando telemetria para o banco antigo, mas o app no Vercel não lê mais de lá — parece que "pararam de transmitir" na nova interface.
 
-## O que será feito
+A solução é dar aos ESP32 a capacidade de usar um backend configurável, migrando-os via OTA para o novo Supabase. Enquanto isso não acontece, o app no Vercel pode sincronizar/replicar os dados do banco antigo como ponte temporária.
 
-1. Criar firmware **v2.5.4** com as credenciais do novo Supabase parametrizáveis por `#define` ou constantes editáveis no topo do arquivo.
-2. Atualizar `MIGRACAO_SUPABASE.md` com as instruções exatas de recompilação e OTA.
-3. Garantir que os endpoints públicos do Vercel (`/api/public/co2/reading`, `/api/public/scale/reading`, `/api/public/bench/*`) continuem sendo usados para balanças/CO2, enquanto as RPCs do Supabase continuam para telemetria/comandos/ar-condicionado.
+## Estratégia escolhida (fallback para quem ainda não migrou)
 
-## Detalhes técnicos
+1. **Firmware v2.5.4 — backend configurável**
+   - Criar `firmware/bancada_esp32_v2_5_4/bancada_esp32_v2_5_4.ino`.
+   - Tornar `SUPABASE_URL` e `SUPABASE_ANON_KEY` configuráveis via WiFiManager (campos extras no portal) e salvar em `Preferences` (NVS).
+   - Manter os valores atuais do Lovable Cloud como **fallback** caso nada seja configurado — assim dispositivos não atualizados continuam funcionando no banco antigo.
+   - Todas as chamadas RPC (`bench_push_telemetry`, `bench_pull_commands`, `bench_pair`, etc.) passam a usar a URL/anon configuráveis.
 
-- O arquivo a editar é `firmware/bancada_esp32_v2_5_3/bancada_esp32_v2_5_3.ino`.
-- As linhas 64-69 contêm `SUPABASE_URL` e `SUPABASE_ANON_KEY` fixos do projeto atual (`ftfboqlapblxndizyaxy`).
-- A linha 22 contém `API_HOST = "https://explantelab.lovable.app"`, usado para balança/CO2 e OTA.
-- Será criada uma nova pasta `firmware/bancada_esp32_v2_5_4/` com o `.ino` renomeado e os valores trocados por placeholders `SEU_SUPABASE_URL`, `SEU_SUPABASE_ANON_KEY` e `SEU_DOMINIO_VERCEL`.
-- O certificado ISRG Root X1 usado para pinning permanece o mesmo, pois o novo backend também é Supabase.
-- Se a tabela `bancada_secrets` for migrada (copiada), os ESP32 já reconhecem os tokens e não precisam ser pareados novamente. Caso contrário, cada prateleira terá que passar pelo pareamento de 6 dígitos.
+2. **OTA para o novo backend**
+   - A tela `/_shell/atualizacao` já envia OTA para prateleiras selecionadas ou todas.
+   - Gerar binário `.bin` da v2.5.4 e enviar para o bucket `firmware`.
+   - Disparar OTA em massa para as prateleiras. Cada ESP32 baixa o novo firmware, reinicia e passa a aceitar configuração de backend.
+   - Após OTA, a prateleira deve ser re-pareada ou receber um comando via app para gravar a nova URL/anon key do Supabase do Vercel.
 
-## Entregáveis
+3. **Configuração do novo backend no dispositivo**
+   - Adicionar um novo comando `SET_BACKEND` que permite o app enviar URL + anon key do Supabase novo para a prateleira.
+   - O ESP32 grava em `Preferences` e passa a usar o novo backend a partir do próximo boot/ciclo.
+   - Esse comando pode ser disparado automaticamente após OTA bem-sucedida ou manualmente pelo usuário.
 
-- `firmware/bancada_esp32_v2_5_4/bancada_esp32_v2_5_4.ino` com placeholders documentados.
-- Seção atualizada em `MIGRACAO_SUPABASE.md` explicando como preencher os três valores e como subir via OTA ou cabo.
-- Atualização do `mem://index.md` para refletir a versão atual do firmware.
+4. **Ponte temporária (opcional, mas recomendada para não perder dados durante transição)**
+   - Criar uma função simples de sincronização que copia telemetria recente do banco Lovable Cloud para o novo Supabase do Vercel.
+   - Isso mantém os dados visíveis no app mesmo para prateleiras que ainda não foram atualizadas.
+   - A ponte pode ser desativada assim que todos os dispositivos estiverem no novo backend.
 
-## Não incluído neste plano
+5. **Documentação da migração**
+   - Atualizar `MIGRACAO_SUPABASE.md` com o passo-a-passo:
+     a. Compilar a v2.5.4 e gerar `.bin`.
+     b. Fazer upload do binário na tela Atualização.
+     c. Disparar OTA para todas as prateleiras.
+     d. Enviar comando `SET_BACKEND` com URL/anon key do novo Supabase.
+     e. Verificar se as prateleiras aparecem online no app do Vercel.
+     f. (Opcional) Ligar a ponte de dados até que todos os dispositivos migrem.
 
-- Não serão alteradas as funcionalidades do firmware (ciclos, luz, ar-condicionado, balança, CO2, botão físico).
-- Não serão alteradas as rotas do app web; elas já funcionam com qualquer Supabase desde que as variáveis de ambiente estejam corretas.
+## O que muda no código
+
+### Firmware v2.5.4
+- Novo arquivo `firmware/bancada_esp32_v2_5_4/bancada_esp32_v2_5_4.ino` baseado na v2.5.3.
+- Adicionar campos `custom_supabase_url` e `custom_supabase_anon` no WiFiManager.
+- Adicionar função `carregarBackendConfig()` que lê NVS e retorna URL/anon a serem usados.
+- Adicionar handler para comando `SET_BACKEND` que grava a nova configuração em NVS.
+- Atualizar a constante `FIRMWARE_VERSION` para `"2.5.4"`.
+
+### Web app
+- No arquivo `src/lib/atualizacao.functions.ts` e/ou na tela `/_shell/atualizacao`, adicionar botão para enviar comando `SET_BACKEND` para uma prateleira ou todas, com os valores do novo Supabase lidos de variáveis de ambiente.
+- Criar (opcional) função server de sincronização de dados do banco Lovable para o novo Supabase, com endpoint agendado manualmente.
+- Atualizar documentação de migração.
+
+### Banco de dados
+- Nenhuma alteração de schema é necessária. O comando `SET_BACKEND` é entregue pela tabela `comandos` existente, já que o payload é genérico (`tipo` + `payload`).
+
+## Critérios de conclusão
+- [ ] Firmware v2.5.4 compila sem erros e mantém todos os recursos da v2.5.3.
+- [ ] WiFiManager permite digitar URL e anon key do Supabase.
+- [ ] Comando `SET_BACKEND` é processado pelo ESP32 e persiste em NVS.
+- [ ] Tela OTA permite enviar `SET_BACKEND` em massa.
+- [ ] Documentação de migração atualizada.
+- [ ] (Opcional) Ponte de sincronização funcionando entre bancos.
+
+## Riscos e cuidados
+- OTA em campo pode falhar se a conexão Wi-Fi estiver instável. Recomenda-se atualizar uma prateleira de teste primeiro.
+- Se o anon key do novo Supabase estiver errado, a prateleira não conseguirá autenticar e ficará offline até ser reconfigurada (pode ser feito via WiFiManager resetando a configuração).
+- Durante a transição, a ponte temporária evita perda de visibilidade, mas não deve ser mantida indefinidamente para evitar duplicidade/confusão.
