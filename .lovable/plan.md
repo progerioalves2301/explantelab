@@ -1,46 +1,45 @@
-# Independência sem migrar: seu app, seu domínio, mesmos ESPs
+# Autonomia sem migrar nada
 
-Nada de firmware, nada de janela de manutenção, nenhuma prateleira sai do ar. Os ESP32 continuam gravando exatamente onde gravam hoje. O que muda é o **app**: ele passa a rodar no seu Vercel, no seu domínio, com credenciais que você tem em mãos, e as três abas administrativas passam a funcionar sem depender de chave secreta.
+Premissa firme: **nenhum ESP32 é tocado**. Sem OTA, sem recompilar, sem janela de manutenção. Eles continuam gravando exatamente onde gravam hoje, 24h por dia.
 
-## O que já é seu hoje
+O que muda é só o app: ele passa a rodar no seu Vercel, no seu domínio, com credenciais que estão na sua mão.
 
-A URL do backend e a chave publicável (anon) **você já tem** — estão nas variáveis do projeto e podem ser colocadas no Vercel. Com essas duas, todo o app funciona: prateleiras, ciclos, temperatura, ar-condicionado, relatórios, gráficos, alertas. O único ponto que hoje depende de chave secreta é o gerenciamento de usuários.
+## Credenciais — o que existe e o que não existe
 
-## O plano
+Você já pode ter, agora, as duas credenciais que o app precisa: a **URL do backend** e a **chave publicável (anon)**. Elas estão no arquivo de ambiente do projeto e servem para o app inteiro funcionar no Vercel.
 
-1. **Eliminar a dependência de chave secreta no gerenciamento de usuários**
+A chave de serviço (`service_role`) e a senha do banco **não são acessíveis neste ambiente** — nem para mim. Então, em vez de o app depender delas, o plano é **remover essa dependência**.
 
-   Reescrever as três operações para não precisarem de `service_role`:
-   - **Redefinir senha** → passa a usar o envio de e-mail de redefinição pelo próprio serviço de autenticação (funciona só com a chave publicável).
-   - **Criar usuário** → convite por e-mail: o admin cadastra o e-mail e o papel; o usuário define a senha ao aceitar. O papel já fica pré-atribuído.
-   - **Remover usuário** → uma função no banco, executada com privilégio próprio e liberada apenas para quem é administrador, que apaga o usuário e seus papéis. Nenhuma chave secreta envolvida.
+## Passo 1 — Tirar a chave secreta do caminho
 
-   Resultado: a aba **Usuários** funciona no seu Vercel apenas com a chave publicável.
+Hoje três abas dependem dela. Cada uma passa a funcionar só com a chave publicável:
 
-2. **Abas "Dados e exportação" e "Atualização"**
-   - **Dados e exportação** passa a gerar os arquivos direto do banco com a sessão do próprio administrador (RLS já permite), sem chave secreta.
-   - **Atualização (OTA)** passa a usar link assinado gerado por função do banco, também sem chave secreta.
+- **Usuários**
+  - *Redefinir senha*: passa a enviar o e-mail de redefinição pelo próprio serviço de autenticação.
+  - *Criar usuário*: convite por e-mail — o admin informa e-mail e papel, o usuário define a senha ao aceitar, e o papel já vem pré-atribuído.
+  - *Remover usuário*: função no banco, com privilégio próprio, liberada só para administradores, que apaga o usuário e seus papéis.
+- **Dados e exportação**: gera os arquivos direto do banco com a sessão do próprio administrador.
+- **Atualização (OTA)**: o link do firmware passa a ser assinado por função do banco.
 
-3. **Deploy no seu Vercel**
-   - Configurar as variáveis (URL + chave publicável) e o seu domínio.
-   - A partir daí o app é seu: você publica, versiona e opera sem depender deste editor.
+Resultado: o app roda no Vercel sem uma única variável secreta.
 
-4. **Seus dados na sua mão, continuamente**
-   - Rotina de backup: exportação periódica das tabelas operacionais (leituras de temperatura, pesos, CO2, histórico de status, auditoria) em CSV, para você guardar onde quiser.
-   - Assim, mesmo sem migrar agora, você deixa de ficar dependente de um único lugar para não perder histórico.
+## Passo 2 — Publicar no seu domínio
 
-5. **Deixar a migração futura pronta, sem executá-la**
-   - O `schema_completo.sql` já rodou no seu Supabase, então o destino existe.
-   - Preparar a **v2.5.4** do firmware com backend configurável (URL e chave gravadas na memória, editáveis pelo portal VitroCeres) e deixá-la pronta no repositório, **sem enviar OTA**. No dia que fizer sentido — troca de equipamento, manutenção programada, prateleira nova — a virada é só configuração, não recompilação.
+Configurar no Vercel apenas a URL e a chave publicável, mais o seu domínio. A partir daí você publica e opera o app por conta própria.
 
-## Ordem
+## Passo 3 — Seus dados sempre na sua mão
 
-Passos 1 a 3 podem ser feitos agora e não tocam em nenhum ESP32. O passo 4 é aditivo. O passo 5 fica na gaveta, pronto, para quando você e o cliente decidirem.
+Uma rotina de exportação (leituras de temperatura, pesos, CO2, histórico de status, auditoria) em CSV, disponível na aba de exportação e executável quando você quiser. Assim o histórico nunca fica preso em um só lugar, mesmo sem migrar.
+
+## O que fica para depois, sem prazo
+
+A estrutura do seu Supabase já está criada (o `schema_completo.sql` rodou). Quando um dia houver manutenção física ou prateleira nova, aí sim se prepara o firmware com backend configurável. Não faz parte deste plano.
 
 ## Detalhes técnicos
 
-- `src/routes/_shell.usuarios.tsx`: remover os contornos client-side atuais; usar `supabase.auth.resetPasswordForEmail` e `supabase.auth.signInWithOtp`/fluxo de convite para criação, e RPC `admin_remover_usuario` (SECURITY DEFINER, guardada por `has_role(auth.uid(),'admin')`) para exclusão.
-- Migração nova: função `admin_remover_usuario(uuid)` apagando de `auth.users` e `public.user_roles`, com GRANT EXECUTE para `authenticated` e checagem de papel dentro da função.
-- `src/routes/_shell.atualizacao.tsx`: link assinado do bucket `firmware` via RPC em vez de cliente admin.
-- Vercel: apenas `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`; nenhuma variável secreta necessária.
-- Firmware v2.5.4: `SUPABASE_URL`/`SUPABASE_ANON_KEY` saem dos `#define` para `Preferences`, com campos extras no WiFiManager e fallback para os valores atuais quando a memória estiver vazia. Fica pronto no repositório, sem publicar OTA.
+- `src/routes/_shell.usuarios.tsx`: remover os contornos client-side atuais; `supabase.auth.resetPasswordForEmail` para senha, fluxo de convite por e-mail para criação, RPC `admin_remover_usuario` para exclusão.
+- Migração nova: `admin_remover_usuario(uuid)` como `SECURITY DEFINER`, guardada por `has_role(auth.uid(),'admin')`, apagando de `auth.users` e `public.user_roles`; `GRANT EXECUTE` para `authenticated`.
+- Nova rota pública `/reset-password` para concluir a redefinição de senha.
+- `src/routes/_shell.atualizacao.tsx` e `_shell.dados.tsx`: substituir chamadas que exigem cliente admin por RPC/consulta com a sessão do usuário.
+- Vercel: somente `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`.
+- Firmware: nenhuma alteração.
