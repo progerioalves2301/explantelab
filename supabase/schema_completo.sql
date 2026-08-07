@@ -4149,3 +4149,45 @@ with check (usuario_id = auth.uid());
 --   'decidir-ar-condicionado', '* * * * *',
 --   $$SELECT public.decidir_ar_condicionado();$$
 -- );
+
+-- ============================================================
+-- Triggers de auditoria e politicas faltantes (LGPD)
+-- ============================================================
+drop trigger if exists audit_ar_condicionados on public.ar_condicionados;
+create trigger audit_ar_condicionados
+after insert or update or delete on public.ar_condicionados
+for each row execute function public.tg_auditoria();
+
+drop trigger if exists audit_bancadas on public.bancadas;
+create trigger audit_bancadas
+after insert or update or delete on public.bancadas
+for each row execute function public.tg_auditoria();
+
+drop trigger if exists audit_laboratorios on public.laboratorios;
+create trigger audit_laboratorios
+after insert or update or delete on public.laboratorios
+for each row execute function public.tg_auditoria();
+
+drop trigger if exists audit_user_roles on public.user_roles;
+create trigger audit_user_roles
+after insert or update or delete on public.user_roles
+for each row execute function public.tg_auditoria();
+
+-- Politicas de auditoria
+grant select on public.auditoria to authenticated;
+drop policy if exists "Apenas admins podem ver auditoria" on public.auditoria;
+create policy "Apenas admins podem ver auditoria"
+on public.auditoria for select to authenticated
+using (public.has_role(auth.uid(), 'admin'::app_role));
+
+-- Politicas de aceite de termos
+grant select, insert on public.termos_aceites to authenticated;
+drop policy if exists "Usuário vê seu próprio aceite" on public.termos_aceites;
+create policy "Usuário vê seu próprio aceite"
+on public.termos_aceites for select to authenticated
+using (auth.uid() = user_id);
+
+drop policy if exists "Usuário registra seu próprio aceite" on public.termos_aceites;
+create policy "Usuário registra seu próprio aceite"
+on public.termos_aceites for insert to authenticated
+with check (auth.uid() = user_id);
