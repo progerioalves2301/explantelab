@@ -62,8 +62,20 @@ export function AppSidebar() {
     const check = async () => {
       try {
         const { data: sess } = await supabase.auth.getSession();
-        if (!sess.session) {
+        const userId = sess.session?.user.id;
+        if (!userId) {
           if (!cancel) setIsAdmin(false);
+          return;
+        }
+        // Fonte primária: consulta direta (RLS permite ler os próprios papéis).
+        // Funciona mesmo se as variáveis de servidor não estiverem configuradas.
+        const { data: rows, error } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId);
+        if (!error) {
+          if (!cancel)
+            setIsAdmin((rows ?? []).some((r) => r.role === "admin"));
           return;
         }
         const roles = await meus();
@@ -81,6 +93,7 @@ export function AppSidebar() {
       sub.subscription.unsubscribe();
     };
   }, [meus]);
+
 
   const visible = items.filter((i) => !i.adminOnly || isAdmin);
 
