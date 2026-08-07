@@ -108,11 +108,9 @@ export const listarBancadasParaOta = createServerFn({ method: "GET" })
     return (data ?? []) as BancadaFirmwareInfo[];
   });
 
-async function assinarUrlOta(filename: string): Promise<string> {
-  const { supabaseAdmin } = await import(
-    "@/integrations/supabase/client.server"
-  );
-  const { data, error } = await context.supabase.storage
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assinarUrlOta(sb: any, filename: string): Promise<string> {
+  const { data, error } = await sb.storage
     .from(BUCKET)
     .createSignedUrl(filename, SIGNED_URL_TTL_SEC);
   if (error || !data?.signedUrl) {
