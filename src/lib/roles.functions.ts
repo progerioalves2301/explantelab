@@ -33,9 +33,6 @@ export const listarUsuarios = createServerFn({ method: "GET" })
     });
     if (!isAdmin) throw new Error("Acesso negado");
 
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
     const { data: rolesData, error: rolesErr } = await supabaseAdmin
       .from("user_roles")
       .select("user_id, role");
@@ -73,9 +70,6 @@ export const concederPapel = createServerFn({ method: "POST" })
     });
     if (!isAdmin) throw new Error("Acesso negado");
 
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
     const { error } = await supabaseAdmin
       .from("user_roles")
       .insert({ user_id: data.user_id, role: data.role });
@@ -102,9 +96,6 @@ export const removerPapel = createServerFn({ method: "POST" })
     });
     if (!isAdmin) throw new Error("Acesso negado");
 
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
 
     // Proteção: nunca deixar o sistema sem admin
     if (data.role === "admin") {
@@ -144,9 +135,6 @@ export const criarUsuario = createServerFn({ method: "POST" })
     });
     if (!isAdmin) throw new Error("Acesso negado");
 
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
@@ -179,9 +167,6 @@ export const removerUsuario = createServerFn({ method: "POST" })
     if (data.user_id === context.userId)
       throw new Error("Não é possível remover seu próprio usuário");
 
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
 
     // Proteção: nunca deixar o sistema sem admin
     const { data: userRoles } = await supabaseAdmin
@@ -228,9 +213,6 @@ export const redefinirSenha = createServerFn({ method: "POST" })
     });
     if (!isAdmin) throw new Error("Acesso negado");
 
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
     const { error } = await supabaseAdmin.auth.admin.updateUserById(
       data.user_id,
       { password: data.nova_senha },
