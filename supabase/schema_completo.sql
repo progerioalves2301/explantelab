@@ -27,7 +27,7 @@ CREATE TABLE public.bancadas (
   valvulas jsonb NOT NULL DEFAULT '{"v1":false,"v2":false,"v3":false,"v4":false,"v5":false}'::jsonb,
   ultima_sync timestamptz,
   proximo_ciclo_segundos integer NOT NULL DEFAULT 0,
-  config jsonb NOT NULL DEFAULT '{"tempo_injecao_segundos":150,"tempo_pausa_segundos":60,"tempo_retorno_segundos":150,"tempo_alivio_segundos":10,"intervalo_ciclo_horas":4}'::jsonb,
+  config jsonb NOT NULL DEFAULT '{"tempo_injecao_segundos":180,"tempo_pausa_segundos":60,"tempo_retorno_segundos":240,"tempo_alivio_segundos":10,"horarios_disparo":["06:00","12:00","18:00","00:00"]}'::jsonb,
   config_version integer NOT NULL DEFAULT 1,
   firmware_version text,
   ip_local text,

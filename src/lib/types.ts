@@ -101,9 +101,9 @@ export interface Comando {
 }
 
 export const DEFAULT_CONFIG: Configuracoes = {
-  tempo_injecao_segundos: 150,
+  tempo_injecao_segundos: 180,
   tempo_pausa_segundos: 60,
-  tempo_retorno_segundos: 150,
+  tempo_retorno_segundos: 240,
   tempo_alivio_segundos: 10,
   horarios_disparo: ["06:00", "12:00", "18:00", "00:00"],
   luz_janelas: [{ ligar: "06:00", desligar: "18:00" }],
