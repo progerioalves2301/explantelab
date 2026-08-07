@@ -54,12 +54,8 @@ export const exportarTabela = createServerFn({ method: "POST" })
     inputSchema.parse(data),
   )
   .handler(async ({ data, context }): Promise<ResultadoExportacao> => {
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
-
     const coluna = COLUNA_DATA[data.tabela];
-    let query = supabaseAdmin
+    let query = context.supabase
       .from(data.tabela)
       .select("*")
       .limit(LIMITE_LINHAS + 1);
@@ -91,7 +87,7 @@ export const exportarTabela = createServerFn({ method: "POST" })
     );
 
     if (TABELAS_SENSIVEIS.includes(data.tabela)) {
-      await supabaseAdmin.from("auditoria").insert({
+      await context.supabase.from("auditoria").insert({
         usuario_id: context.userId,
         tabela: data.tabela,
         operacao: "EXPORT",

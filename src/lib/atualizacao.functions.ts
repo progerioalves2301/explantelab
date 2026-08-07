@@ -36,10 +36,7 @@ export const listarFirmwares = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<FirmwareItem[]> => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
-    const { data, error } = await supabaseAdmin.storage
+    const { data, error } = await context.supabase.storage
       .from(BUCKET)
       .list("", { limit: 200, sortBy: { column: "created_at", order: "desc" } });
     if (error) throw new Error(error.message);
@@ -72,11 +69,8 @@ export const uploadFirmware = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
     const bytes = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
-    const { error } = await supabaseAdmin.storage
+    const { error } = await context.supabase.storage
       .from(BUCKET)
       .upload(data.filename, bytes, {
         contentType: data.contentType ?? "application/octet-stream",
@@ -94,10 +88,7 @@ export const deletarFirmware = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
-    const { error } = await supabaseAdmin.storage
+    const { error } = await context.supabase.storage
       .from(BUCKET)
       .remove([data.filename]);
     if (error) throw new Error(error.message);
@@ -109,10 +100,7 @@ export const listarBancadasParaOta = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<BancadaFirmwareInfo[]> => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await context.supabase
       .from("bancadas")
       .select("id, nome, firmware_version, status, ip_local, ultima_sync")
       .order("nome", { ascending: true });
@@ -120,11 +108,9 @@ export const listarBancadasParaOta = createServerFn({ method: "GET" })
     return (data ?? []) as BancadaFirmwareInfo[];
   });
 
-async function assinarUrlOta(filename: string): Promise<string> {
-  const { supabaseAdmin } = await import(
-    "@/integrations/supabase/client.server"
-  );
-  const { data, error } = await supabaseAdmin.storage
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assinarUrlOta(sb: any, filename: string): Promise<string> {
+  const { data, error } = await sb.storage
     .from(BUCKET)
     .createSignedUrl(filename, SIGNED_URL_TTL_SEC);
   if (error || !data?.signedUrl) {
@@ -146,11 +132,8 @@ export const disparaOtaBancada = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const url = await assinarUrlOta(data.filename);
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
-    const { error } = await supabaseAdmin.from("comandos").insert({
+    const url = await assinarUrlOta(context.supabase, data.filename);
+    const { error } = await context.supabase.from("comandos").insert({
       bancada_id: data.bancada_id,
       tipo: "OTA_UPDATE",
       payload: { url, filename: data.filename } as never,
@@ -167,11 +150,8 @@ export const disparaOtaTodas = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const url = await assinarUrlOta(data.filename);
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
-    const { data: bs, error: bErr } = await supabaseAdmin
+    const url = await assinarUrlOta(context.supabase, data.filename);
+    const { data: bs, error: bErr } = await context.supabase
       .from("bancadas")
       .select("id");
     if (bErr) throw new Error(bErr.message);
@@ -181,7 +161,7 @@ export const disparaOtaTodas = createServerFn({ method: "POST" })
       payload: { url, filename: data.filename } as never,
     }));
     if (rows.length === 0) return { ok: true, total: 0 };
-    const { error } = await supabaseAdmin.from("comandos").insert(rows);
+    const { error } = await context.supabase.from("comandos").insert(rows);
     if (error) throw new Error(error.message);
     return { ok: true, total: rows.length };
   });

@@ -939,6 +939,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_listar_usuarios: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          user_id: string
+        }[]
+      }
       bench_ir_debug: {
         Args: {
           _ar_id: string
