@@ -68,6 +68,8 @@ export function BancadaConfigDialog({
   const [qtdHorarios, setQtdHorarios] = useState<string>("4");
   const [primeiroHorario, setPrimeiroHorario] = useState<string>("06:00");
   const [tempMin, setTempMin] = useState<string>("");
+  const [tempMax, setTempMax] = useState<string>("");
+  const [offlineThr, setOfflineThr] = useState<string>("300");
   const [acess, setAcess] = useState<Acessorios>({
     tem_sensor_temp: true,
     tem_luz: true,
