@@ -65,9 +65,9 @@ export function BancadaConfigDialog({
   const [laboratorioId, setLaboratorioId] = useState<string>(SEM_LAB);
   const [posicao, setPosicao] = useState<string>("");
   const [config, setConfig] = useState<Configuracoes>(DEFAULT_CONFIG);
+  const [qtdHorarios, setQtdHorarios] = useState<string>("4");
+  const [primeiroHorario, setPrimeiroHorario] = useState<string>("06:00");
   const [tempMin, setTempMin] = useState<string>("");
-  const [tempMax, setTempMax] = useState<string>("");
-  const [offlineThr, setOfflineThr] = useState<string>("300");
   const [acess, setAcess] = useState<Acessorios>({
     tem_sensor_temp: true,
     tem_luz: true,
@@ -88,7 +88,13 @@ export function BancadaConfigDialog({
       setNome(bancada.nome);
       setLaboratorioId(bancada.laboratorio_id ?? SEM_LAB);
       setPosicao(bancada.posicao?.toString() ?? "");
-      setConfig({ ...DEFAULT_CONFIG, ...bancada.config });
+      const currentConfig = { ...DEFAULT_CONFIG, ...bancada.config };
+      setConfig(currentConfig);
+      
+      const hs = currentConfig.horarios_disparo ?? [];
+      setQtdHorarios(hs.length.toString());
+      if (hs.length > 0) setPrimeiroHorario(hs[0]);
+
       setTempMin(bancada.temp_min?.toString() ?? "");
       setTempMax(bancada.temp_max?.toString() ?? "");
       setOfflineThr((bancada.offline_threshold_segundos ?? 300).toString());
@@ -132,6 +138,22 @@ export function BancadaConfigDialog({
 
   const horarios = config.horarios_disparo ?? [];
 
+  const recalcularHorarios = (qtd: number, primeiro: string) => {
+    if (qtd <= 0) return;
+    const [h, m] = primeiro.split(":").map(Number);
+    const startMinutes = h * 60 + m;
+    const interval = (24 * 60) / qtd;
+    
+    const novos = Array.from({ length: qtd }, (_, i) => {
+      const totalMinutes = (startMinutes + i * interval) % (24 * 60);
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = Math.floor(totalMinutes % 60);
+      return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+    });
+
+    setConfig((prev) => ({ ...prev, horarios_disparo: novos }));
+  };
+
   const setHorario = (idx: number, v: string) =>
     setConfig((prev) => {
       const list = [...(prev.horarios_disparo ?? [])];
@@ -139,19 +161,12 @@ export function BancadaConfigDialog({
       return { ...prev, horarios_disparo: list };
     });
 
-  const addHorario = () =>
-    setConfig((prev) => ({
-      ...prev,
-      horarios_disparo: [...(prev.horarios_disparo ?? []), "12:00"],
-    }));
-
   const removeHorario = (idx: number) =>
-    setConfig((prev) => ({
-      ...prev,
-      horarios_disparo: (prev.horarios_disparo ?? []).filter(
-        (_, i) => i !== idx,
-      ),
-    }));
+    setConfig((prev) => {
+      const list = (prev.horarios_disparo ?? []).filter((_, i) => i !== idx);
+      setQtdHorarios(list.length.toString());
+      return { ...prev, horarios_disparo: list };
+    });
 
   const handleSave = async () => {
     const nomeTrim = nome.trim();
