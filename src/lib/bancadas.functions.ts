@@ -102,6 +102,7 @@ export const criarBancada = createServerFn({ method: "POST" })
       tem_balanca: data.tem_balanca ?? false,
       tem_co2: data.tem_co2 ?? false,
       controla_ar: data.controla_ar ?? false,
+      offline_threshold_segundos: 420,
     };
     if (initialConfig) insertRow.config = initialConfig;
 
