@@ -95,12 +95,29 @@ static const int PIN_IR_RX  = 33;   // Receptor IR VS1838B/TL1838 (v2.2.0)
 static const int PIN_BOTAO_CICLO = 4;
 static const unsigned long BOTAO_LONGO_MS = 2000;  // limiar do aperto longo
 
+// v2.5.4 — LED de STATUS do ciclo (na caixa, ao lado do botão).
+// Ligação: GPIO 19 -> resistor 330R -> anodo do LED; catodo no GND.
+// Padrões de pisca (funcionam 100% offline):
+//   Repouso ............... apagado (pulso curto de "vivo" a cada 3 s)
+//   Injetando (auto) ...... 1 pisca lento  (500 ms ligado / 500 ms apagado)
+//   Pausa ................. pisca curto    (150 ms a cada 2 s)
+//   Retornando (auto) ..... pisca rápido   (150 ms / 150 ms)
+//   Ciclo MANUAL (botão) .. LED aceso fixo durante todo o ciclo manual
+//   Pausado (STOP) ........ 2 piscas curtas a cada 2 s
+static const int  PIN_LED_CICLO = 19;
+static const bool LED_CICLO_ACTIVE_LOW = false;  // true se o LED liga em GPIO LOW
+#define ledCicloWrite(on) digitalWrite(PIN_LED_CICLO, \
+  (on) ? (LED_CICLO_ACTIVE_LOW ? LOW : HIGH) : (LED_CICLO_ACTIVE_LOW ? HIGH : LOW))
+
+// Marca que o ciclo atual foi iniciado pelo botão físico (ciclo manual).
+static bool ciclo_manual_ativo = false;
+
 // v2.4.0 — Balança HX711 (opcional, ativa se sensor responder)
 static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.5.3";
+static const char* FIRMWARE_VERSION = "2.5.4";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -309,6 +326,7 @@ void aplicarFase(FaseCiclo f) {
     // ALIVIO mantido no enum para compat, mas sem fase ativa (V5 removida)
     default:         escreverValvulas(false, false, false, false, false); break;
   }
+  if (f == REPOUSO) ciclo_manual_ativo = false;  // v2.5.4 — encerra sinalização manual
   persistirCiclo(f);
   Serial.printf("[FASE] %s\n", faseNome(f));
 }
@@ -1750,6 +1768,9 @@ void setup() {
   luzWrite(false);
   pinMode(PIN_LED, OUTPUT);
   digitalWrite(PIN_LED, LOW);
+  // v2.5.4 — LED de status do ciclo (inicia apagado antes de qualquer coisa)
+  pinMode(PIN_LED_CICLO, OUTPUT);
+  ledCicloWrite(false);
   g_luz_ligada = false;
 
   // IR: inicializa LED em nível baixo (transistor bloqueado).
@@ -2066,6 +2087,7 @@ void tickBotaoCiclo(unsigned long now) {
         } else {
           Serial.println("[BOTAO] curto -> iniciando ciclo manual (Injetando)");
           pausado_manual = false;
+          ciclo_manual_ativo = true;   // v2.5.4 — LED fica aceso fixo no ciclo manual
           aplicarFase(INJETANDO);
           lastTelem = 0;
         }
@@ -2089,6 +2111,36 @@ void tickBotaoCiclo(unsigned long now) {
 }
 
 
+// -------- v2.5.4 — LED de status do ciclo --------
+// Traduz a fase atual (e a origem manual) em um padrão de pisca no PIN_LED_CICLO.
+// Não bloqueia: usa só comparação de millis().
+void tickLedStatus(unsigned long now) {
+  bool on = false;
+
+  if (ciclo_manual_ativo && fase != REPOUSO) {
+    on = true;                                  // ciclo manual -> aceso fixo
+  } else if (pausado_manual && fase == REPOUSO) {
+    unsigned long t = now % 2000UL;              // pausado (STOP) -> 2 piscas
+    on = (t < 120UL) || (t >= 300UL && t < 420UL);
+  } else {
+    switch (fase) {
+      case INJETANDO:  on = ((now % 1000UL) < 500UL); break;          // lento
+      case RETORNANDO: on = ((now % 300UL)  < 150UL); break;          // rápido
+      case PAUSADO:    on = ((now % 2000UL) < 150UL); break;          // curto
+      case MANUAL:     on = true;                     break;          // válvula manual
+      case REPOUSO:
+      default:         on = ((now % 3000UL) < 40UL);  break;          // "vivo"
+    }
+  }
+
+  static bool ultimo = false;
+  if (on != ultimo) {
+    ultimo = on;
+    ledCicloWrite(on);
+  }
+}
+
+
 void loop() {
   unsigned long now = millis();
 
@@ -2104,6 +2156,7 @@ void loop() {
   unsigned long intervaloCmd   = ativo ? 3000UL  : 5000UL;   // 3s ativo / 5s parado
 
 
+  tickLedStatus(now);     // v2.5.4 — LED de status do ciclo / ciclo manual
   tickBotaoCiclo(now);    // v2.5.3 — botão: curto inicia, longo (2 s) cancela
   tickWifiWatchdog(now); // v2.1.2 — reengata rápido quando o Wi-Fi/roteador volta
   tickIrLearn();          // v2.2.0 — captura IR do controle quando ativo
