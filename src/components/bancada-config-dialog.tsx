@@ -69,7 +69,7 @@ export function BancadaConfigDialog({
   const [primeiroHorario, setPrimeiroHorario] = useState<string>("06:00");
   const [tempMin, setTempMin] = useState<string>("");
   const [tempMax, setTempMax] = useState<string>("");
-  const [offlineThr, setOfflineThr] = useState<string>("300");
+  const [offlineThr, setOfflineThr] = useState<string>("420");
   const [acess, setAcess] = useState<Acessorios>({
     tem_sensor_temp: true,
     tem_luz: true,
@@ -99,7 +99,7 @@ export function BancadaConfigDialog({
 
       setTempMin(bancada.temp_min?.toString() ?? "");
       setTempMax(bancada.temp_max?.toString() ?? "");
-      setOfflineThr((bancada.offline_threshold_segundos ?? 300).toString());
+      setOfflineThr((bancada.offline_threshold_segundos ?? 420).toString());
       setAcess({
         tem_sensor_temp: bancada.tem_sensor_temp ?? true,
         tem_luz: bancada.tem_luz ?? true,
@@ -194,7 +194,7 @@ export function BancadaConfigDialog({
           bancada_id: bancada.id,
           temp_min: semSensor || tempMin === "" ? null : Number(tempMin),
           temp_max: semSensor || tempMax === "" ? null : Number(tempMax),
-          offline_threshold_segundos: Math.max(30, Number(offlineThr) || 300),
+          offline_threshold_segundos: Math.max(30, Number(offlineThr) || 420),
         },
       });
       toast.success(`Configuração salva para ${nomeTrim}`);
@@ -502,8 +502,8 @@ export function BancadaConfigDialog({
             </div>
             <p className="text-[10px] text-muted-foreground">
               {semSensor
-                ? "Prateleira sem sensor de temperatura: alertas de temperatura desativados. Offline padrão: 300s (5 min)."
-                : "Deixe temp em branco para desativar. Offline padrão: 300s (5 min)."}
+                ? "Prateleira sem sensor de temperatura: alertas de temperatura desativados. Offline padrão: 420s (7 min)."
+                : "Deixe temp em branco para desativar. Offline padrão: 420s (7 min)."}
             </p>
           </div>
 
