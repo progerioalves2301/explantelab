@@ -65,6 +65,8 @@ export function BancadaConfigDialog({
   const [laboratorioId, setLaboratorioId] = useState<string>(SEM_LAB);
   const [posicao, setPosicao] = useState<string>("");
   const [config, setConfig] = useState<Configuracoes>(DEFAULT_CONFIG);
+  const [qtdHorarios, setQtdHorarios] = useState<string>("4");
+  const [primeiroHorario, setPrimeiroHorario] = useState<string>("06:00");
   const [tempMin, setTempMin] = useState<string>("");
   const [tempMax, setTempMax] = useState<string>("");
   const [offlineThr, setOfflineThr] = useState<string>("300");
@@ -88,7 +90,13 @@ export function BancadaConfigDialog({
       setNome(bancada.nome);
       setLaboratorioId(bancada.laboratorio_id ?? SEM_LAB);
       setPosicao(bancada.posicao?.toString() ?? "");
-      setConfig({ ...DEFAULT_CONFIG, ...bancada.config });
+      const currentConfig = { ...DEFAULT_CONFIG, ...bancada.config };
+      setConfig(currentConfig);
+      
+      const hs = currentConfig.horarios_disparo ?? [];
+      setQtdHorarios(hs.length.toString());
+      if (hs.length > 0) setPrimeiroHorario(hs[0]);
+
       setTempMin(bancada.temp_min?.toString() ?? "");
       setTempMax(bancada.temp_max?.toString() ?? "");
       setOfflineThr((bancada.offline_threshold_segundos ?? 300).toString());
@@ -132,6 +140,22 @@ export function BancadaConfigDialog({
 
   const horarios = config.horarios_disparo ?? [];
 
+  const recalcularHorarios = (qtd: number, primeiro: string) => {
+    if (qtd <= 0) return;
+    const [h, m] = primeiro.split(":").map(Number);
+    const startMinutes = h * 60 + m;
+    const interval = (24 * 60) / qtd;
+    
+    const novos = Array.from({ length: qtd }, (_, i) => {
+      const totalMinutes = (startMinutes + i * interval) % (24 * 60);
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = Math.floor(totalMinutes % 60);
+      return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+    });
+
+    setConfig((prev) => ({ ...prev, horarios_disparo: novos }));
+  };
+
   const setHorario = (idx: number, v: string) =>
     setConfig((prev) => {
       const list = [...(prev.horarios_disparo ?? [])];
@@ -139,19 +163,12 @@ export function BancadaConfigDialog({
       return { ...prev, horarios_disparo: list };
     });
 
-  const addHorario = () =>
-    setConfig((prev) => ({
-      ...prev,
-      horarios_disparo: [...(prev.horarios_disparo ?? []), "12:00"],
-    }));
-
   const removeHorario = (idx: number) =>
-    setConfig((prev) => ({
-      ...prev,
-      horarios_disparo: (prev.horarios_disparo ?? []).filter(
-        (_, i) => i !== idx,
-      ),
-    }));
+    setConfig((prev) => {
+      const list = (prev.horarios_disparo ?? []).filter((_, i) => i !== idx);
+      setQtdHorarios(list.length.toString());
+      return { ...prev, horarios_disparo: list };
+    });
 
   const handleSave = async () => {
     const nomeTrim = nome.trim();
@@ -289,50 +306,63 @@ export function BancadaConfigDialog({
             </div>
           </div>
 
-          <div className="grid gap-2">
-
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 text-primary" />
-                Horários de disparo por dia
-              </Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addHorario}
-                disabled={horarios.length >= 24}
-              >
-                <Plus className="mr-1 h-3.5 w-3.5" />
-                Adicionar
-              </Button>
+          <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Clock className="h-3.5 w-3.5 text-primary" />
+              <Label className="text-xs font-semibold">Configurar Ciclos Diários</Label>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              Fuso America/Sao_Paulo. O ciclo dispara automaticamente em cada
-              horário listado.
-            </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {horarios.map((h, idx) => (
-                <div key={idx} className="flex items-center gap-1">
-                  <Input
-                    type="time"
-                    value={h}
-                    onChange={(e) => setHorario(idx, e.target.value)}
-                    className="font-mono"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 shrink-0 text-red-600 hover:bg-red-600/10 hover:text-red-600"
-                    onClick={() => removeHorario(idx)}
-                    disabled={horarios.length <= 1}
-                    aria-label="Remover horário"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              ))}
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-[11px] text-muted-foreground">Ciclos por dia</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={24}
+                  value={qtdHorarios}
+                  onChange={(e) => {
+                    setQtdHorarios(e.target.value);
+                    const n = Number(e.target.value);
+                    if (n > 0 && n <= 24) recalcularHorarios(n, primeiroHorario);
+                  }}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-[11px] text-muted-foreground">Primeiro horário</Label>
+                <Input
+                  type="time"
+                  value={primeiroHorario}
+                  onChange={(e) => {
+                    setPrimeiroHorario(e.target.value);
+                    recalcularHorarios(Number(qtdHorarios), e.target.value);
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-2 border-t pt-2">
+              <Label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">
+                Horários calculados (Fuso America/Sao_Paulo)
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                {horarios.map((h, idx) => (
+                  <div key={idx} className="flex items-center gap-1">
+                    <div className="flex-1 rounded border bg-background px-2 py-1 text-center font-mono text-xs">
+                      {h}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0 text-red-600 hover:bg-red-600/10"
+                      onClick={() => removeHorario(idx)}
+                      disabled={horarios.length <= 1}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
