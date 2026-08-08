@@ -74,3 +74,25 @@ O módulo de 2 canais (Foto `image-12.png`) possui um jumper para selecionar o t
 ---
 **Versão da Documentação:** 1.0.0
 **Compatível com Firmware:** v2.5.3+
+
+---
+
+## 5. Botão e LED de status do ciclo (Firmware v2.5.4+)
+
+| Função | Pino ESP32 | Ligação |
+| :--- | :--- | :--- |
+| **Botão de ciclo manual** | **GPIO 4** | Um lado no GPIO 4, outro no **GND** (pull-up interno). Curto = inicia ciclo, longo (≥2 s) = cancela. |
+| **LED de status do ciclo** | **GPIO 19** | GPIO 19 → resistor **330 Ω** → anodo do LED; catodo no **GND**. |
+
+### Padrões do LED
+| Estado | LED |
+| :--- | :--- |
+| Repouso | apagado (pulso curtíssimo a cada 3 s = "vivo") |
+| Ciclo **manual** (pelo botão) | **aceso fixo** durante todo o ciclo |
+| Injetando (automático) | pisca lento (0,5 s liga / 0,5 s apaga) |
+| Pausa | pisca curto (150 ms a cada 2 s) |
+| Retornando (automático) | pisca rápido (150 ms / 150 ms) |
+| Pausado (STOP pelo app) | 2 piscas curtas a cada 2 s |
+| Válvula em modo manual | aceso fixo |
+
+> Se usar LED com driver que liga em nível baixo, mude `LED_CICLO_ACTIVE_LOW = true` no firmware.
