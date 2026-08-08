@@ -99,7 +99,7 @@ export function BancadaConfigDialog({
 
       setTempMin(bancada.temp_min?.toString() ?? "");
       setTempMax(bancada.temp_max?.toString() ?? "");
-      setOfflineThr((bancada.offline_threshold_segundos ?? 420).toString());
+      setOfflineThr((bancada.offline_threshold_segundos || 420).toString());
       setAcess({
         tem_sensor_temp: bancada.tem_sensor_temp ?? true,
         tem_luz: bancada.tem_luz ?? true,
