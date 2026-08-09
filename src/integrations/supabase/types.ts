@@ -444,6 +444,8 @@ export type Database = {
           posicao: number | null
           proximo_ciclo_segundos: number
           rtc_bateria_fraca: boolean | null
+          rtc_desvio_segundos: number | null
+          rtc_hora_perdida: boolean | null
           sensor_reinicios: number | null
           sensor_travado: boolean | null
           status: string
@@ -475,6 +477,8 @@ export type Database = {
           posicao?: number | null
           proximo_ciclo_segundos?: number
           rtc_bateria_fraca?: boolean | null
+          rtc_desvio_segundos?: number | null
+          rtc_hora_perdida?: boolean | null
           sensor_reinicios?: number | null
           sensor_travado?: boolean | null
           status?: string
@@ -506,6 +510,8 @@ export type Database = {
           posicao?: number | null
           proximo_ciclo_segundos?: number
           rtc_bateria_fraca?: boolean | null
+          rtc_desvio_segundos?: number | null
+          rtc_hora_perdida?: boolean | null
           sensor_reinicios?: number | null
           sensor_travado?: boolean | null
           status?: string
@@ -999,6 +1005,8 @@ export type Database = {
           _luz_ligada?: boolean
           _proximo_ciclo_segundos: number
           _rtc_bateria_fraca?: boolean
+          _rtc_desvio_segundos?: number
+          _rtc_hora_perdida?: boolean
           _sensor_reinicios?: number
           _sensor_travado?: boolean
           _status: string
