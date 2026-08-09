@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-08-09 — Firmware v2.5.6
+
+**Firmware**
+- Detecção de **bateria fraca do RTC (DS3231)** muito mais confiável:
+  - Nova evidência: **desvio contra o NTP**. No boot o firmware guarda a hora que o DS3231 estava marcando; quando o NTP sincroniza, compara. Desvio maior que **120 s** acende o alerta de bateria.
+  - O **carimbo de hora** (`rtc_ts` na NVS) não é mais apagado quando a bateria é julgada OK — só atualizado. Antes, apagá-lo deixava o boot seguinte sem referência para detectar que o relógio retrocedeu.
+  - Telemetria passa a reportar `_rtc_hora_perdida` e `_rtc_desvio_segundos`.
+- **Motivo**: com o ESP32 energizado, o DS3231 conta a hora pelo VCC. Uma CR2032 fraca/ausente não gerava nenhum sinal (OSF em 0, hora certa), então o app nunca acusava falha. Só um relógio que voltou errado após queda de energia revela o problema — e esse caso passava batido quando a hora voltava "válida" mas errada.
+- **Pinos**: nenhuma alteração (DS3231 em SDA=21 / SCL=22).
+- **Ação**: atualizar os ESP32 para a **v2.5.6** via OTA. Sem mudança de fiação.
+- **Validar**:
+  1. Com o ESP32 ligado, retirar a CR2032 → nada muda (esperado; sem medir a tensão da bateria não há sinal).
+  2. Cortar a energia por ~1 min e religar → o card deve mostrar **RTC · sem hora** ou **RTC · bateria** em poucos minutos.
+  3. Com CR2032 boa, desligar/religar → o alerta desaparece no próximo boot.
+  4. No serial: `[RTC] desvio contra NTP: X s` e `[RTC] bateria ...`.
+
+**Web / Backend**
+- Colunas novas em `bancadas`: `rtc_hora_perdida`, `rtc_desvio_segundos`; `bench_push_telemetry` aceita os dois parâmetros novos (opcionais — firmwares antigos seguem funcionando).
+- Selo "RTC" no card agora tem três estados: **RTC** (íntegro), **RTC · bateria**, **RTC · sem hora**, com o motivo detalhado no tooltip.
+- Configuração da prateleira informa a limitação: a bateria do RTC só é avaliada de forma conclusiva após uma queda de energia.
+
+---
+
 ## 2026-08-09 — Firmware v2.5.5
 
 **Firmware**

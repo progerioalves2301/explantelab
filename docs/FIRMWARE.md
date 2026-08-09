@@ -1,7 +1,7 @@
 # Documentação Técnica do Firmware — VitroCeres Prateleira ESP32
 
-> Versão atual: **v2.5.5**  
-> Arquivo: `firmware/bancada_esp32_v2_5_5/bancada_esp32_v2_5_5.ino`
+> Versão atual: **v2.5.6**  
+> Arquivo: `firmware/bancada_esp32_v2_5_6/bancada_esp32_v2_5_6.ino`
 
 Este documento explica como o firmware funciona, pinagem, lógica de ciclos, luzes, ar-condicionado, sensores e atualização OTA. Use-o para entender o comportamento esperado, diagnosticar problemas e saber quando é necessário atualizar os equipamentos.
 
@@ -19,7 +19,7 @@ A prateleira é **autônoma**: ciclos e luzes funcionam sem internet desde que o
 
 ---
 
-## 2. Pinagem consolidada (v2.5.5)
+## 2. Pinagem consolidada (v2.5.6)
 
 | Função | GPIO | Observação |
 | :--- | :--- | :--- |
@@ -133,12 +133,15 @@ Se a energia cair em cima de um horário programado, o firmware pode recuperar o
 
 ### Bateria do RTC
 
-A tensão da bateria não é medida diretamente. O firmware usa duas evidências indiretas:
+A tensão da bateria **não é medida** (o DS3231 não expõe o Vbat e não há divisor resistivo na fiação atual). O firmware usa três evidências indiretas:
 
-- **OSF** (Oscillator Stop Flag): indica que o oscilador parou (bateria fraca/ausente ou corte de energia).
-- **Carimbo de hora**: a cada 5 min o firmware salva o epoch atual na NVS. Se no boot o RTC voltar com hora anterior ao carimbo, a bateria é considerada fraca.
+- **OSF** (Oscillator Stop Flag): o oscilador parou — faltou VCC e a bateria não segurou o relógio.
+- **Carimbo de hora**: a cada 5 min o firmware salva o epoch atual na NVS. Se no boot o RTC voltar com hora anterior ao carimbo, ele perdeu a hora. A partir da **v2.5.6** o carimbo não é mais apagado quando a bateria é julgada OK — apenas atualizado —, para que o boot seguinte sempre tenha referência.
+- **Desvio contra o NTP (v2.5.6)**: no boot o firmware guarda a hora que o DS3231 marcava; quando o NTP confirma a sincronização (`sntp_get_sync_status`), compara as duas. Desvio acima de **120 s** acende o alerta.
 
-Quando a bateria é detectada como fraca, o firmware envia alerta na telemetria e o app exibe um ícone de aviso.
+Quando a bateria é detectada como fraca, o firmware envia alerta na telemetria (`_rtc_bateria_fraca`, `_rtc_hora_perdida`, `_rtc_desvio_segundos`) e o app exibe **RTC · bateria** ou **RTC · sem hora** no card.
+
+> **Limitação importante**: com o ESP32 energizado, o DS3231 conta a hora pelo VCC. Uma CR2032 fraca ou ausente **não produz nenhum sinal** nesse estado. A avaliação só é conclusiva depois de uma queda de energia. Para detecção em tempo real seria necessário medir o positivo da bateria por ADC (divisor resistivo em uma GPIO analógica) — não implementado.
 
 ---
 
@@ -274,13 +277,14 @@ Após o pareamento, as credenciais são salvas na NVS e o portal não abre mais,
 | Temperatura travada | DS18B20 falhando ou sem pull-up | Cabo, resistor, versão ≥ v2.4.5. |
 | Ar não desliga | Protocolo toggle sem estado local | Versão ≥ v2.2.1, protocolo correto. |
 | Rate limit no serial | Intervalos muito curtos | Versão ≥ v2.4.4. |
-| Bateria RTC alerta | OSF ligado ou hora perdida | Trocar CR2032. |
+| Bateria RTC alerta | OSF ligado, hora perdida ou desvio > 120 s vs NTP | Trocar CR2032; ver §6. |
+| RTC sem bateria e nada é acusado | ESP energizado mantém o relógio pelo VCC | Cortar energia por 1 min e religar; versão ≥ v2.5.6. |
 
 ---
 
 ## 14. Arquivos relacionados
 
-- `firmware/bancada_esp32_v2_5_5/bancada_esp32_v2_5_5.ino` — código fonte.
+- `firmware/bancada_esp32_v2_5_6/bancada_esp32_v2_5_6.ino` — código fonte.
 - `firmware/FIACAO_VALVULAS.md` — diagrama de fiação e endereçamento.
 - `CHANGELOG.md` — histórico de alterações.
 - `mem://index.md` — memória consolidada do projeto.

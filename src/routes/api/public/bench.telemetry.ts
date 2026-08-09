@@ -34,6 +34,8 @@ const telemetrySchema = z.object({
   luz_ligada: z.boolean().optional(),
   tem_rtc: z.boolean().optional(),
   rtc_bateria_fraca: z.boolean().optional(),
+  rtc_hora_perdida: z.boolean().optional(),
+  rtc_desvio_segundos: z.number().int().min(-31_536_000).max(31_536_000).optional(),
   sensor_travado: z.boolean().optional(),
   sensor_reinicios: z.number().int().min(0).max(1_000_000).optional(),
 });
@@ -92,6 +94,12 @@ export const Route = createFileRoute("/api/public/bench/telemetry")({
         }
         if (payload.rtc_bateria_fraca !== undefined) {
           updatePayload.rtc_bateria_fraca = payload.rtc_bateria_fraca;
+        }
+        if (payload.rtc_hora_perdida !== undefined) {
+          updatePayload.rtc_hora_perdida = payload.rtc_hora_perdida;
+        }
+        if (payload.rtc_desvio_segundos !== undefined) {
+          updatePayload.rtc_desvio_segundos = payload.rtc_desvio_segundos;
         }
 
         if (payload.sensor_reinicios !== undefined) {

@@ -3478,8 +3478,11 @@ $function$;
 -- 20260730225648_46bb6aca-9261-4839-8767-f5410e535374.sql
 -- ============================================================
 ALTER TABLE public.bancadas ADD COLUMN IF NOT EXISTS rtc_bateria_fraca boolean DEFAULT false;
+-- v2.5.6 — diagnóstico da saúde do relógio (bateria CR2032)
+ALTER TABLE public.bancadas ADD COLUMN IF NOT EXISTS rtc_hora_perdida boolean DEFAULT false;
+ALTER TABLE public.bancadas ADD COLUMN IF NOT EXISTS rtc_desvio_segundos integer;
 
-CREATE OR REPLACE FUNCTION public.bench_push_telemetry(_bancada_id uuid, _device_token text, _status text, _valvulas jsonb, _proximo_ciclo_segundos integer, _firmware_version text, _ip_local text, _temperatura_planta numeric DEFAULT NULL::numeric, _luz_ligada boolean DEFAULT NULL::boolean, _tem_rtc boolean DEFAULT NULL::boolean, _sensor_travado boolean DEFAULT NULL::boolean, _sensor_reinicios integer DEFAULT NULL::integer, _temperatura_valida boolean DEFAULT NULL::boolean, _rtc_bateria_fraca boolean DEFAULT NULL::boolean)
+CREATE OR REPLACE FUNCTION public.bench_push_telemetry(_bancada_id uuid, _device_token text, _status text, _valvulas jsonb, _proximo_ciclo_segundos integer, _firmware_version text, _ip_local text, _temperatura_planta numeric DEFAULT NULL::numeric, _luz_ligada boolean DEFAULT NULL::boolean, _tem_rtc boolean DEFAULT NULL::boolean, _sensor_travado boolean DEFAULT NULL::boolean, _sensor_reinicios integer DEFAULT NULL::integer, _temperatura_valida boolean DEFAULT NULL::boolean, _rtc_bateria_fraca boolean DEFAULT NULL::boolean, _rtc_hora_perdida boolean DEFAULT NULL::boolean, _rtc_desvio_segundos integer DEFAULT NULL::integer)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -3538,6 +3541,8 @@ BEGIN
          luz_ligada = COALESCE(_luz_ligada, luz_ligada),
          tem_rtc = COALESCE(_tem_rtc, tem_rtc),
          rtc_bateria_fraca = COALESCE(_rtc_bateria_fraca, rtc_bateria_fraca),
+         rtc_hora_perdida = COALESCE(_rtc_hora_perdida, rtc_hora_perdida),
+         rtc_desvio_segundos = COALESCE(_rtc_desvio_segundos, rtc_desvio_segundos),
          sensor_travado = CASE
            WHEN _temperatura_planta IS NOT NULL THEN false
            WHEN _temperatura_valida IS FALSE THEN true
@@ -3607,7 +3612,7 @@ GRANT EXECUTE ON FUNCTION public.temp_extremos_30d() TO authenticated;
 -- ============================================================
 -- 20260731225036_78b4c0e3-7227-46c5-853c-668b802d1831.sql
 -- ============================================================
-CREATE OR REPLACE FUNCTION public.bench_push_telemetry(_bancada_id uuid, _device_token text, _status text, _valvulas jsonb, _proximo_ciclo_segundos integer, _firmware_version text, _ip_local text, _temperatura_planta numeric DEFAULT NULL::numeric, _luz_ligada boolean DEFAULT NULL::boolean, _tem_rtc boolean DEFAULT NULL::boolean, _sensor_travado boolean DEFAULT NULL::boolean, _sensor_reinicios integer DEFAULT NULL::integer, _temperatura_valida boolean DEFAULT NULL::boolean, _rtc_bateria_fraca boolean DEFAULT NULL::boolean)
+CREATE OR REPLACE FUNCTION public.bench_push_telemetry(_bancada_id uuid, _device_token text, _status text, _valvulas jsonb, _proximo_ciclo_segundos integer, _firmware_version text, _ip_local text, _temperatura_planta numeric DEFAULT NULL::numeric, _luz_ligada boolean DEFAULT NULL::boolean, _tem_rtc boolean DEFAULT NULL::boolean, _sensor_travado boolean DEFAULT NULL::boolean, _sensor_reinicios integer DEFAULT NULL::integer, _temperatura_valida boolean DEFAULT NULL::boolean, _rtc_bateria_fraca boolean DEFAULT NULL::boolean, _rtc_hora_perdida boolean DEFAULT NULL::boolean, _rtc_desvio_segundos integer DEFAULT NULL::integer)
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -3673,6 +3678,8 @@ BEGIN
          luz_ligada = COALESCE(_luz_ligada, luz_ligada),
          tem_rtc = COALESCE(_tem_rtc, tem_rtc),
          rtc_bateria_fraca = COALESCE(_rtc_bateria_fraca, rtc_bateria_fraca),
+         rtc_hora_perdida = COALESCE(_rtc_hora_perdida, rtc_hora_perdida),
+         rtc_desvio_segundos = COALESCE(_rtc_desvio_segundos, rtc_desvio_segundos),
          sensor_travado = CASE
            WHEN _temperatura_planta IS NOT NULL THEN false
            WHEN _temperatura_valida IS FALSE THEN true
