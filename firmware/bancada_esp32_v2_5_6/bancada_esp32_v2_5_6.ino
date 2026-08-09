@@ -42,6 +42,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <time.h>            // NTP + horário local p/ timer das luzes
+#include <esp_sntp.h>        // v2.5.6: confirma se o NTP realmente sincronizou
 #include <sys/time.h>        // settimeofday (sincronizar system clock com DS3231)
 #include <HTTPUpdate.h>      // OTA via HTTPS (v1.6.0)
 #include <Wire.h>            // I2C p/ DS3231 (v1.8.0)
@@ -117,7 +118,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.5.5";
+static const char* FIRMWARE_VERSION = "2.5.6";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -193,6 +194,17 @@ bool       g_rtc_bat_fraca    = false;   // v2.4.6: OSF ligado => bateria CR2032
 uint32_t   g_ultimo_check_bat = 0;       // millis() da última leitura do OSF
 uint32_t   g_ultimo_save_epoch = 0;      // v2.4.7: millis() do último "carimbo" de hora na NVS
 uint32_t   g_ultima_sync_rtc  = 0;       // millis() da última gravação NTP -> RTC
+// v2.5.6 — diagnóstico da saúde do relógio (bateria CR2032):
+//   g_rtc_hora_perdida : no boot o DS3231 voltou sem hora válida / retrocedeu.
+//   g_rtc_desvio_seg   : desvio (s) entre a hora que o RTC marcava no boot e a
+//                        hora real entregue pelo NTP. Desvio grande = bateria ruim.
+bool       g_rtc_hora_perdida = false;
+int32_t    g_rtc_desvio_seg   = 0;
+bool       g_rtc_desvio_medido = false;
+uint32_t   g_rtc_epoch_boot   = 0;       // unixtime lido do RTC no boot (0 = inválido)
+uint32_t   g_rtc_epoch_boot_ms = 0;      // millis() no instante dessa leitura
+// Desvio tolerado antes de considerar o relógio/bateria suspeitos.
+const int32_t RTC_DESVIO_MAX_S = 120;
 
 // -------- SCD41 (CO2 ambiente — v2.4.0) --------
 // Sensor opcional; se não responder no I2C, os ticks de CO2 ficam desabilitados.
@@ -576,6 +588,36 @@ void tickCarimboHoraRtc() {
   prefs.end();
 }
 
+// v2.5.6 — Desvio do RTC contra o NTP.
+// O relógio pode voltar com uma hora "válida" (ex.: 2024) mas errada: nesse caso
+// o OSF já foi limpo e a hora não é inválida, então nada era acusado. Aqui a
+// hora que o DS3231 marcava no boot é comparada com a hora real do NTP.
+void tickDesvioRtc() {
+  if (!g_tem_rtc || g_rtc_desvio_medido) return;
+  if (g_rtc_epoch_boot == 0) return;                 // sem hora no boot: já sinalizado
+  // Só compara depois que o NTP REALMENTE sincronizou (senão a hora do sistema
+  // ainda é a do próprio RTC e o desvio sairia sempre zero).
+  if (sntp_get_sync_status() != SNTP_SYNC_STATUS_COMPLETED) return;
+  time_t agora = time(nullptr);
+  if (agora < 1700000000) return;
+
+  uint32_t decorrido = (uint32_t)((millis() - g_rtc_epoch_boot_ms) / 1000UL);
+  int64_t esperado = (int64_t)g_rtc_epoch_boot + (int64_t)decorrido;
+  int32_t desvio = (int32_t)((int64_t)agora - esperado);
+
+  g_rtc_desvio_seg = desvio;
+  g_rtc_desvio_medido = true;
+
+  int32_t abs_desvio = desvio < 0 ? -desvio : desvio;
+  Serial.printf("[RTC] desvio contra NTP: %ld s (limite %ld s)\n",
+                (long)desvio, (long)RTC_DESVIO_MAX_S);
+  if (abs_desvio > RTC_DESVIO_MAX_S && !g_rtc_bat_fraca) {
+    Serial.println("[RTC] bateria FRACA/AUSENTE — relógio voltou com hora errada");
+    g_rtc_bat_fraca = true;
+    salvarFlagBateriaRtc(true);
+  }
+}
+
 // Avaliação completa, feita UMA vez no boot (antes de qualquer adjust()).
 // v2.4.9: o OSF sozinho não condena mais a bateria no boot — ele é sticky e
 // ficava ligado para sempre depois de uma queda, mantendo o alerta aceso mesmo
@@ -587,6 +629,12 @@ void avaliarBateriaRtcNoBoot() {
   bool osf = lerOsfDs3231();
   DateTime now = g_rtc.now();
   bool hora_ruim = !now.isValid() || now.year() < 2024;
+
+  // v2.5.6 — guarda a hora que o RTC marcava no boot para comparar com o NTP.
+  g_rtc_epoch_boot_ms = millis();
+  g_rtc_epoch_boot    = hora_ruim ? 0 : (uint32_t)now.unixtime();
+  g_rtc_desvio_medido = false;
+  g_rtc_desvio_seg    = 0;
 
   prefs.begin("genelab", true);
   uint32_t ultimo_ts = prefs.getULong("rtc_ts", 0);
@@ -614,6 +662,8 @@ void avaliarBateriaRtcNoBoot() {
     fraca = anterior;             // reset de software: mantém o histórico
   }
 
+  g_rtc_hora_perdida = falha;   // v2.5.6: exposto na telemetria
+
   Serial.printf("[RTC] bateria %s (OSF=%d hora_ruim=%d retrocedeu=%d poweron=%d anterior=%d)\n",
                 fraca ? "FRACA/AUSENTE — trocar CR2032" : "OK",
                 (int)osf, (int)hora_ruim, (int)retrocedeu, (int)poweron, (int)anterior);
@@ -624,13 +674,10 @@ void avaliarBateriaRtcNoBoot() {
   g_rtc_bat_fraca = fraca;
   if (fraca != anterior) salvarFlagBateriaRtc(fraca);
 
-  // Bateria OK: descarta carimbo antigo para não reavaliar com dado obsoleto.
-  if (!fraca) {
-    prefs.begin("genelab", false);
-    prefs.remove("rtc_ts");
-    prefs.end();
-    g_ultimo_save_epoch = 0;
-  }
+  // v2.5.6 — o carimbo NÃO é mais apagado quando a bateria é julgada OK. Antes,
+  // apagá-lo deixava o próximo boot sem referência para detectar que o relógio
+  // retrocedeu. Ele passa a ser apenas atualizado pelo tickCarimboHoraRtc().
+  g_ultimo_save_epoch = 0;   // força regravar o carimbo no primeiro tick
 }
 
 void tickBateriaRtc() {
@@ -1084,6 +1131,8 @@ bool enviarTelemetria() {
 
   doc["_tem_rtc"]                = g_tem_rtc;
   doc["_rtc_bateria_fraca"]      = g_rtc_bat_fraca;
+  doc["_rtc_hora_perdida"]       = g_rtc_hora_perdida;
+  doc["_rtc_desvio_segundos"]    = g_rtc_desvio_medido ? g_rtc_desvio_seg : 0;
   doc["_ip_local"]               = WiFi.localIP().toString();
   doc["_luz_ligada"]             = g_luz_ligada;
   doc["_sensor_travado"]         = g_sensor_travado;
@@ -2165,6 +2214,7 @@ void loop() {
   tickCo2(now);           // v2.4.0 — amostra e envia CO2 se SCD41 presente
   tickBalanca(now);       // v2.4.0 — amostra e envia peso se HX711 presente
   tickBateriaRtc();       // v2.4.7 — OSF do DS3231 a cada 10 min
+  tickDesvioRtc();        // v2.5.6 — desvio do RTC contra o NTP (bateria ruim)
   tickCarimboHoraRtc();   // v2.4.7 — carimbo de hora na NVS (detecta perda de hora no boot)
 
   if (now - lastTick > 1000)          { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); sincronizarNtpParaRtc(); }
