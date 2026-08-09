@@ -1,45 +1,63 @@
-# Autonomia sem migrar nada
+# Plano de comunicação e documentação das implementações
 
-Premissa firme: **nenhum ESP32 é tocado**. Sem OTA, sem recompilar, sem janela de manutenção. Eles continuam gravando exatamente onde gravam hoje, 24h por dia.
+## Contexto
 
-O que muda é só o app: ele passa a rodar no seu Vercel, no seu domínio, com credenciais que estão na sua mão.
+O usuário acompanha um projeto complexo: aplicação web + firmware ESP32 + hardware físico (prateleiras, válvulas, sensores, IR, etc.). Sem explicação clara do que mudou e como funciona, fica difícil validar se o comportamento está correto ou se um equipamento precisa ser atualizado. Será criado um padrão de documentação **dentro do repositório** para que o usuário possa consultar sempre que quiser.
 
-## Credenciais — o que existe e o que não existe
+## Objetivos
 
-Você já pode ter, agora, as duas credenciais que o app precisa: a **URL do backend** e a **chave publicável (anon)**. Elas estão no arquivo de ambiente do projeto e servem para o app inteiro funcionar no Vercel.
+1. Registrar toda alteração relevante em um arquivo técnico no projeto (não no chat).
+2. Para firmware, documentar: pinos GPIO, lógica de funcionamento e necessidade de atualização/OTA nos equipamentos existentes.
+3. Criar uma estrutura previsível para que o usuário saiba onde procurar o que foi modificado.
+4. Manter memória do projeto atualizada para regras que se repetem.
 
-A chave de serviço (`service_role`) e a senha do banco **não são acessíveis neste ambiente** — nem para mim. Então, em vez de o app depender delas, o plano é **remover essa dependência**.
+## O que será entregue
 
-## Passo 1 — Tirar a chave secreta do caminho
+### 1. `CHANGELOG.md` na raiz do projeto
+- Arquivo central com histórico de alterações.
+- Entrada por versão/data, dividida em: Web, Firmware, Hardware/Configuração.
+- Cada item deve responder:
+  - O que mudou
+  - Por quê (quando relevante)
+  - Como validar/testar
+  - Se exige ação do usuário (ex: atualizar ESP32, religar, reconfigurar)
 
-Hoje três abas dependem dela. Cada uma passa a funcionar só com a chave publicável:
+### 2. `docs/FIRMWARE.md`
+- Documentação técnica do firmware:
+  - Tabela de pinos GPIO consolidada (versão atual e histórico)
+  - Lógica dos ciclos, luz, IR, AC, botão físico, LED, RTC, etc.
+  - Instruções de OTA e quando é obrigatório aplicar
+  - Requisitos de hardware por versão
 
-- **Usuários**
-  - *Redefinir senha*: passa a enviar o e-mail de redefinição pelo próprio serviço de autenticação.
-  - *Criar usuário*: convite por e-mail — o admin informa e-mail e papel, o usuário define a senha ao aceitar, e o papel já vem pré-atribuído.
-  - *Remover usuário*: função no banco, com privilégio próprio, liberada só para administradores, que apaga o usuário e seus papéis.
-- **Dados e exportação**: gera os arquivos direto do banco com a sessão do próprio administrador.
-- **Atualização (OTA)**: o link do firmware passa a ser assinado por função do banco.
+### 3. Atualização da memória do projeto
+- Sincronizar `mem://index.md` com as regras atuais de firmware (pinagem, lógica de luz/relés, etc.).
+- Garantir que a memória reflita a versão mais recente do firmware.
 
-Resultado: o app roda no Vercel sem uma única variável secreta.
+### 4. Padrão para futuras implementações
+- Sempre que uma mudança envolver:
+  - **Firmware**: criar/renomear versão, atualizar `CHANGELOG.md`, `docs/FIRMWARE.md`, detalhar pinos, lógica e OTA.
+  - **Web**: registrar no `CHANGELOG.md` com o que mudou na UI/regras e como validar.
+  - **Banco/RLS**: documentar no `CHANGELOG.md` e, se necessário, em `docs/INFRA.md`.
 
-## Passo 2 — Publicar no seu domínio
+## Exemplo de formato de entrada no `CHANGELOG.md`
 
-Configurar no Vercel apenas a URL e a chave publicável, mais o seu domínio. A partir daí você publica e opera o app por conta própria.
+```text
+## 2026-08-09 - Firmware v2.5.5
+- LED de status (GPIO 19) não pisca intermitente ao sair do ciclo manual; passa para pulso de "vivo" do repouso.
+- Pinos: GPIO 19 (LED status), GPIO 4 (botão físico).
+- Lógica: ao comando PAUSE vindo do app durante ciclo manual, estado vai para repouso e LED apaga.
+- Ação necessária: atualizar ESP32 via OTA se estiver na v2.5.4 ou anterior.
+- Validar: pressionar ciclo manual, depois clicar "Sair" no app; LED deve apagar com pulso a cada 3s.
+```
 
-## Passo 3 — Seus dados sempre na sua mão
+## Próximos passos
 
-Uma rotina de exportação (leituras de temperatura, pesos, CO2, histórico de status, auditoria) em CSV, disponível na aba de exportação e executável quando você quiser. Assim o histórico nunca fica preso em um só lugar, mesmo sem migrar.
+1. Criar/validar `CHANGELOG.md` e `docs/FIRMWARE.md` com base no histórico da conversa.
+2. Atualizar `mem://index.md` com as regras consolidadas.
+3. Aplicar esse padrão a partir da próxima implementação.
 
-## O que fica para depois, sem prazo
+## Não incluso neste plano
 
-A estrutura do seu Supabase já está criada (o `schema_completo.sql` rodou). Quando um dia houver manutenção física ou prateleira nova, aí sim se prepara o firmware com backend configurável. Não faz parte deste plano.
-
-## Detalhes técnicos
-
-- `src/routes/_shell.usuarios.tsx`: remover os contornos client-side atuais; `supabase.auth.resetPasswordForEmail` para senha, fluxo de convite por e-mail para criação, RPC `admin_remover_usuario` para exclusão.
-- Migração nova: `admin_remover_usuario(uuid)` como `SECURITY DEFINER`, guardada por `has_role(auth.uid(),'admin')`, apagando de `auth.users` e `public.user_roles`; `GRANT EXECUTE` para `authenticated`.
-- Nova rota pública `/reset-password` para concluir a redefinição de senha.
-- `src/routes/_shell.atualizacao.tsx` e `_shell.dados.tsx`: substituir chamadas que exigem cliente admin por RPC/consulta com a sessão do usuário.
-- Vercel: somente `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`.
-- Firmware: nenhuma alteração.
+- Refatoração de código funcional não solicitada.
+- Mudanças no firmware em si; apenas a estrutura de documentação.
+- Resumos extensos no chat (conforme preferência do usuário: somente arquivo no projeto).
