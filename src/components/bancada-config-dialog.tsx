@@ -347,9 +347,12 @@ export function BancadaConfigDialog({
               <div className="grid grid-cols-3 gap-2">
                 {horarios.map((h, idx) => (
                   <div key={idx} className="flex items-center gap-1">
-                    <div className="flex-1 rounded border bg-background px-2 py-1 text-center font-mono text-xs">
-                      {h}
-                    </div>
+                    <Input
+                      type="time"
+                      value={h}
+                      onChange={(e) => setHorario(idx, e.target.value)}
+                      className="h-8 flex-1 px-2 py-1 text-center font-mono text-xs"
+                    />
                     <Button
                       type="button"
                       variant="ghost"
