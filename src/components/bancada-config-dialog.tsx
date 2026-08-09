@@ -505,6 +505,10 @@ export function BancadaConfigDialog({
                 ? "Prateleira sem sensor de temperatura: alertas de temperatura desativados. Offline padrão: 420s (7 min)."
                 : "Deixe temp em branco para desativar. Offline padrão: 420s (7 min)."}
             </p>
+            <p className="text-[10px] text-muted-foreground">
+              Bateria do RTC: a verificação só é conclusiva depois de uma queda de
+              energia. Ver "RTC" sem alerta não garante que a CR2032 esteja nova.
+            </p>
           </div>
 
 
