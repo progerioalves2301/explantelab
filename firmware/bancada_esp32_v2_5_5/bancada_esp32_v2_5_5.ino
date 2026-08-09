@@ -117,7 +117,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.5.4";
+static const char* FIRMWARE_VERSION = "2.5.5";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -2120,8 +2120,10 @@ void tickLedStatus(unsigned long now) {
   if (ciclo_manual_ativo && fase != REPOUSO) {
     on = true;                                  // ciclo manual -> aceso fixo
   } else if (pausado_manual && fase == REPOUSO) {
-    unsigned long t = now % 2000UL;              // pausado (STOP) -> 2 piscas
-    on = (t < 120UL) || (t >= 300UL && t < 420UL);
+    // v2.5.5 — "Sair" do modo manual no app envia PAUSE: a prateleira volta a
+    // REPOUSO e o LED NAO deve ficar piscando intermitente. Usa o mesmo pulso
+    // curtissimo de "vivo" do repouso.
+    on = ((now % 3000UL) < 40UL);
   } else {
     switch (fase) {
       case INJETANDO:  on = ((now % 1000UL) < 500UL); break;          // lento
