@@ -76,6 +76,11 @@ export interface Bancada {
   controla_ar?: boolean | null;
   tem_rtc?: boolean | null;
   rtc_bateria_fraca?: boolean | null;
+  /** v2.5.6 — RTC voltou sem hora válida no último boot. */
+  rtc_hora_perdida?: boolean | null;
+  /** v2.5.6 — desvio (s) entre a hora do RTC no boot e a hora real do NTP. */
+  rtc_desvio_segundos?: number | null;
+
   sensor_travado?: boolean | null;
   sensor_reinicios?: number | null;
   ciclo_iniciado_em?: string | null;
