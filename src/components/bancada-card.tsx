@@ -361,39 +361,55 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             {bancada.luz_ligada ? "ON" : "OFF"}
           </span>
           )}
-          {bancada.tem_rtc != null && (
+          {bancada.tem_rtc != null && (() => {
+            const desvio = bancada.rtc_desvio_segundos ?? 0;
+            const desvioAlto = Math.abs(desvio) > 120;
+            const semHora = bancada.tem_rtc === true && bancada.rtc_hora_perdida === true;
+            const alerta =
+              bancada.tem_rtc === true &&
+              (bancada.rtc_bateria_fraca === true || semHora || desvioAlto);
+            const motivos: string[] = [];
+            if (semHora) motivos.push("o relógio voltou sem hora válida");
+            if (desvioAlto) motivos.push(`desvio de ${Math.round(Math.abs(desvio) / 60)} min em relação à hora real`);
+            if (bancada.rtc_bateria_fraca) motivos.push("oscilador do DS3231 parou (OSF)");
+            const rotulo = alerta ? (semHora ? "RTC · sem hora" : "RTC · bateria") : "RTC";
+            return (
             <span
               className={cn(
                 "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
-                bancada.tem_rtc && bancada.rtc_bateria_fraca
+                alerta
                   ? "border-amber-500/70 bg-amber-400/20 text-amber-700 dark:text-amber-300"
                   : bancada.tem_rtc
                     ? "border-emerald-500/60 bg-emerald-400/15 text-emerald-700 dark:text-emerald-300"
                     : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
               )}
               title={
-                bancada.tem_rtc && bancada.rtc_bateria_fraca
-                  ? "DS3231 perdeu a hora sem energia — troque a bateria CR2032"
+                alerta
+                  ? `Troque a bateria CR2032 — ${motivos.join("; ")}.`
                   : bancada.tem_rtc
-                    ? "DS3231 detectado — hora local independente de internet"
+                    ? "DS3231 detectado — hora local independente de internet. A bateria só é avaliada após uma queda de energia."
                     : "Sem DS3231 — hora vem do NTP + millis()"
               }
               aria-label={
-                bancada.tem_rtc && bancada.rtc_bateria_fraca
-                  ? "Bateria do RTC fraca"
+                alerta
+                  ? semHora
+                    ? "RTC voltou sem hora válida"
+                    : "Bateria do RTC fraca"
                   : bancada.tem_rtc
                     ? "RTC físico ativo"
                     : "Sem RTC físico"
               }
             >
-              {bancada.tem_rtc && bancada.rtc_bateria_fraca ? (
+              {alerta ? (
                 <BatteryWarning className="h-3 w-3" />
               ) : (
                 <Clock3 className="h-3 w-3" />
               )}
-              {bancada.tem_rtc && bancada.rtc_bateria_fraca ? "RTC · bateria" : "RTC"}
+              {rotulo}
             </span>
-          )}
+            );
+          })()}
+
 
           <StatusBadge status={bancada.status} />
         </div>
