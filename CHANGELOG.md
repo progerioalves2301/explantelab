@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-08-09 — Firmware v2.5.6 (Atualização Web)
+
+**Web**
+- **Ciclos Diários**: Os horários calculados automaticamente na configuração da prateleira agora são **editáveis**. O usuário pode disparar o preenchimento automático (ajustando a quantidade ou o primeiro horário) e depois refinar manualmente horários específicos se necessário.
+
+---
+
 ## 2026-08-09 — Firmware v2.5.6
 
 **Firmware**
