@@ -7,9 +7,9 @@
 ## 2026-08-10 — Interface e Explicações (Atualização Web)
 
 **Web**
-- **Explicações de Funções**: Adicionadas descrições detalhadas na tela de **Ar-condicionado** explicando o que é Histerese, Intervalo entre comandos e Agregação de temperatura (ajuda o usuário a entender as lógicas automáticas).
+- **Explicações de Funções**: Adicionadas descrições detalhadas na tela de **Ar-condicionado** explicando o que é Histerese, Intervalo entre comandos e Agregação de temperatura (ajuda o usuário a entender as lógicas automáticas). Removida mensagem redundante sobre múltiplos ares na sala.
 - **Apoio à Configuração**: Adicionado um tooltip (ícone "?") na configuração de ciclos da prateleira explicando como funciona o preenchimento automático de horários.
-- **Ciclos Diários**: Os horários calculados automaticamente agora são **editáveis** (concluído na versão anterior, agora documentado).
+- **Ciclos Diários**: Os horários calculados automaticamente agora são **editáveis**.
 
 ---
 

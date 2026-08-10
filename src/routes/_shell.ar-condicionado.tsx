@@ -329,11 +329,6 @@ function ArCondicionadoPage() {
             <AirVent className="h-6 w-6 text-primary" />
             Ar-condicionado
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Múltiplos ares por sala são suportados. Qualquer prateleira da sala
-            pode ser controladora — o LED IR fica no <strong>GPIO 32</strong> dela
-            e ela emite os comandos para o ar atrelado.
-          </p>
           <div className="mt-4 grid gap-2 rounded-md border bg-muted/50 p-4 text-xs text-muted-foreground shadow-sm max-w-2xl">
             <h3 className="font-semibold text-foreground mb-1">Entenda o funcionamento do controle automático:</h3>
             <ul className="space-y-1.5 list-disc list-inside">
