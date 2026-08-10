@@ -334,6 +334,15 @@ function ArCondicionadoPage() {
             pode ser controladora — o LED IR fica no <strong>GPIO 32</strong> dela
             e ela emite os comandos para o ar atrelado.
           </p>
+          <div className="mt-4 grid gap-2 rounded-md border bg-muted/50 p-4 text-xs text-muted-foreground shadow-sm max-w-2xl">
+            <h3 className="font-semibold text-foreground mb-1">Entenda o funcionamento do controle automático:</h3>
+            <ul className="space-y-1.5 list-disc list-inside">
+              <li><strong>Histerese:</strong> Margem de tolerância para evitar que o ar ligue e desligue repetidamente. Se o setpoint for 24°C com histerese de 1°C, o ar esfria até 23°C e só religa quando atingir 25°C.</li>
+              <li><strong>Intervalo mín entre cmds:</strong> Tempo de segurança que o sistema aguarda antes de enviar um novo comando IR (ex.: trocar de Frio para Quente ou Desligar), protegendo o compressor do aparelho.</li>
+              <li><strong>Agregação de temperatura:</strong> Como o sistema decide a temperatura da sala se houver várias prateleiras com sensores. <strong>Média</strong> usa o valor equilibrado; <strong>Máxima</strong> liga o ar baseando-se no ponto mais quente da sala (recomendado para maior segurança das plantas).</li>
+              <li><strong>Controle automático ativo:</strong> Quando ligado, o sistema monitora a temperatura em tempo real e envia comandos IR via prateleira controladora para manter o ambiente dentro da faixa ideal.</li>
+            </ul>
+          </div>
         </div>
         <Button onClick={startNew} disabled={labs.length === 0}>
           <Plus className="mr-1.5 h-4 w-4" />
