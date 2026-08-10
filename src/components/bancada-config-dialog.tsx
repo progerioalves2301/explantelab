@@ -307,9 +307,19 @@ export function BancadaConfigDialog({
           </div>
 
           <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Clock className="h-3.5 w-3.5 text-primary" />
-              <Label className="text-xs font-semibold">Configurar Ciclos Diários</Label>
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-primary" />
+                <Label className="text-xs font-semibold">Configurar Ciclos Diários</Label>
+              </div>
+              <div className="group relative">
+                <span className="cursor-help rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary hover:bg-primary/20 transition-colors">?</span>
+                <div className="absolute right-0 top-6 z-50 w-64 scale-95 opacity-0 pointer-events-none group-hover:scale-100 group-hover:opacity-100 transition-all duration-200 origin-top-right rounded-md border bg-popover p-3 text-[11px] text-popover-foreground shadow-lg">
+                  <p className="font-semibold mb-1 border-b pb-1">Preenchimento Automático:</p>
+                  <p>Informe <strong>Ciclos por dia</strong> e o <strong>Primeiro horário</strong>. O sistema distribuirá os ciclos igualmente ao longo das 24 horas.</p>
+                  <p className="mt-2 text-[10px] text-muted-foreground italic border-t pt-1">Você pode ajustar os horários manualmente abaixo após o cálculo.</p>
+                </div>
+              </div>
             </div>
             
             <div className="grid grid-cols-2 gap-3">

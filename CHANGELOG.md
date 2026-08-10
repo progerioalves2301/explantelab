@@ -4,10 +4,16 @@
 
 ---
 
-## 2026-08-09 — Firmware v2.5.6 (Atualização Web)
+## 2026-08-10 — Interface e Explicações (Atualização Web)
 
 **Web**
-- **Ciclos Diários**: Os horários calculados automaticamente na configuração da prateleira agora são **editáveis**. O usuário pode disparar o preenchimento automático (ajustando a quantidade ou o primeiro horário) e depois refinar manualmente horários específicos se necessário.
+- **Explicações de Funções**: Adicionadas descrições detalhadas na tela de **Ar-condicionado** explicando o que é Histerese, Intervalo entre comandos e Agregação de temperatura (ajuda o usuário a entender as lógicas automáticas).
+- **Apoio à Configuração**: Adicionado um tooltip (ícone "?") na configuração de ciclos da prateleira explicando como funciona o preenchimento automático de horários.
+- **Ciclos Diários**: Os horários calculados automaticamente agora são **editáveis** (concluído na versão anterior, agora documentado).
+
+---
+
+## 2026-08-09 — Firmware v2.5.6 (Atualização Web)
 
 ---
 
