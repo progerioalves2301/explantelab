@@ -443,7 +443,7 @@ export function BancadaConfigDialog({
                       await cmd({ data: { bancada_id: bancada.id, tipo: "LUZ_TESTE" } });
                       toast.success("Teste de luz iniciado (7 segundos)");
                     } catch (e) {
-                      toast.error("Falha ao testar luz");
+                      toast.error("quando vou fazer um teste de luz ele da falha");
                     }
                   }}
                 >
