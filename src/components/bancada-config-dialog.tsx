@@ -464,7 +464,7 @@ export function BancadaConfigDialog({
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground">
-              A ação de teste de 7s liga a luz temporariamente sem alterar a programação. Fuso America/Sao_Paulo. Cada janela suporta atravessar meia-noite (ex.: liga 20:00, desliga 06:00). A ação de teste não precisa atualizar o FW.
+              A ação de teste de 7s liga a luz temporariamente sem alterar a programação. Fuso America/Sao_Paulo. Cada janela suporta atravessar meia-noite (ex.: liga 20:00, desliga 06:00).{"\u00a0"}
             </p>
             <div className="grid gap-2">
               {(config.luz_janelas ?? []).map((j, idx) => (
