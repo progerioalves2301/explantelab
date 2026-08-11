@@ -369,7 +369,7 @@ function AtualizacaoPage() {
             <code>.bin</code> gerado.
           </p>
           <p className="text-xs text-muted-foreground mt-2">
-            <strong>Downgrade:</strong> É possível fazer downgrade (ex: de v2.5.8 para v2.5.0) via OTA normalmente enviando o binário da versão desejada.
+            {"\n"}
           </p>
 
 
