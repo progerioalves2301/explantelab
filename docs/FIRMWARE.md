@@ -286,7 +286,7 @@ Após o pareamento, as credenciais são salvas na NVS e o portal não abre mais,
 
 ## 14. Arquivos relacionados
 
-- `firmware/bancada_esp32_v2_5_8/bancada_esp32_v2_5_8.ino` — código fonte.
+- `firmware/bancada_esp32_v2_5_7/bancada_esp32_v2_5_7.ino` — código fonte.
 - `firmware/FIACAO_VALVULAS.md` — diagrama de fiação e endereçamento.
 - `CHANGELOG.md` — histórico de alterações.
 - `mem://index.md` — memória consolidada do projeto.
