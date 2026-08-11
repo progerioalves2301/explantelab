@@ -408,6 +408,8 @@ int hhmmParaMinutos(const char* s) {
 
 bool g_luz_ligada = false;
 
+unsigned long g_luz_teste_ate = 0;  // v2.5.8 — timer para teste de luz (millis)
+
 // Serializa cfg.luz_janelas em JSON compacto para persistir em Preferences.
 String serializarLuzJanelas() {
   String out = "[";
