@@ -447,7 +447,6 @@ export function BancadaConfigDialog({
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground">
-              Não precisa modificar o firmware, somente através da página você pode efetuar essa operação, ligando e desligando a luz.
               Fuso America/Sao_Paulo. Cada janela suporta atravessar meia-noite (ex.: liga 20:00, desliga 06:00).
             </p>
             <div className="grid gap-2">
