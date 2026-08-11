@@ -432,7 +432,24 @@ export function BancadaConfigDialog({
                 <Clock className="h-3.5 w-3.5" />
                 Timer das luzes
               </Label>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 border-yellow-500/50 text-xs font-semibold text-yellow-700 hover:bg-yellow-500/10 dark:text-yellow-400"
+                  onClick={async () => {
+                    try {
+                      await cmd({ data: { bancada_id: bancada.id, tipo: "LUZ_TESTE" } });
+                      toast.success("Teste de luz iniciado (7 segundos)");
+                    } catch (e) {
+                      toast.error("Falha ao testar luz");
+                    }
+                  }}
+                >
+                  <Play className="mr-1 h-3 w-3" />
+                  Teste 7s
+                </Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -447,7 +464,7 @@ export function BancadaConfigDialog({
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground">
-              Fuso America/Sao_Paulo. Cada janela suporta atravessar meia-noite (ex.: liga 20:00, desliga 06:00).
+              A ação de teste de 7s liga a luz temporariamente sem alterar a programação. Fuso America/Sao_Paulo. Cada janela suporta atravessar meia-noite (ex.: liga 20:00, desliga 06:00).
             </p>
             <div className="grid gap-2">
               {(config.luz_janelas ?? []).map((j, idx) => (

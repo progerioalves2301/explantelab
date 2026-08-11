@@ -5,13 +5,16 @@
 ---
 
 
-## 2026-08-11 — Firmware v2.5.7
+## 2026-08-11 — Firmware v2.5.8
 
 **Firmware**
-- Adicionada **sinalização visual de reset**: o LED de status do ciclo (GPIO 19) pisca 3 vezes rapidamente no boot para confirmar que o ESP32 foi reiniciado.
-- **Motivo**: Auxiliar na identificação de resets físicos via botão na entrada EN.
-- **Pinos**: Sem alteração (LED no GPIO 19).
-- **Ação**: Atualizar via OTA para a v2.5.7.
+- Implementado o comando **LUZ_TESTE**: permite testar o funcionamento da fiação e do relé da luz diretamente pela interface web.
+- **Funcionamento**: Ao acionar o botão "Teste 7s" na interface, a luz liga por exatos 7 segundos e desliga automaticamente, sem interferir na agenda programada.
+- **Ação**: Atualizar via OTA para a v2.5.8 para habilitar o botão de teste.
+
+---
+
+## 2026-08-11 — Firmware v2.5.7
 
 ---
 
