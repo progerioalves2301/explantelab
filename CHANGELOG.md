@@ -4,22 +4,6 @@
 
 ---
 
-## 2026-08-11 — Firmware v2.5.8
-
-**Firmware**
-- Adicionado comando de **teste de relé da luz**: novo comando `LUZ_TESTE` que liga a luz por exatos 7 segundos para validação física da instalação, desligando automaticamente após o tempo sem bloquear o processamento do ESP32.
-- **Versão**: v2.5.8.
-- **Ação**: Atualizar via OTA para validar o acionamento do GPIO 27.
-
----
-
-## 2026-08-11 — Interface Web (Timer de Luzes)
-
-**Web**
-- **Botão de Teste**: Adicionado botão "Teste 7s" na configuração do Timer das Luzes. Permite testar o relé instantaneamente sem precisar alterar os horários programados.
-- **Limpeza Visual**: Removida a indicação fixa "GPIO 27" do título do timer para uma interface mais limpa.
-
----
 
 ## 2026-08-11 — Firmware v2.5.7
 
