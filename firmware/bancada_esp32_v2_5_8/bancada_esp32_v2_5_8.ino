@@ -452,13 +452,24 @@ bool janelaAtiva(const LuzJanela& j, int agora) {
 }
 
 void tickLuz() {
-  struct tm ti;
-  if (!getLocalTime(&ti, 50)) return;   // NTP ainda nao sincronizou
-  int agora = ti.tm_hour * 60 + ti.tm_min;
-  bool deveLigar = false;
-  for (uint8_t i = 0; i < cfg.luz_n && i < MAX_LUZ_JANELAS; i++) {
-    if (janelaAtiva(cfg.luz_janelas[i], agora)) { deveLigar = true; break; }
+  // v2.5.8 — Prioridade para o teste manual de 7s
+  bool testeAtivo = (g_luz_teste_ate > 0 && millis() < g_luz_teste_ate);
+  if (g_luz_teste_ate > 0 && !testeAtivo) {
+    g_luz_teste_ate = 0; // teste expirou
+    Serial.println("[LUZ] Teste de 7s finalizado");
   }
+
+  struct tm ti;
+  bool ntpOk = getLocalTime(&ti, 50);
+  int agora = ntpOk ? (ti.tm_hour * 60 + ti.tm_min) : -1;
+  
+  bool deveLigar = testeAtivo;
+  if (!deveLigar && ntpOk) {
+    for (uint8_t i = 0; i < cfg.luz_n && i < MAX_LUZ_JANELAS; i++) {
+      if (janelaAtiva(cfg.luz_janelas[i], agora)) { deveLigar = true; break; }
+    }
+  }
+
   if (deveLigar != g_luz_ligada) {
     g_luz_ligada = deveLigar;
     luzWrite(deveLigar);
