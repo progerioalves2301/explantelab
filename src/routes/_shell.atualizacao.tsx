@@ -364,9 +364,12 @@ function AtualizacaoPage() {
             className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground hover:file:bg-primary/90"
           />
           <p className="text-xs text-muted-foreground">
-            Compile o sketch <code>bancada_esp32_v2_1_0.ino</code> em{" "}
+            Compile o sketch <code>bancada_esp32_v2_5_8.ino</code> em{" "}
             <em>Sketch → Export Compiled Binary</em> e envie o{" "}
             <code>.bin</code> gerado.
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            <strong>Downgrade:</strong> É possível fazer downgrade (ex: de v2.5.8 para v2.5.0) via OTA normalmente enviando o binário da versão desejada.
           </p>
 
 
