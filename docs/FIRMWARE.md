@@ -165,7 +165,7 @@ O botão usa pull-up interno e debounce de 60 ms.
 | Retornando (automático) | Pisca rápido (150 ms / 150 ms). |
 | Pausado (STOP pelo app) | 2 piscas curtas a cada 2 s. |
 | Reset / Boot | 3 piscas rápidas (100ms on/off) no início. |
-| Teste de Relé (Luz) | Aceso por 7 segundos (via comando `LUZ_TESTE`). |
+
 
 > Se o LED for de driver que liga em nível baixo, altere `LED_CICLO_ACTIVE_LOW = true` no firmware.
 
