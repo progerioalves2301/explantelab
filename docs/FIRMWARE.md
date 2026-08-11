@@ -19,7 +19,7 @@ A prateleira é **autônoma**: ciclos e luzes funcionam sem internet desde que o
 
 ---
 
-## 2. Pinagem consolidada (v2.5.7)
+## 2. Pinagem consolidada (v2.5.8)
 
 | Função | GPIO | Observação |
 | :--- | :--- | :--- |
