@@ -1,49 +1,33 @@
-# P8S12 cai ao acionar o Teste de Luz
+# Liberar memória antes do OTA (firmware v2.5.9)
 
-## O que os dados mostram
+## Minha avaliação da sugestão do Gemini
 
-Consultei o banco para essa prateleira:
+A sugestão está correta e vale aplicar. Confirmei no código atual (v2.5.8):
 
-- O comando `LUZ_TESTE` foi entregue às **02:22:31**.
-- A última telemetria chegou às **02:22:32** — um segundo depois. Antes disso, telemetria chegava normalmente a cada 15 s, sem falhas.
-- O comando `LUZ_TESTE` seguinte (02:27) **nunca foi entregue**: o ESP32 não voltou a se conectar.
-- Firmware reportado: **2.5.8** (o `.bin` 2.5.9 enviado por OTA às 02:14 não passou a reportar 2.5.9 — a versão instalada continua 2.5.8).
+- Existe um cliente TLS global persistente (`WiFiClientSecure httpsClient` + `HTTPClient http`) usado na telemetria.
+- No comando `OTA_UPDATE`, o código chama `enviarTelemetria()` e, em seguida, cria um segundo cliente TLS (`WiFiClientSecure otaClient`) sem fechar o primeiro.
+- `http.end()` é chamado ao fim de cada requisição, mas a conexão TCP/SSL global continua aberta (keep-alive), então o buffer de criptografia (~30–40 KB) permanece alocado.
 
-Conclusão: o dispositivo parou de responder no instante exato em que o relé da luz foi energizado. O caminho de software do teste é simples (liga o pino da luz e agenda o desligamento em 7 s, sem bloqueio), então o comportamento aponta para causa **elétrica**: queda de tensão / reset por brownout ou ruído do relé da luz derrubando o ESP32, e não uma falha na lógica do teste.
+Ou seja: no instante do OTA há dois contextos TLS vivos ao mesmo tempo. Em um ESP32 rodando há dias, com heap fragmentado, isso é exatamente o tipo de pico que faz o download falhar ou o dispositivo reiniciar. A parte de segurança física (desligar válvulas e luz antes de atualizar) já está feita e continua igual.
 
-Isso não é confirmado ainda — a primeira etapa do plano é confirmar a causa.
+Uma ressalva: isso melhora a confiabilidade do OTA, mas não explica a queda da P8S12 no teste de luz — aquele caso segue apontando para alimentação/relé.
 
-## Etapa 1 — Confirmar a causa (sem mudar código)
+## O que fazer
 
-1. Religar a alimentação da P8S12 e verificar se ela volta online. Se voltar só após power-cycle, é reset/travamento por alimentação.
-2. Acionar a luz **pela programação de horário** (não pelo botão de teste). Se cair igual, o problema é o acionamento da luz em si — o teste apenas o expõe.
-3. Observar o LED de status (GPIO 19): 3 piscadas rápidas no boot indicam que o ESP32 reiniciou.
+Nova versão de firmware `firmware/bancada_esp32_v2_5_9/` (cópia do v2_5_8 com `FIRMWARE_VERSION` = 2.5.9), com as mudanças no bloco `OTA_UPDATE`:
 
-## Etapa 2 — Instrumentar o firmware para diagnóstico
+1. Após o último `enviarTelemetria()`, encerrar a conexão global antes de criar o cliente do OTA: `http.end()`, `httpsClient.stop()`, pequeno `delay(200)`.
+2. Logar o heap livre antes e depois da limpeza (`ESP.getFreeHeap()`) e também no `onProgress`, para termos evidência real de memória em cada tentativa.
+3. Se o heap livre ficar abaixo de um mínimo seguro (~45 KB), abortar o OTA com log claro em vez de tentar e travar — o comando pode ser reenviado depois.
+4. Em caso de falha, além de liberar `pausado_manual`, registrar o motivo no log serial como já é feito.
 
-Nova versão de firmware (v2.5.9, pasta e `FIRMWARE_VERSION` renomeados conforme o padrão do projeto):
+## Documentação
 
-- Registrar o **motivo do último reset** do ESP32 (`esp_reset_reason()`), incluindo brownout, e enviá-lo na telemetria.
-- Contador de reboots persistido em NVS, também enviado na telemetria.
-- Habilitar/registrar explicitamente o detector de brownout e logar no Serial.
-- Desligar a luz no boot antes de qualquer outra coisa (já é feito para os pinos; confirmar que o estado de teste não persiste após reset).
-
-## Etapa 3 — Mostrar o diagnóstico na interface
-
-- Guardar `motivo_reset` e `reboots` na prateleira e exibir um badge/tooltip no card quando o último reset for por brownout ("queda de tensão").
-- No botão "Teste 7s", exibir aviso curto de que uma queda ao acionar indica fonte insuficiente para o relé da luz.
-
-## Etapa 4 — Recomendação de hardware (documentação)
-
-Adicionar a `firmware/FIACAO_VALVULAS.md` uma seção sobre o relé da luz:
-
-- Fonte separada (ou com folga) para os relés; não alimentar bobina de relé pelo 5V do regulador do ESP32.
-- Capacitor eletrolítico (470–1000 µF) + 100 nF no trilho 5V e no 3V3 próximo ao ESP32.
-- Diodo de roda-livre no relé mecânico; snubber RC (100 Ω + 100 nF) no contato quando a carga da luz for reator/LED com driver.
-- Manter fiação de rede longe das linhas de sinal; ferrite no cabo da luz se necessário.
+- `CHANGELOG.md`: entrada v2.5.9 explicando a liberação de memória antes do OTA e o log de heap.
+- `docs/FIRMWARE.md`: seção do OTA descrevendo a ordem correta (desliga cargas → telemetria final → fecha TLS global → baixa) e o limite mínimo de heap.
 
 ## Detalhes técnicos
 
-Arquivos envolvidos: `firmware/bancada_esp32_v2_5_9/` (novo, a partir do v2_5_8), `bench_push_telemetry` (novas colunas opcionais `motivo_reset`, `reboots` em `bancadas`, com migração incluindo GRANTs), `src/components/bancada-card.tsx` (badge), `src/components/bancada-config-dialog.tsx` (aviso), `CHANGELOG.md` e `docs/FIRMWARE.md`.
+Arquivos: `firmware/bancada_esp32_v2_5_9/bancada_esp32_v2_5_9.ino` (novo), `CHANGELOG.md`, `docs/FIRMWARE.md`. Texto de compilação em `src/routes/_shell.atualizacao.tsx` atualizado para `bancada_esp32_v2_5_9.ino`.
 
-A Etapa 2 exige atualização de firmware por OTA. Vale checar antes por que a OTA de 2.5.9 não mudou a versão reportada (o binário enviado pode não corresponder ao fonte).
+Exige gravação por cabo ou OTA a partir do 2.5.8. Antes de confiar na próxima OTA, vale confirmar por que o binário 2.5.9 enviado anteriormente não passou a reportar 2.5.9 (provavelmente o `.bin` exportado não correspondia ao fonte).
