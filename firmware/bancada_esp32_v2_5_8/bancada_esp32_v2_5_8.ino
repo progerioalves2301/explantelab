@@ -1620,6 +1620,11 @@ void tratarComando(JsonObject cmd) {
         // rebootOnUpdate(true) já cuidou do restart.
         break;
     }
+  } else if (strcmp(tipo, "LUZ_TESTE") == 0) {
+    // v2.5.8 — Liga a luz por 7 segundos para teste de fiação/relé
+    Serial.println("[CMD] LUZ_TESTE — ligando por 7s");
+    g_luz_teste_ate = millis() + 7000UL;
+    lastTelem = 0; // reporta luz_ligada:true imediatamente
   }
 }
 
