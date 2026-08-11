@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-08-11 — Firmware v2.5.7
+
+**Firmware**
+- Adicionada **sinalização visual de reset**: o LED de status do ciclo (GPIO 19) pisca 3 vezes rapidamente no boot para confirmar que o ESP32 foi reiniciado.
+- **Motivo**: Auxiliar na identificação de resets físicos via botão na entrada EN.
+- **Pinos**: Sem alteração (LED no GPIO 19).
+- **Ação**: Atualizar via OTA para a v2.5.7.
+
+---
+
 ## 2026-08-10 — Interface e Explicações (Atualização Web)
 
 **Web**

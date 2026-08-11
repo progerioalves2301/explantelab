@@ -1,7 +1,7 @@
 # Documentação Técnica do Firmware — VitroCeres Prateleira ESP32
 
-> Versão atual: **v2.5.6**  
-> Arquivo: `firmware/bancada_esp32_v2_5_6/bancada_esp32_v2_5_6.ino`
+> Versão atual: **v2.5.7**  
+> Arquivo: `firmware/bancada_esp32_v2_5_7/bancada_esp32_v2_5_7.ino`
 
 Este documento explica como o firmware funciona, pinagem, lógica de ciclos, luzes, ar-condicionado, sensores e atualização OTA. Use-o para entender o comportamento esperado, diagnosticar problemas e saber quando é necessário atualizar os equipamentos.
 
@@ -19,7 +19,7 @@ A prateleira é **autônoma**: ciclos e luzes funcionam sem internet desde que o
 
 ---
 
-## 2. Pinagem consolidada (v2.5.6)
+## 2. Pinagem consolidada (v2.5.7)
 
 | Função | GPIO | Observação |
 | :--- | :--- | :--- |
@@ -137,7 +137,7 @@ A tensão da bateria **não é medida** (o DS3231 não expõe o Vbat e não há 
 
 - **OSF** (Oscillator Stop Flag): o oscilador parou — faltou VCC e a bateria não segurou o relógio.
 - **Carimbo de hora**: a cada 5 min o firmware salva o epoch atual na NVS. Se no boot o RTC voltar com hora anterior ao carimbo, ele perdeu a hora. A partir da **v2.5.6** o carimbo não é mais apagado quando a bateria é julgada OK — apenas atualizado —, para que o boot seguinte sempre tenha referência.
-- **Desvio contra o NTP (v2.5.6)**: no boot o firmware guarda a hora que o DS3231 marcava; quando o NTP confirma a sincronização (`sntp_get_sync_status`), compara as duas. Desvio acima de **120 s** acende o alerta.
+- **Desvio contra o NTP (v2.5.6+)**: no boot o firmware guarda a hora que o DS3231 marcava; quando o NTP confirma a sincronização (`sntp_get_sync_status`), compara as duas. Desvio acima de **120 s** acende o alerta.
 
 Quando a bateria é detectada como fraca, o firmware envia alerta na telemetria (`_rtc_bateria_fraca`, `_rtc_hora_perdida`, `_rtc_desvio_segundos`) e o app exibe **RTC · bateria** ou **RTC · sem hora** no card.
 
@@ -164,6 +164,7 @@ O botão usa pull-up interno e debounce de 60 ms.
 | Pausa | Pisca curto (150 ms a cada 2 s). |
 | Retornando (automático) | Pisca rápido (150 ms / 150 ms). |
 | Pausado (STOP pelo app) | 2 piscas curtas a cada 2 s. |
+| Reset / Boot | 3 piscas rápidas (100ms on/off) no início. |
 
 > Se o LED for de driver que liga em nível baixo, altere `LED_CICLO_ACTIVE_LOW = true` no firmware.
 
