@@ -1819,6 +1819,13 @@ void setup() {
   digitalWrite(PIN_LED, LOW);
   // v2.5.4 — LED de status do ciclo (inicia apagado antes de qualquer coisa)
   pinMode(PIN_LED_CICLO, OUTPUT);
+  // v2.5.7: Sinalização visual de reset (3 piscadas rápidas no LED de ciclo)
+  for (int i = 0; i < 3; i++) {
+    ledCicloWrite(true);
+    delay(100);
+    ledCicloWrite(false);
+    delay(100);
+  }
   ledCicloWrite(false);
   g_luz_ligada = false;
 
