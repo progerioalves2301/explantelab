@@ -205,6 +205,8 @@ uint32_t   g_rtc_epoch_boot   = 0;       // unixtime lido do RTC no boot (0 = in
 uint32_t   g_rtc_epoch_boot_ms = 0;      // millis() no instante dessa leitura
 // Desvio tolerado antes de considerar o relógio/bateria suspeitos.
 const int32_t RTC_DESVIO_MAX_S = 120;
+static uint32_t g_luz_teste_ate = 0;
+
 
 // -------- SCD41 (CO2 ambiente — v2.4.0) --------
 // Sensor opcional; se não responder no I2C, os ticks de CO2 ficam desabilitados.
@@ -450,19 +452,36 @@ bool janelaAtiva(const LuzJanela& j, int agora) {
 }
 
 void tickLuz() {
-  struct tm ti;
-  if (!getLocalTime(&ti, 50)) return;   // NTP ainda nao sincronizou
-  int agora = ti.tm_hour * 60 + ti.tm_min;
-  bool deveLigar = false;
-  for (uint8_t i = 0; i < cfg.luz_n && i < MAX_LUZ_JANELAS; i++) {
-    if (janelaAtiva(cfg.luz_janelas[i], agora)) { deveLigar = true; break; }
+  bool testeAtivo = (g_luz_teste_ate > 0 && millis() < g_luz_teste_ate);
+  if (!testeAtivo && g_luz_teste_ate > 0) {
+    g_luz_teste_ate = 0; // encerra teste
   }
+
+  struct tm ti;
+  bool relogioOk = getLocalTime(&ti, 50);
+  
+  bool deveLigar = false;
+  if (testeAtivo) {
+    deveLigar = true;
+  } else if (relogioOk) {
+    int agora = ti.tm_hour * 60 + ti.tm_min;
+    for (uint8_t i = 0; i < cfg.luz_n && i < MAX_LUZ_JANELAS; i++) {
+      if (janelaAtiva(cfg.luz_janelas[i], agora)) { deveLigar = true; break; }
+    }
+  }
+
   if (deveLigar != g_luz_ligada) {
     g_luz_ligada = deveLigar;
     luzWrite(deveLigar);
-    Serial.printf("[LUZ] %s (%02d:%02d) [%u janela(s)]\n",
-                  deveLigar ? "ON" : "OFF",
-                  ti.tm_hour, ti.tm_min, (unsigned)cfg.luz_n);
+    if (testeAtivo) {
+      Serial.println("[LUZ] ON (Teste Rele)");
+    } else if (relogioOk) {
+      Serial.printf("[LUZ] %s (%02d:%02d) [%u janela(s)]\n",
+                    deveLigar ? "ON" : "OFF",
+                    ti.tm_hour, ti.tm_min, (unsigned)cfg.luz_n);
+    } else {
+      Serial.println("[LUZ] OFF (NTP offline)");
+    }
   }
 }
 
@@ -1618,15 +1637,10 @@ void tratarComando(JsonObject cmd) {
     // Vamos apenas ligar e deixar o tickLuz (que roda a cada 1s) desligar
     // se não houver janela ativa, mas isso seria imediato.
     // SOLUÇÃO: flag temporária.
-    static uint32_t luzTesteAte = 0;
-    luzTesteAte = millis() + 7000;
-    
-    // Para implementar isso, precisamos que o tickLuz considere essa flag.
-    // Vou adicionar uma variável global.
+    g_luz_teste_ate = millis() + 7000;
   }
 }
 
-static uint32_t g_luz_teste_ate = 0;
 
 
 
