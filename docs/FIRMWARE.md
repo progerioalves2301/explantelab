@@ -1,7 +1,7 @@
 # Documentação Técnica do Firmware — VitroCeres Prateleira ESP32
 
-> Versão atual: **v2.5.7**  
-> Arquivo: `firmware/bancada_esp32_v2_5_7/bancada_esp32_v2_5_7.ino`
+> Versão atual: **v2.5.8**  
+> Arquivo: `firmware/bancada_esp32_v2_5_8/bancada_esp32_v2_5_8.ino`
 
 Este documento explica como o firmware funciona, pinagem, lógica de ciclos, luzes, ar-condicionado, sensores e atualização OTA. Use-o para entender o comportamento esperado, diagnosticar problemas e saber quando é necessário atualizar os equipamentos.
 
@@ -165,6 +165,7 @@ O botão usa pull-up interno e debounce de 60 ms.
 | Retornando (automático) | Pisca rápido (150 ms / 150 ms). |
 | Pausado (STOP pelo app) | 2 piscas curtas a cada 2 s. |
 | Reset / Boot | 3 piscas rápidas (100ms on/off) no início. |
+| Teste de Relé (Luz) | Aceso por 7 segundos (via comando `LUZ_TESTE`). |
 
 > Se o LED for de driver que liga em nível baixo, altere `LED_CICLO_ACTIVE_LOW = true` no firmware.
 
@@ -285,7 +286,7 @@ Após o pareamento, as credenciais são salvas na NVS e o portal não abre mais,
 
 ## 14. Arquivos relacionados
 
-- `firmware/bancada_esp32_v2_5_6/bancada_esp32_v2_5_6.ino` — código fonte.
+- `firmware/bancada_esp32_v2_5_8/bancada_esp32_v2_5_8.ino` — código fonte.
 - `firmware/FIACAO_VALVULAS.md` — diagrama de fiação e endereçamento.
 - `CHANGELOG.md` — histórico de alterações.
 - `mem://index.md` — memória consolidada do projeto.

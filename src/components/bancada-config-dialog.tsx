@@ -430,19 +430,38 @@ export function BancadaConfigDialog({
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-1.5 text-xs font-semibold text-yellow-700 dark:text-yellow-400">
                 <Clock className="h-3.5 w-3.5" />
-                Timer das luzes (GPIO 27)
+                Timer das luzes
               </Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={addLuz}
-                disabled={(config.luz_janelas ?? []).length >= 8}
-              >
-                <Plus className="mr-1 h-3 w-3" />
-                Nova janela
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 border-yellow-500/50 text-[10px] hover:bg-yellow-500/20"
+                  onClick={async () => {
+                    try {
+                      await cmd({ data: { bancada_id: bancada.id, tipo: "LUZ_TESTE" } });
+                      toast.success("Comando de teste (7s) enviado!");
+                    } catch (e) {
+                      toast.error("Falha ao testar rele");
+                    }
+                  }}
+                >
+                  <Play className="mr-1 h-3 w-3" />
+                  Teste 7s
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={addLuz}
+                  disabled={(config.luz_janelas ?? []).length >= 8}
+                >
+                  <Plus className="mr-1 h-3 w-3" />
+                  Nova janela
+                </Button>
+              </div>
             </div>
             <p className="text-[10px] text-muted-foreground">
               Fuso America/Sao_Paulo. Cada janela suporta atravessar meia-noite

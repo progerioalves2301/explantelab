@@ -94,7 +94,8 @@ export type ComandoTipo =
   | "RESUME"
   | "SET_VALVE"
   | "OTA_UPDATE"
-  | "AC_CONTROL";
+  | "AC_CONTROL"
+  | "LUZ_TESTE";
 
 export interface Comando {
   id: string;
