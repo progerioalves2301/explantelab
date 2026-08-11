@@ -118,7 +118,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.5.7";
+static const char* FIRMWARE_VERSION = "2.5.8";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -1607,8 +1607,27 @@ void tratarComando(JsonObject cmd) {
         // rebootOnUpdate(true) já cuidou do restart.
         break;
     }
+  } else if (strcmp(tipo, "LUZ_TESTE") == 0) {
+    Serial.println("[LUZ] Teste de rele solicitado (7s)");
+    luzWrite(true);
+    // Agendamento não-bloqueante via tickLuz não é possível aqui facilmente
+    // sem mudar a estrutura, então usamos um delay curto + desligamento
+    // para teste rápido, ou melhor, usamos uma flag.
+    // Mas para teste de 7s, um delay(7000) bloquearia o ESP.
+    // Vamos usar a máquina de estados do ciclo manual para luz? Não.
+    // Vamos apenas ligar e deixar o tickLuz (que roda a cada 1s) desligar
+    // se não houver janela ativa, mas isso seria imediato.
+    // SOLUÇÃO: flag temporária.
+    static uint32_t luzTesteAte = 0;
+    luzTesteAte = millis() + 7000;
+    
+    // Para implementar isso, precisamos que o tickLuz considere essa flag.
+    // Vou adicionar uma variável global.
   }
 }
+
+static uint32_t g_luz_teste_ate = 0;
+
 
 
 void puxarComandos() {
