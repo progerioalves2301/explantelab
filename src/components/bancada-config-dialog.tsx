@@ -437,23 +437,6 @@ export function BancadaConfigDialog({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-7 border-yellow-500/50 text-[10px] hover:bg-yellow-500/20"
-                  onClick={async () => {
-                    try {
-                      await cmd({ data: { bancada_id: bancada.id, tipo: "LUZ_TESTE" } });
-                      toast.success("Comando de teste (7s) enviado!");
-                    } catch (e) {
-                      toast.error("Falha ao testar rele");
-                    }
-                  }}
-                >
-                  <Play className="mr-1 h-3 w-3" />
-                  Teste 7s
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
                   className="h-7 text-xs"
                   onClick={addLuz}
                   disabled={(config.luz_janelas ?? []).length >= 8}
