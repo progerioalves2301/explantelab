@@ -342,21 +342,6 @@ function AtualizacaoPage() {
         </p>
       </div>
 
-      <div className="flex items-start gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm dark:border-amber-400/30">
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-        <div className="space-y-1 text-amber-900 dark:text-amber-100">
-          <p className="font-medium">
-            v2.1.0 — controle de ar-condicionado por IR (GPIO 32)
-          </p>
-          <p className="text-xs leading-relaxed text-amber-900/90 dark:text-amber-100/90">
-            Use <code>bancada_esp32_v2_1_0.ino.bin</code>. Adiciona suporte a{" "}
-            <strong>LG, Samsung, Fujitsu, Midea/Electrolux, Electra</strong> via
-            comando <code>AC_CONTROL</code>. Só a prateleira marcada como
-            controladora IR emite comandos (config em <em>Ar-condicionado</em>).
-            Requer biblioteca <code>IRremoteESP8266 ≥ 2.8</code>.
-          </p>
-        </div>
-      </div>
 
 
 
