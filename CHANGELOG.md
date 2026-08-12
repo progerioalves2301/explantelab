@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-08-12 — Firmware v2.5.9
+
+**Firmware — confiabilidade do OTA e vida útil da memória**
+- **Liberação de RAM antes do OTA**: a telemetria mantém um cliente TLS global com keep-alive. Antes, o cliente do OTA era criado sem fechar esse cliente, deixando dois contextos TLS vivos (~30–40 KB cada) — causa comum de falha/reset no download em equipamentos com dias de uptime. Agora o firmware encerra a conexão global (`http.end()` + `httpsClient.stop()`), aguarda 200 ms e registra o heap livre antes e depois.
+- **Piso de memória**: se o heap livre ficar abaixo de 45 KB, o OTA é abortado com log claro (em vez de travar) e o comando pode ser reenviado.
+- **Timeout de rede no OTA**: `otaClient.setTimeout(10000)` evita que a transferência fique pendurada quando o Wi-Fi do local remoto oscila.
+- **Watchdog durante o OTA**: watchdog de 180 s armado só no download e realimentado no progresso. Se travar fora do alcance do timeout, o ESP32 reinicia sozinho e volta no firmware antigo — sem viagem até o local. O OTA é atômico, então nunca fica firmware corrompido.
+- **Log de progresso** agora inclui o heap livre, para diagnosticar tentativas futuras.
+- **Menos desgaste na NVS**: o carimbo de hora do RTC (`rtc_ts`) passa de 5 minutos para **1 hora**. Como o valor é o epoch atual, cada tick era uma gravação física no flash (~105 mil/ano); o desgaste cai ~12x. A detecção de bateria fraca da CR2032 continua funcionando (janela de incerteza vira 1 h). Gravações com valor igual são ignoradas e o carimbo é salvo antes de um reinício por OTA.
+- **Ação**: compilar `firmware/bancada_esp32_v2_5_9/bancada_esp32_v2_5_9.ino` e atualizar via OTA a partir da v2.5.8.
+
+---
+
 
 ## 2026-08-11 — Firmware v2.5.8
 
