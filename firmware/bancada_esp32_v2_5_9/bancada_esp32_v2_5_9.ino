@@ -590,17 +590,29 @@ static bool lerFlagBateriaRtc() {
 }
 
 // Carimbo de hora — chamado periodicamente no loop quando a hora é confiável.
-void tickCarimboHoraRtc() {
+// v2.5.9 — Intervalo elevado de 5 min para 1 h. Cada carimbo é uma gravação
+// física real na NVS (o epoch muda sempre), então 5 min significava ~105 mil
+// escritas/ano no flash. Com 1 h o desgaste cai ~12x e o diagnóstico da bateria
+// CR2032 continua igual: se o relógio retroceder após queda de energia, a
+// comparação com o carimbo ainda detecta (a janela de incerteza vira 1 h).
+static const uint32_t CARIMBO_RTC_INTERVALO_MS = 3600UL * 1000UL;
+
+void salvarCarimboHoraRtc(bool forcar) {
   if (!g_tem_rtc) return;
   uint32_t agora = millis();
-  if (g_ultimo_save_epoch != 0 && (agora - g_ultimo_save_epoch) < 300UL * 1000UL) return;
+  if (!forcar && g_ultimo_save_epoch != 0 &&
+      (agora - g_ultimo_save_epoch) < CARIMBO_RTC_INTERVALO_MS) return;
   DateTime now = g_rtc.now();
   if (!now.isValid() || now.year() < 2024) return;
+  uint32_t ts = (uint32_t)now.unixtime();
   g_ultimo_save_epoch = agora;
   prefs.begin("genelab", false);
-  prefs.putULong("rtc_ts", (uint32_t)now.unixtime());
+  // Evita escrita redundante quando o valor não mudou (ex.: RTC parado).
+  if (prefs.getULong("rtc_ts", 0) != ts) prefs.putULong("rtc_ts", ts);
   prefs.end();
 }
+
+void tickCarimboHoraRtc() { salvarCarimboHoraRtc(false); }
 
 // v2.5.6 — Desvio do RTC contra o NTP.
 // O relógio pode voltar com uma hora "válida" (ex.: 2024) mas errada: nesse caso
