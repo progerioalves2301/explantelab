@@ -21,6 +21,17 @@ Nova versão de firmware `firmware/bancada_esp32_v2_5_9/` (cópia do v2_5_8 com 
 3. Se o heap livre ficar abaixo de um mínimo seguro (~45 KB), abortar o OTA com log claro em vez de tentar e travar — o comando pode ser reenviado depois.
 4. Em caso de falha, além de liberar `pausado_manual`, registrar o motivo no log serial como já é feito.
 
+## Desgaste da NVS (também procede)
+
+Confirmei no código: `tickCarimboHoraRtc()` grava `rtc_ts` na NVS a cada 300 s (5 min), e o valor é sempre diferente (é o epoch atual), então há gravação física real toda vez — cerca de 105 mil gravações por ano. A crítica do Gemini está certa.
+
+Mudanças no v2.5.9:
+
+1. Intervalo do carimbo de 5 min para 1 hora (`3600UL * 1000UL`). O diagnóstico da bateria CR2032 continua funcionando: se o relógio retroceder após uma queda de luz, a comparação com o carimbo ainda detecta — a janela de incerteza passa de 5 min para 1 h, irrelevante para esse fim.
+2. Gravar o carimbo também imediatamente antes de um reinício controlado (OTA), para que o último save point fique o mais recente possível.
+3. Não gravar quando o valor arredondado não mudou, evitando escritas redundantes.
+
+
 ## Documentação
 
 - `CHANGELOG.md`: entrada v2.5.9 explicando a liberação de memória antes do OTA e o log de heap.
