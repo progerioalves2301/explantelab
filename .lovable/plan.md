@@ -34,7 +34,7 @@ Mudanças no v2.5.9:
 
 ## Documentação
 
-- `CHANGELOG.md`: entrada v2.5.9 explicando a liberação de memória antes do OTA e o log de heap.
+- `CHANGELOG.md`: entrada v2.5.9 explicando a liberação de memória antes do OTA, o log de heap e o novo intervalo do carimbo NVS.
 - `docs/FIRMWARE.md`: seção do OTA descrevendo a ordem correta (desliga cargas → telemetria final → fecha TLS global → baixa) e o limite mínimo de heap.
 
 ## Detalhes técnicos
