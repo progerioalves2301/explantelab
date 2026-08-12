@@ -39,6 +39,7 @@
 #include <ArduinoJson.h>
 #include <Preferences.h>
 #include <esp_system.h>   // v2.4.7: esp_reset_reason() p/ distinguir boot por energia
+#include <esp_task_wdt.h> // v2.5.9: watchdog armado apenas durante o OTA
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <time.h>            // NTP + horário local p/ timer das luzes
