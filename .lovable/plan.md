@@ -31,6 +31,19 @@ Mudanças no v2.5.9:
 2. Gravar o carimbo também imediatamente antes de um reinício controlado (OTA), para que o último save point fique o mais recente possível.
 3. Não gravar quando o valor arredondado não mudou, evitando escritas redundantes.
 
+## Timeout de rede no OTA (também procede — e é o mais importante para local remoto)
+
+Confirmei: a telemetria usa `http.setTimeout(8000)`, mas o cliente do OTA (`otaClient`) não define timeout nenhum. Se o Wi-Fi do local oscilar no meio do download, a transferência pode ficar pendurada esperando pacotes. Com as prateleiras longe, isso é justamente o cenário a evitar.
+
+Mudanças no v2.5.9:
+
+1. `otaClient.setTimeout(10000)` antes de `httpUpdate.update(...)`, como sugerido.
+2. Também `httpUpdate.setLedPin` não é necessário, mas vale usar o timeout de conexão do `httpUpdate` (`httpUpdate.setFollowRedirects(...)` já aplicável) e manter `rebootOnUpdate(true)` — o reinício só acontece se o binário for validado integralmente pelo bootloader.
+3. Watchdog de tarefa (`esp_task_wdt`) armado só durante o OTA com prazo generoso (ex.: 180 s): se o processo travar em um ponto que o timeout de socket não cobre, o ESP32 reinicia sozinho e volta rodando o firmware antigo — sem viagem até o local.
+4. Em qualquer falha, `pausado_manual = false` (já existe), garantindo que o ciclo hídrico volte a rodar normalmente.
+
+Vale lembrar que o OTA do ESP32 é atômico: a nova imagem só é ativada após validação, então uma transferência interrompida nunca deixa a prateleira com firmware corrompido.
+
 
 ## Documentação
 
