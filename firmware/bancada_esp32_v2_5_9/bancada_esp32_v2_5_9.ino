@@ -1601,26 +1601,67 @@ void tratarComando(JsonObject cmd) {
     luzWrite(false);
     // Publica um último ping de telemetria antes de reiniciar.
     enviarTelemetria();
+    // v2.5.9 — carimbo de hora atualizado antes do reinício controlado.
+    salvarCarimboHoraRtc(true);
+
+    // v2.5.9 — Libera RAM antes do OTA.
+    // A telemetria mantém um cliente TLS global (httpsClient) com keep-alive.
+    // Criar o cliente do OTA sem fechá-lo deixa DOIS contextos TLS vivos
+    // (~30–40 KB cada) e, com heap fragmentado após dias no ar, isso derruba
+    // o download (out of memory / panic reset).
+    Serial.printf("[OTA] heap antes da limpeza: %u bytes\n",
+                  (unsigned)ESP.getFreeHeap());
+    http.end();
+    httpsClient.stop();
+    delay(200);
+    uint32_t heapLivre = ESP.getFreeHeap();
+    Serial.printf("[OTA] heap após limpeza: %u bytes\n", (unsigned)heapLivre);
+
+    // Abaixo desse piso o handshake TLS + buffers do update não caberiam;
+    // melhor abortar com log claro e reenviar o comando depois.
+    static const uint32_t OTA_HEAP_MINIMO = 45000UL;
+    if (heapLivre < OTA_HEAP_MINIMO) {
+      Serial.printf("[OTA] ABORTADO: heap insuficiente (%u < %u). Reenvie o comando.\n",
+                    (unsigned)heapLivre, (unsigned)OTA_HEAP_MINIMO);
+      pausado_manual = false;
+      return;
+    }
 
     WiFiClientSecure otaClient;
     otaClient.setInsecure();
+    // v2.5.9 — Timeout de rede: se o Wi-Fi do local remoto oscilar no meio da
+    // transferência, o socket não fica pendurado esperando pacotes.
+    otaClient.setTimeout(10000);
     httpUpdate.rebootOnUpdate(true);
+    httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+
+    // v2.5.9 — Watchdog armado só durante o OTA. Se o processo travar em um
+    // ponto que o timeout de socket não cobre, o ESP32 reinicia sozinho e volta
+    // rodando o firmware antigo (o OTA é atômico: a nova imagem só é ativada
+    // depois de validada), evitando deslocamento até o local.
+    bool wdtArmado = (esp_task_wdt_init(180, true) == ESP_OK);
+    if (wdtArmado) esp_task_wdt_add(NULL);
+
     // Piscar LED durante download
     httpUpdate.onProgress([](int cur, int total) {
       static uint32_t lastLog = 0;
       digitalWrite(PIN_LED, (cur / 8192) & 1 ? HIGH : LOW);
+      esp_task_wdt_reset();
       if (millis() - lastLog > 1000) {
         lastLog = millis();
-        Serial.printf("[OTA] %d / %d bytes (%d%%)\n",
-                      cur, total, total > 0 ? (cur * 100 / total) : 0);
+        Serial.printf("[OTA] %d / %d bytes (%d%%) heap=%u\n",
+                      cur, total, total > 0 ? (cur * 100 / total) : 0,
+                      (unsigned)ESP.getFreeHeap());
       }
     });
     t_httpUpdate_return ret = httpUpdate.update(otaClient, String(url));
+    if (wdtArmado) esp_task_wdt_delete(NULL);
     switch (ret) {
       case HTTP_UPDATE_FAILED:
-        Serial.printf("[OTA] FALHOU: (%d) %s\n",
+        Serial.printf("[OTA] FALHOU: (%d) %s (heap=%u)\n",
                       httpUpdate.getLastError(),
-                      httpUpdate.getLastErrorString().c_str());
+                      httpUpdate.getLastErrorString().c_str(),
+                      (unsigned)ESP.getFreeHeap());
         pausado_manual = false;   // libera ciclo automático de novo
         digitalWrite(PIN_LED, HIGH);
         break;
