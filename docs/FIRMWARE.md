@@ -236,20 +236,28 @@ Isso mantém a taxa abaixo do limite de 60 requisições/minuto por prateleira.
 
 A atualização é disparada pelo app na aba **Atualização** (admin-only). O backend gera uma URL assinada de 1 h válida no bucket privado `firmware` e envia para a prateleira via comando `OTA_UPDATE`.
 
-### Comportamento durante OTA
+### Comportamento durante OTA (ordem correta — v2.5.9)
 
 1. A prateleira recebe `{ "url": "...", "filename": "..." }`.
-2. Desliga válvulas e luzes por segurança.
-3. Envia um último ping de telemetria.
-4. Faz download do binário via HTTPS.
-5. Se o download for bem-sucedido, reinicia automaticamente.
-6. Se falhar, volta ao estado anterior (`pausado_manual = false`).
+2. Desliga válvulas e luzes por segurança (`pausado_manual = true`).
+3. Envia um último ping de telemetria e grava o carimbo de hora do RTC na NVS.
+4. **Fecha o cliente TLS global** da telemetria (`http.end()` + `httpsClient.stop()` + `delay(200)`) e loga o heap antes/depois. Sem isso, dois contextos TLS (~30–40 KB cada) coexistem e o download falha por falta de RAM em dispositivos com dias de uptime.
+5. Verifica o **piso de heap** (`OTA_HEAP_MINIMO` = 45.000 bytes). Abaixo dele, aborta com log claro, libera `pausado_manual` e o comando pode ser reenviado.
+6. Cria o cliente do OTA com **timeout de rede de 10 s** (`otaClient.setTimeout(10000)`), protegendo contra Wi-Fi instável em sites remotos.
+7. Arma um **watchdog de 180 s** apenas durante o download (`esp_task_wdt`), realimentado no `onProgress`. Se o processo travar fora do alcance do timeout de socket, o ESP32 reinicia sozinho e volta no firmware antigo.
+8. Faz download do binário via HTTPS, logando progresso e heap a cada segundo.
+9. Se o download for bem-sucedido, reinicia automaticamente. O OTA do ESP32 é **atômico**: a nova imagem só é ativada após validação, então uma transferência interrompida nunca deixa a prateleira com firmware corrompido.
+10. Se falhar, volta ao estado anterior (`pausado_manual = false`) e o ciclo hídrico segue normalmente.
 
 ### Quando atualizar
 
 - Sempre que o `FIRMWARE_VERSION` mudar e a nova versão afetar o hardware/fiação da prateleira.
 - Correções de bugs que afetam autonomia offline, segurança ou estabilidade do ciclo.
 - Melhorias no controle de IR ou novos sensores.
+
+### Carimbo de hora na NVS (v2.5.9)
+
+O carimbo `rtc_ts` (usado para detectar bateria fraca do DS3231 quando o relógio retrocede) é gravado a cada **1 hora** — antes era a cada 5 minutos. Como o valor é o epoch atual, cada tick era uma gravação física real no flash (~105 mil/ano). Com 1 h o desgaste cai cerca de 12x e o diagnóstico continua válido; a janela de incerteza passa de 5 min para 1 h. Gravações redundantes (valor igual) são evitadas, e o carimbo também é salvo imediatamente antes de um reinício controlado por OTA.
 
 ---
 
