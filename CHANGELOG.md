@@ -13,7 +13,6 @@
 - **Watchdog durante o OTA**: watchdog de 180 s armado só no download e realimentado no progresso. Se travar fora do alcance do timeout, o ESP32 reinicia sozinho e volta no firmware antigo — sem viagem até o local. O OTA é atômico, então nunca fica firmware corrompido.
 - **Log de progresso** agora inclui o heap livre, para diagnosticar tentativas futuras.
 - **Menos desgaste na NVS**: o carimbo de hora do RTC (`rtc_ts`) passa de 5 minutos para **1 hora**. Como o valor é o epoch atual, cada tick era uma gravação física no flash (~105 mil/ano); o desgaste cai ~12x. A detecção de bateria fraca da CR2032 continua funcionando (janela de incerteza vira 1 h). Gravações com valor igual são ignoradas e o carimbo é salvo antes de um reinício por OTA.
-- **Correção de interferência**: identificada causa de quedas esporádicas na prateleira P8S12 devido a ruído eletromagnético das válvulas AC. Recomendado uso de filtros ou separação física de cabos.
 - **Ação**: compilar `firmware/bancada_esp32_v2_5_9/bancada_esp32_v2_5_9.ino` e atualizar via OTA a partir da v2.5.8.
 
 ---

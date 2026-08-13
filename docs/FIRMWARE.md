@@ -286,7 +286,6 @@ Após o pareamento, as credenciais são salvas na NVS e o portal não abre mais,
 | LED de ciclo pisca estranho | Estado manual ou fase inconsistente | Botão pressionado, app em pausa. |
 | Temperatura travada | DS18B20 falhando ou sem pull-up | Cabo, resistor, versão ≥ v2.4.5. |
 | Ar não desliga | Protocolo toggle sem estado local | Versão ≥ v2.2.1, protocolo correto. |
-| P8S12 fica offline esporadicamente | Interferência eletromagnética (EMI) da abertura das válvulas AC | Adicionar filtros snubbers; afastar cabos de sinal dos de força. |
 | Rate limit no serial | Intervalos muito curtos | Versão ≥ v2.4.4. |
 | Bateria RTC alerta | OSF ligado, hora perdida ou desvio > 120 s vs NTP | Trocar CR2032; ver §6. |
 | RTC sem bateria e nada é acusado | ESP energizado mantém o relógio pelo VCC | Cortar energia por 1 min e religar; versão ≥ v2.5.6. |
