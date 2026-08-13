@@ -2,13 +2,14 @@
 
 ## O que provavelmente está acontecendo
 
-Válvulas solenoide não "sujam" o Wi-Fi por rádio. O 2,4 GHz do ESP32 é digital e o ruído das solenoides é de baixa frequência. O que realmente derruba a placa nesse cenário, em ordem de probabilidade:
+Válvulas solenoide não "sujam" o Wi-Fi por rádio. O 2,4 GHz do ESP32 é digital e o ruído das solenoides é de baixa frequência. Como as válvulas são **220 Vac ligadas direto na rede**, o mecanismo mais provável muda de ordem:
 
-1. **Queda de tensão (brownout)** — no instante em que a bobina energiza, a corrente de partida puxa a fonte 5 V. Se o ESP32 divide a mesma fonte, o 3,3 V afunda, o brownout detector dispara e a placa reinicia. Reiniciar leva ~10–20 s até reconectar: no app aparece como "offline" momentâneo.
-2. **Coice indutivo / EMI conduzida** — ao desligar a bobina, o pico de tensão volta pelo GND comum e trava ou reseta o rádio. Sem diodo de proteção (solenoide DC) ou snubber (AC), isso é frequente.
-3. **Arco no contato do relé mecânico** — o faiscamento acopla ruído na fiação de sinal se os cabos de força correm junto com os cabos dos GPIOs.
+1. **EMI conduzida pela rede / arco no contato do relé** — ao abrir e fechar 220 Vac numa carga indutiva o contato faisca e gera um transiente rápido de centenas de volts. Esse pulso entra pela rede e volta pela **fonte chaveada do ESP32** (que está na mesma rede), resetando ou travando a placa. Esta é a causa nº 1 em instalação AC.
+2. **Queda/pico na fonte do ESP32 (brownout)** — o transiente na rede afunda ou distorce a saída da fonte 5 V, o 3,3 V sai da faixa e o brownout detector reinicia. Reiniciar leva ~10–20 s até reconectar: no app aparece como "offline" momentâneo.
+3. **Acoplamento capacitivo na fiação de sinal** — cabo de 220 V correndo no mesmo feixe dos cabos dos GPIOs injeta ruído nas entradas e no barramento I²C/1-Wire.
 
-Nada disso é problema de código: é alimentação e supressão. Mas o firmware pode **provar qual é a causa** e reduzir o impacto.
+Nada disso é problema de código: é supressão de transiente e alimentação. Mas o firmware pode **provar qual é a causa** e reduzir o impacto.
+
 
 ## Como confirmar antes de mexer em hardware
 
@@ -27,12 +28,14 @@ No app, o card da prateleira ganha um aviso discreto quando o último reset foi 
 - **Reconexão mais rápida após reset**: hoje a primeira tentativa de reconexão espera até 20 s. Reduzir a primeira janela para ~3 s encurta o tempo aparente de "offline".
 - **Retomada de ciclo já existe** (NVS), então um reset não perde a fase — apenas some do painel por alguns segundos.
 
-## Recomendações de hardware (documentadas em `firmware/FIACAO_VALVULAS.md`)
+## Recomendações de hardware para válvulas 220 Vac (documentadas em `firmware/FIACAO_VALVULAS.md`)
 
-- Fonte **separada** para as válvulas; ESP32 em fonte própria, GND unidos em um único ponto (estrela).
-- Capacitor eletrolítico **1000 µF** no 5 V do ESP32 + **100 nF** cerâmico junto ao pino.
-- **Diodo 1N4007** em paralelo com cada bobina DC (catodo no positivo); para bobina AC, **snubber RC** 100 Ω / 100 nF nos contatos do relé.
-- Manter os cabos de força a pelo menos alguns centímetros dos cabos de sinal; nunca no mesmo feixe.
+- **Snubber RC** (100 Ω / 100 nF, 275 Vac tipo X2) **em paralelo com a bobina de cada válvula** — é a medida mais eficaz para carga AC. Alternativa/complemento: **varistor MOV 275 V** nos contatos do relé. Diodo 1N4007 **não serve** em 220 Vac.
+- **Filtro de linha EMI** na entrada de alimentação do quadro, ou no mínimo uma fonte 5 V de boa qualidade e exclusiva do ESP32 (não compartilhada com nada mais).
+- Capacitor eletrolítico **1000 µF** no 5 V do ESP32 + **100 nF** cerâmico junto ao pino de alimentação.
+- **Separação física**: cabos de 220 V em canaleta/lado oposto do quadro, cruzando os cabos de sinal em 90° quando inevitável; nunca no mesmo feixe. GND de sinal ligado em um único ponto (estrela).
+- Preferir relé/contator com contato dimensionado para carga indutiva AC (AC-1/AC-3), ou trocar por **SSR com zero-crossing**, que praticamente elimina o arco.
+
 
 ## Detalhes técnicos
 
