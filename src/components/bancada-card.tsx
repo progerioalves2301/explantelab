@@ -378,7 +378,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               className={cn(
                 "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
                 alerta
-                  ? "border-amber-500/70 bg-amber-400/20 text-amber-700 dark:text-amber-300"
+                  ? "border-red-500/70 bg-red-400/20 text-red-700 dark:text-red-300"
                   : bancada.tem_rtc
                     ? "border-emerald-500/60 bg-emerald-400/15 text-emerald-700 dark:text-emerald-300"
                     : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
