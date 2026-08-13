@@ -28,12 +28,14 @@ No app, o card da prateleira ganha um aviso discreto quando o último reset foi 
 - **Reconexão mais rápida após reset**: hoje a primeira tentativa de reconexão espera até 20 s. Reduzir a primeira janela para ~3 s encurta o tempo aparente de "offline".
 - **Retomada de ciclo já existe** (NVS), então um reset não perde a fase — apenas some do painel por alguns segundos.
 
-## Recomendações de hardware (documentadas em `firmware/FIACAO_VALVULAS.md`)
+## Recomendações de hardware para válvulas 220 Vac (documentadas em `firmware/FIACAO_VALVULAS.md`)
 
-- Fonte **separada** para as válvulas; ESP32 em fonte própria, GND unidos em um único ponto (estrela).
-- Capacitor eletrolítico **1000 µF** no 5 V do ESP32 + **100 nF** cerâmico junto ao pino.
-- **Diodo 1N4007** em paralelo com cada bobina DC (catodo no positivo); para bobina AC, **snubber RC** 100 Ω / 100 nF nos contatos do relé.
-- Manter os cabos de força a pelo menos alguns centímetros dos cabos de sinal; nunca no mesmo feixe.
+- **Snubber RC** (100 Ω / 100 nF, 275 Vac tipo X2) **em paralelo com a bobina de cada válvula** — é a medida mais eficaz para carga AC. Alternativa/complemento: **varistor MOV 275 V** nos contatos do relé. Diodo 1N4007 **não serve** em 220 Vac.
+- **Filtro de linha EMI** na entrada de alimentação do quadro, ou no mínimo uma fonte 5 V de boa qualidade e exclusiva do ESP32 (não compartilhada com nada mais).
+- Capacitor eletrolítico **1000 µF** no 5 V do ESP32 + **100 nF** cerâmico junto ao pino de alimentação.
+- **Separação física**: cabos de 220 V em canaleta/lado oposto do quadro, cruzando os cabos de sinal em 90° quando inevitável; nunca no mesmo feixe. GND de sinal ligado em um único ponto (estrela).
+- Preferir relé/contator com contato dimensionado para carga indutiva AC (AC-1/AC-3), ou trocar por **SSR com zero-crossing**, que praticamente elimina o arco.
+
 
 ## Detalhes técnicos
 
