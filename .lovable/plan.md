@@ -5,7 +5,7 @@
 Válvulas solenoide não "sujam" o Wi-Fi por rádio. O 2,4 GHz do ESP32 é digital e o ruído das solenoides é de baixa frequência. Como as válvulas são **220 Vac ligadas direto na rede**, o mecanismo mais provável muda de ordem:
 
 1. **EMI conduzida pela rede / arco no contato do relé** — ao abrir e fechar 220 Vac numa carga indutiva o contato faisca e gera um transiente rápido de centenas de volts. Esse pulso entra pela rede e volta pela **fonte chaveada do ESP32** (que está na mesma rede), resetando ou travando a placa. Esta é a causa nº 1 em instalação AC.
-2. **Queda/pico na fonte do ESP32 (brownout)** — o transiente na rede afunda ou distorce a saída da fonte 5 V, o 3,3 V sai da faixa e o brownout detector reinicia. Reiniciar leva ~10–20 s até reconectar: no app aparece como "offline" momentâneo.
+2. **Queda/pico na fonte do ESP32 (brownout)** — o transiente na rede se propaga pela fonte chaveada 12 V → regulador 5 V, afunda o 3,3 V por instantes e o brownout detector reinicia. Reiniciar leva ~10–20 s até reconectar: no app aparece como "offline" momentâneo.
 3. **Acoplamento capacitivo na fiação de sinal** — cabo de 220 V correndo no mesmo feixe dos cabos dos GPIOs injeta ruído nas entradas e no barramento I²C/1-Wire.
 
 Nada disso é problema de código: é supressão de transiente e alimentação. Mas o firmware pode **provar qual é a causa** e reduzir o impacto.
