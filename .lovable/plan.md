@@ -1,50 +1,53 @@
-# Quedas do ESP32 quando as válvulas acionam
+# P8S12: alerta "RTC · sem hora" que não some depois de trocar a bateria
 
-## O que provavelmente está acontecendo
+## O que os dados mostram (verificado agora)
 
-Válvulas solenoide não "sujam" o Wi-Fi por rádio. O 2,4 GHz do ESP32 é digital e o ruído das solenoides é de baixa frequência. Como as válvulas são **220 Vac ligadas direto na rede**, o mecanismo mais provável muda de ordem:
+Na prateleira **P8S12** (firmware **2.5.8**, online, telemetria a cada 3 s):
 
-1. **EMI conduzida pela rede / arco no contato do relé** — ao abrir e fechar 220 Vac numa carga indutiva o contato faisca e gera um transiente rápido de centenas de volts. Esse pulso entra pela rede e volta pela **fonte chaveada do ESP32** (que está na mesma rede), resetando ou travando a placa. Esta é a causa nº 1 em instalação AC.
-2. **Queda/pico na fonte do ESP32 (brownout)** — o transiente na rede se propaga pela fonte chaveada 12 V → regulador 5 V, afunda o 3,3 V por instantes e o brownout detector reinicia. Reiniciar leva ~10–20 s até reconectar: no app aparece como "offline" momentâneo.
-3. **Acoplamento capacitivo na fiação de sinal** — cabo de 220 V correndo no mesmo feixe dos cabos dos GPIOs injeta ruído nas entradas e no barramento I²C/1-Wire.
+- `rtc_hora_perdida = true`
+- `rtc_bateria_fraca = true`
+- `rtc_desvio_segundos = 0`
+- último boot registrado: hoje 10:52 (UTC)
 
-Nada disso é problema de código: é supressão de transiente e alimentação. Mas o firmware pode **provar qual é a causa** e reduzir o impacto.
+O desvio zerado é a pista decisiva: quando o firmware conclui "hora perdida" no boot, ele **não mede mais** o desvio contra o NTP (a referência de boot fica em zero e a comparação é abandonada). Ou seja, no boot de 10:52 o DS3231 respondeu com hora inválida (ou anterior ao carimbo salvo na memória), e a partir daí:
 
+1. O alerta é gravado na memória interna do ESP32 e **fica ligado por toda a vida do boot**.
+2. Alguns segundos depois o NTP corrige a hora e regrava o DS3231 — mas nada reavalia o alerta.
+3. Em reinícios que não sejam por corte de energia (OTA, watchdog, reset por software), o firmware **repete o valor antigo** gravado na memória, então o aviso reaparece mesmo com a CR2032 nova.
 
-## Como confirmar antes de mexer em hardware
+Conclusão: o aviso que você está vendo é um **estado travado**, não uma leitura atual da bateria. Não é possível afirmar pelos dados que a bateria nova está ruim — o único evento suspeito foi aquele boot.
 
-O ESP32 sabe por que reiniciou. O firmware passa a registrar isso e enviar na telemetria:
+## O que será feito
 
-- Motivo do último reset (`esp_reset_reason`) — se vier `BROWNOUT`, o diagnóstico está fechado: é a fonte.
-- Contador de boots e uptime no momento do último acionamento de válvula.
-- Carimbo do último acionamento antes do reset, para correlacionar "reiniciou logo depois de abrir a injeção".
+### 1. Auto-recuperação do alerta (firmware v2.6.0)
 
-No app, o card da prateleira ganha um aviso discreto quando o último reset foi por brownout, com o contador de ocorrências.
+- Depois que o NTP sincroniza e o firmware regrava a hora no DS3231, iniciar uma **janela de confirmação (~15 min)**: se o relógio se mantiver coerente com a hora real nesse período, o alerta é **apagado** (na memória interna também) e a telemetria volta a reportar RTC íntegro.
+- Se o relógio divergir de novo dentro da janela, o alerta permanece — aí sim é evidência real.
+- Deixar de propagar o valor antigo em reinícios por software quando o relógio está comprovadamente correto.
 
-## Mitigações no firmware (v2.6.0)
+### 2. Leitura do RTC no boot mais tolerante
 
-- **Acionamento escalonado**: quando um par de válvulas e a luz precisarem ligar quase juntos, inserir ~150 ms entre eles, para não somar duas correntes de partida.
-- **Silenciar HTTP durante a comutação**: não iniciar uma requisição TLS na janela de ~300 ms em torno de ligar/desligar relé (o TLS é o momento de maior consumo do rádio, é justo aí que o brownout mata).
-- **Reconexão mais rápida após reset**: hoje a primeira tentativa de reconexão espera até 20 s. Reduzir a primeira janela para ~3 s encurta o tempo aparente de "offline".
-- **Retomada de ciclo já existe** (NVS), então um reset não perde a fase — apenas some do painel por alguns segundos.
+- Reler o DS3231 algumas vezes (com pequeno intervalo) antes de declarar "hora inválida", para que uma leitura I²C perdida no boot não condene o relógio.
+- Só marcar "hora perdida" após leituras repetidas confirmarem o problema.
 
-## Recomendações de hardware para válvulas 220 Vac (documentadas em `firmware/FIACAO_VALVULAS.md`)
+### 3. Reset manual do alerta pelo app
 
-A topologia de alimentação atual é `220 Vac → fonte chaveada 12 Vdc → fonte 5 Vdc → ESP32`. O ESP32 já tem fonte dedicada, então a causa provável **não** é a corrente da bobina afundando a fonte — é o **transiente de 220 Vac que entra pela primeira fonte e se propaga pelo trilho de 12 V** até o regulador de 5 V, derrubando o 3,3 V. Por isso a supressão tem que atacar a fonte do transiente:
+- Novo botão **"Zerar diagnóstico do RTC"** na configuração da prateleira (admin/operador), útil justamente depois de trocar a bateria.
+- Ele limpa os campos de alerta no banco e envia um comando para o ESP32 apagar o registro na memória interna e reavaliar do zero — sem precisar reiniciar o equipamento na mão.
 
-- **Snubber RC** (100 Ω / 100 nF, capacitor classe X2, 275 Vac) **em paralelo com a bobina de cada válvula 220 Vac** — absorve o pico ao cortar a corrente da carga indutiva, antes que ele vire arco no relé e EMI na rede. É a medida de maior impacto. Complementar: **varistor MOV 275 V** nos contatos do relé. Diodo 1N4007 **não serve** em AC.
-- **Capacitor de desacoplamento no trilho de 12 V**: 470–1000 µF eletrolítico + 100 nF cerâmico na entrada da fonte 12→5 V, para amortecer o transiente que escapar do snubber. E **100 µF + 100 nF** na saída de 5 V, junto ao pino do ESP32.
-- **Filtro de linha EMI / N-F** na entrada de 220 V do quadro (especialmente na ramificação que alimenta as fontes), para barrar o ruído conduzido pela rede.
-- **Separação física**: cabos de 220 V em canaleta/lado oposto do quadro, cruzando os cabos de sinal em 90° quando inevitável; nunca no mesmo feixe. GND de sinal ligado em um único ponto (estrela).
-- Preferir relé/contator com contato dimensionado para carga indutiva AC (categoria AC-1/AC-3), ou trocar por **SSR com zero-crossing**, que praticamente elimina o arco — eliminando a fonte do transiente pela raiz.
+### 4. Texto do selo no card
 
-
+- Enquanto a janela de confirmação estiver em curso, o selo mostra **"RTC · verificando"** (neutro) em vez de vermelho, com explicação no tooltip.
 
 ## Detalhes técnicos
 
-- Novo firmware `firmware/bancada_esp32_v2_6_0/bancada_esp32_v2_6_0.ino` (cópia da v2.5.9 + mudanças acima), versão `2.6.0`.
-- Telemetria: novos campos `_reset_reason`, `_boot_count`, `_reset_pos_valvula` (bool), persistidos em `Preferences`.
-- Backend: aceitar os campos novos no schema Zod de `src/routes/api/public/bench.telemetry.ts` e na RPC de telemetria; colunas novas em `bancadas` (nullable, sem quebrar deploys antigos).
-- UI: badge/aviso no `src/components/bancada-card.tsx` quando `reset_reason = brownout`.
-- Docs: `docs/FIRMWARE.md` (nova seção de diagnóstico de reset), `firmware/FIACAO_VALVULAS.md` (supressão e alimentação), `CHANGELOG.md`.
-- Requer atualização OTA das prateleiras para o diagnóstico começar a reportar.
+- Novo `firmware/bancada_esp32_v2_6_0/bancada_esp32_v2_6_0.ino` (`FIRMWARE_VERSION = "2.6.0"`), sem mudança de pinagem.
+- Alterações em `avaliarBateriaRtcNoBoot()` (releitura tolerante), `sincronizarNtpParaRtc()` / `tickDesvioRtc()` (janela de confirmação e limpeza do flag `rtc_bat` na NVS) e novo tratamento do comando `RTC_RESET_DIAG`.
+- Backend: novo comando em `src/lib/bancadas.functions.ts` (grava em `comandos`) + limpeza de `rtc_bateria_fraca` / `rtc_hora_perdida` / `rtc_desvio_segundos` em `bancadas`; entrega já coberta por `bench_pull_commands`.
+- UI: botão em `src/components/bancada-config-dialog.tsx` e estados do selo em `src/components/bancada-card.tsx`.
+- Documentação: entrada no `CHANGELOG.md` e atualização da §6 de `docs/FIRMWARE.md`.
+
+## Ação necessária do seu lado
+
+- Depois do deploy, usar o botão **Zerar diagnóstico do RTC** na P8S12 — se o alerta não voltar em ~15 min, a bateria nova está boa.
+- Atualizar as prateleiras para a **v2.6.0** via OTA para que a auto-recuperação funcione em todas.
