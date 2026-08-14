@@ -663,8 +663,19 @@ void avaliarBateriaRtcNoBoot() {
   if (!g_tem_rtc) { g_rtc_bat_fraca = false; return; }
 
   bool osf = lerOsfDs3231();
+
+  // v2.6.0 — leitura TOLERANTE: uma única leitura I²C perdida no boot (ruído do
+  // barramento, acionamento de relé, etc.) não pode mais condenar o relógio.
+  // Só declaramos "hora inválida" após várias tentativas seguidas falharem.
   DateTime now = g_rtc.now();
   bool hora_ruim = !now.isValid() || now.year() < 2024;
+  for (uint8_t tent = 1; hora_ruim && tent < 5; tent++) {
+    delay(120);
+    now = g_rtc.now();
+    hora_ruim = !now.isValid() || now.year() < 2024;
+    Serial.printf("[RTC] releitura %u no boot: %s\n", (unsigned)tent,
+                  hora_ruim ? "hora ainda inválida" : "hora válida");
+  }
 
   // v2.5.6 — guarda a hora que o RTC marcava no boot para comparar com o NTP.
   g_rtc_epoch_boot_ms = millis();
