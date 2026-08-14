@@ -1239,6 +1239,7 @@ bool enviarTelemetria() {
   doc["_tem_rtc"]                = g_tem_rtc;
   doc["_rtc_bateria_fraca"]      = g_rtc_bat_fraca;
   doc["_rtc_hora_perdida"]       = g_rtc_hora_perdida;
+  doc["_rtc_verificando"]        = g_rtc_verificando;
   doc["_rtc_desvio_segundos"]    = g_rtc_desvio_medido ? g_rtc_desvio_seg : 0;
   doc["_ip_local"]               = WiFi.localIP().toString();
   doc["_luz_ligada"]             = g_luz_ligada;
@@ -2375,6 +2376,7 @@ void loop() {
   tickBalanca(now);       // v2.4.0 — amostra e envia peso se HX711 presente
   tickBateriaRtc();       // v2.4.7 — OSF do DS3231 a cada 10 min
   tickDesvioRtc();        // v2.5.6 — desvio do RTC contra o NTP (bateria ruim)
+  tickSaudeRtc();         // v2.6.0 — auto-recuperação do alerta do RTC
   tickCarimboHoraRtc();   // v2.4.7 — carimbo de hora na NVS (detecta perda de hora no boot)
 
   if (now - lastTick > 1000)          { lastTick  = now; tickCiclo(); tickLuz(); tickAgendaCiclo(); sincronizarNtpParaRtc(); }
