@@ -206,6 +206,16 @@ uint32_t   g_rtc_epoch_boot   = 0;       // unixtime lido do RTC no boot (0 = in
 uint32_t   g_rtc_epoch_boot_ms = 0;      // millis() no instante dessa leitura
 // Desvio tolerado antes de considerar o relógio/bateria suspeitos.
 const int32_t RTC_DESVIO_MAX_S = 120;
+// v2.6.0 — AUTO-RECUPERAÇÃO do diagnóstico do RTC.
+// Antes, qualquer alerta ("hora perdida" / "bateria fraca") ficava travado por
+// toda a vida do boot e era repetido em resets de software, então trocar a
+// CR2032 não apagava o aviso sem intervenção humana. Agora, sempre que existe
+// um alerta e o NTP confirma a hora real, o firmware regrava o DS3231 e abre uma
+// JANELA DE CONFIRMAÇÃO: se o relógio se mantiver coerente durante a janela, o
+// alerta é apagado sozinho (inclusive na NVS). Se divergir, o alerta é mantido.
+bool       g_rtc_verificando   = false;  // janela de confirmação em curso
+uint32_t   g_rtc_janela_ini_ms = 0;
+const uint32_t RTC_JANELA_CONFIRMA_MS = 15UL * 60UL * 1000UL;   // ~15 min
 
 // -------- SCD41 (CO2 ambiente — v2.4.0) --------
 // Sensor opcional; se não responder no I2C, os ticks de CO2 ficam desabilitados.
