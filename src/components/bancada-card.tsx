@@ -365,61 +365,42 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             const desvio = bancada.rtc_desvio_segundos ?? 0;
             const desvioAlto = Math.abs(desvio) > 120;
             const semHora = bancada.tem_rtc === true && bancada.rtc_hora_perdida === true;
-            // v2.6.0 — enquanto o firmware reavalia o relógio (janela de ~15 min),
-            // o selo fica neutro: o alerta se resolve ou se confirma sozinho.
-            const verificando =
-              bancada.tem_rtc === true && bancada.rtc_verificando === true;
             const alerta =
-              !verificando &&
               bancada.tem_rtc === true &&
               (bancada.rtc_bateria_fraca === true || semHora || desvioAlto);
             const motivos: string[] = [];
             if (semHora) motivos.push("o relógio voltou sem hora válida");
             if (desvioAlto) motivos.push(`desvio de ${Math.round(Math.abs(desvio) / 60)} min em relação à hora real`);
             if (bancada.rtc_bateria_fraca) motivos.push("oscilador do DS3231 parou (OSF)");
-            const rotulo = verificando
-              ? "RTC · verificando"
-              : alerta
-                ? semHora
-                  ? "RTC · sem hora"
-                  : "RTC · bateria"
-                : "RTC";
+            const rotulo = alerta ? (semHora ? "RTC · sem hora" : "RTC · bateria") : "RTC";
             return (
             <span
               className={cn(
                 "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
-                verificando
-                  ? "border-muted-foreground/40 bg-muted text-muted-foreground"
-                  : alerta
-                    ? "border-red-500/70 bg-red-400/20 text-red-700 dark:text-red-300"
-                    : bancada.tem_rtc
-                      ? "border-emerald-500/60 bg-emerald-400/15 text-emerald-700 dark:text-emerald-300"
-                      : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
+                alerta
+                  ? "border-red-500/70 bg-red-400/20 text-red-700 dark:text-red-300"
+                  : bancada.tem_rtc
+                    ? "border-emerald-500/60 bg-emerald-400/15 text-emerald-700 dark:text-emerald-300"
+                    : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
               )}
               title={
-                verificando
-                  ? "O equipamento está reavaliando o relógio por ~15 minutos. Se ele se mantiver na hora certa, o aviso desaparece automaticamente; se atrasar de novo, o alerta de bateria volta."
-                  : alerta
-                    ? `Troque a bateria CR2032 — ${motivos.join("; ")}. O aviso desaparece sozinho depois da troca, quando o relógio se mantiver na hora certa.`
-                    : bancada.tem_rtc
-                      ? "DS3231 detectado — hora local independente de internet. A bateria só é avaliada após uma queda de energia."
-                      : "Sem DS3231 — hora vem do NTP + millis()"
+                alerta
+                  ? `Troque a bateria CR2032 — ${motivos.join("; ")}.`
+                  : bancada.tem_rtc
+                    ? "DS3231 detectado — hora local independente de internet. A bateria só é avaliada após uma queda de energia."
+                    : "Sem DS3231 — hora vem do NTP + millis()"
               }
               aria-label={
-                verificando
-                  ? "Relógio em verificação automática"
-                  : alerta
-                    ? semHora
-                      ? "RTC voltou sem hora válida"
-                      : "Bateria do RTC fraca"
-                    : bancada.tem_rtc
-                      ? "RTC físico ativo"
-                      : "Sem RTC físico"
+                alerta
+                  ? semHora
+                    ? "RTC voltou sem hora válida"
+                    : "Bateria do RTC fraca"
+                  : bancada.tem_rtc
+                    ? "RTC físico ativo"
+                    : "Sem RTC físico"
               }
             >
-              {verificando ? (
-                <Clock3 className="h-3 w-3 animate-pulse" />
-              ) : alerta ? (
+              {alerta ? (
                 <BatteryWarning className="h-3 w-3" />
               ) : (
                 <Clock3 className="h-3 w-3" />

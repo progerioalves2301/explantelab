@@ -141,15 +141,6 @@ A tensão da bateria **não é medida** (o DS3231 não expõe o Vbat e não há 
 
 Quando a bateria é detectada como fraca, o firmware envia alerta na telemetria (`_rtc_bateria_fraca`, `_rtc_hora_perdida`, `_rtc_desvio_segundos`) e o app exibe **RTC · bateria** ou **RTC · sem hora** no card.
 
-### Auto-recuperação do alerta (v2.6.0)
-
-Até a v2.5.9 o alerta só era reavaliado num reset por energia (`ESP_RST_POWERON`), então ficava "grudado" mesmo depois de trocar a CR2032. A partir da **v2.6.0**:
-
-- **Leitura tolerante no boot**: até 5 tentativas (120 ms entre elas) antes de declarar hora inválida — elimina falso positivo por ruído no I²C.
-- **Janela de confirmação** (`tickSaudeRtc()`): com qualquer alerta ativo, o firmware espera o NTP, regrava a hora real no DS3231, limpa o OSF e acompanha o relógio por **15 min**. Se o RTC se mantiver dentro de 120 s da hora real e o OSF não reacender, os flags são apagados em RAM e na NVS **sozinhos**. Se divergir, o alerta é reafirmado.
-- **Telemetria**: `_rtc_verificando` (coluna `bancadas.rtc_verificando`) indica a janela em curso; o card mostra **RTC · verificando** em cinza nesse intervalo.
-- Nenhuma ação humana é necessária: basta trocar a bateria.
-
 > **Limitação importante**: com o ESP32 energizado, o DS3231 conta a hora pelo VCC. Uma CR2032 fraca ou ausente **não produz nenhum sinal** nesse estado. A avaliação só é conclusiva depois de uma queda de energia. Para detecção em tempo real seria necessário medir o positivo da bateria por ADC (divisor resistivo em uma GPIO analógica) — não implementado.
 
 ---
