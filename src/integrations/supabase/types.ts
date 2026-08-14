@@ -446,6 +446,7 @@ export type Database = {
           rtc_bateria_fraca: boolean | null
           rtc_desvio_segundos: number | null
           rtc_hora_perdida: boolean | null
+          rtc_verificando: boolean
           sensor_reinicios: number | null
           sensor_travado: boolean | null
           status: string
@@ -479,6 +480,7 @@ export type Database = {
           rtc_bateria_fraca?: boolean | null
           rtc_desvio_segundos?: number | null
           rtc_hora_perdida?: boolean | null
+          rtc_verificando?: boolean
           sensor_reinicios?: number | null
           sensor_travado?: boolean | null
           status?: string
@@ -512,6 +514,7 @@ export type Database = {
           rtc_bateria_fraca?: boolean | null
           rtc_desvio_segundos?: number | null
           rtc_hora_perdida?: boolean | null
+          rtc_verificando?: boolean
           sensor_reinicios?: number | null
           sensor_travado?: boolean | null
           status?: string

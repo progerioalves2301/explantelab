@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.bench_push_telemetry(uuid,text,text,jsonb,integer,text,text,numeric,boolean,boolean,boolean,integer,boolean,boolean,boolean,integer,boolean);
