@@ -80,6 +80,8 @@ export interface Bancada {
   rtc_hora_perdida?: boolean | null;
   /** v2.5.6 — desvio (s) entre a hora do RTC no boot e a hora real do NTP. */
   rtc_desvio_segundos?: number | null;
+  /** v2.6.0 — janela de confirmação em curso: o firmware está reavaliando o relógio. */
+  rtc_verificando?: boolean | null;
 
   sensor_travado?: boolean | null;
   sensor_reinicios?: number | null;

@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-08-14 — Firmware v2.6.0
+
+**Alerta do RTC se resolve sozinho após a troca da bateria**
+- **Problema**: o aviso de bateria/relógio ficava travado (`rtc_hora_perdida`/`rtc_bateria_fraca` = verdadeiro, desvio 0 s) porque só era reavaliado em reset por queda de energia. Trocar a CR2032 não apagava o alerta.
+- **Leitura tolerante no boot**: até 5 releituras do DS3231 (120 ms entre elas) antes de declarar hora inválida — evita falso positivo por ruído no I²C.
+- **Janela de confirmação (15 min)**: com alerta ativo, o firmware espera o NTP, regrava a hora real no relógio, limpa o OSF e acompanha o RTC. Mantendo-se dentro de 120 s da hora real e sem OSF, os flags são apagados automaticamente em RAM e na NVS. Se divergir, o alerta volta — aí é evidência real de bateria ruim.
+- **App**: novo campo `bancadas.rtc_verificando` (telemetria `_rtc_verificando`); durante a janela o card mostra **RTC · verificando** em cinza, sem alarme falso.
+- **Ação**: compilar `firmware/bancada_esp32_v2_6_0/bancada_esp32_v2_6_0.ino` e atualizar via OTA a partir da v2.5.9.
+
+
 ## 2026-08-12 — Firmware v2.5.9
 
 **Firmware — confiabilidade do OTA e vida útil da memória**
