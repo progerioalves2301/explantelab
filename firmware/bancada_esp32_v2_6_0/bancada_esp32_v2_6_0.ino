@@ -654,6 +654,66 @@ void tickDesvioRtc() {
   }
 }
 
+// v2.6.0 — AUTO-RECUPERAÇÃO do diagnóstico do RTC (sem intervenção humana).
+// Enquanto existir qualquer alerta de relógio/bateria, este tick:
+//   1) espera o NTP confirmar a hora real;
+//   2) regrava o DS3231 com essa hora e limpa o OSF;
+//   3) acompanha o relógio por ~15 min (janela de confirmação);
+//   4) se o RTC se mantiver coerente com a hora real, APAGA o alerta (RAM + NVS);
+//   5) se divergir (ou o OSF reacender), mantém o alerta — aí é evidência real.
+// Assim, trocar a CR2032 basta: o aviso desaparece por conta própria.
+void tickSaudeRtc() {
+  if (!g_tem_rtc) { g_rtc_verificando = false; return; }
+  if (!g_rtc_verificando && !g_rtc_bat_fraca && !g_rtc_hora_perdida) return;
+
+  if (sntp_get_sync_status() != SNTP_SYNC_STATUS_COMPLETED) return;
+  time_t agora = time(nullptr);
+  if (agora < 1700000000) return;
+
+  if (!g_rtc_verificando) {
+    // Abre a janela: hora real gravada no relógio e oscilador rearmado.
+    g_rtc.adjust(DateTime((uint32_t)agora));
+    limparOsfDs3231();
+    g_ultima_sync_rtc   = millis();
+    g_rtc_janela_ini_ms = millis();
+    g_rtc_verificando   = true;
+    Serial.println("[RTC] alerta ativo — iniciando janela de confirmacao (15 min)");
+    return;
+  }
+
+  DateTime n = g_rtc.now();
+  bool ruim = !n.isValid() || n.year() < 2024;
+  int32_t desvio = ruim ? 0 : (int32_t)((int64_t)n.unixtime() - (int64_t)agora);
+  int32_t abs_desvio = desvio < 0 ? -desvio : desvio;
+
+  if (!ruim) {
+    g_rtc_desvio_seg    = desvio;
+    g_rtc_desvio_medido = true;
+  }
+
+  if (ruim || abs_desvio > RTC_DESVIO_MAX_S || lerOsfDs3231()) {
+    Serial.printf("[RTC] janela FALHOU (ruim=%d desvio=%ld s) — alerta mantido\n",
+                  (int)ruim, (long)desvio);
+    g_rtc_verificando = false;
+    g_rtc_janela_ini_ms = 0;
+    if (ruim) g_rtc_hora_perdida = true;
+    if (!g_rtc_bat_fraca) { g_rtc_bat_fraca = true; salvarFlagBateriaRtc(true); }
+    limparOsfDs3231();
+    return;
+  }
+
+  if ((millis() - g_rtc_janela_ini_ms) >= RTC_JANELA_CONFIRMA_MS) {
+    Serial.println("[RTC] janela OK — relogio integro, alerta APAGADO automaticamente");
+    g_rtc_verificando   = false;
+    g_rtc_janela_ini_ms = 0;
+    g_rtc_hora_perdida  = false;
+    g_rtc_desvio_seg    = 0;
+    if (g_rtc_bat_fraca) { g_rtc_bat_fraca = false; salvarFlagBateriaRtc(false); }
+    salvarCarimboHoraRtc(true);
+  }
+}
+
+
 // Avaliação completa, feita UMA vez no boot (antes de qualquer adjust()).
 // v2.4.9: o OSF sozinho não condena mais a bateria no boot — ele é sticky e
 // ficava ligado para sempre depois de uma queda, mantendo o alerta aceso mesmo
