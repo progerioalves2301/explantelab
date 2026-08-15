@@ -435,6 +435,7 @@ export type Database = {
           controla_ar: boolean
           created_at: string
           firmware_version: string | null
+          heap_min: number | null
           id: string
           ip_local: string | null
           laboratorio_id: string | null
@@ -443,6 +444,8 @@ export type Database = {
           offline_threshold_segundos: number
           posicao: number | null
           proximo_ciclo_segundos: number
+          reset_reason: string | null
+          rssi: number | null
           rtc_bateria_fraca: boolean | null
           rtc_desvio_segundos: number | null
           rtc_hora_perdida: boolean | null
@@ -460,7 +463,9 @@ export type Database = {
           temp_min: number | null
           temperatura_planta: number | null
           ultima_sync: string | null
+          uptime_s: number | null
           valvulas: Json
+          wifi_reconexoes: number | null
         }
         Insert: {
           ciclo_iniciado_em?: string | null
@@ -469,6 +474,7 @@ export type Database = {
           controla_ar?: boolean
           created_at?: string
           firmware_version?: string | null
+          heap_min?: number | null
           id?: string
           ip_local?: string | null
           laboratorio_id?: string | null
@@ -477,6 +483,8 @@ export type Database = {
           offline_threshold_segundos?: number
           posicao?: number | null
           proximo_ciclo_segundos?: number
+          reset_reason?: string | null
+          rssi?: number | null
           rtc_bateria_fraca?: boolean | null
           rtc_desvio_segundos?: number | null
           rtc_hora_perdida?: boolean | null
@@ -494,7 +502,9 @@ export type Database = {
           temp_min?: number | null
           temperatura_planta?: number | null
           ultima_sync?: string | null
+          uptime_s?: number | null
           valvulas?: Json
+          wifi_reconexoes?: number | null
         }
         Update: {
           ciclo_iniciado_em?: string | null
@@ -503,6 +513,7 @@ export type Database = {
           controla_ar?: boolean
           created_at?: string
           firmware_version?: string | null
+          heap_min?: number | null
           id?: string
           ip_local?: string | null
           laboratorio_id?: string | null
@@ -511,6 +522,8 @@ export type Database = {
           offline_threshold_segundos?: number
           posicao?: number | null
           proximo_ciclo_segundos?: number
+          reset_reason?: string | null
+          rssi?: number | null
           rtc_bateria_fraca?: boolean | null
           rtc_desvio_segundos?: number | null
           rtc_hora_perdida?: boolean | null
@@ -528,7 +541,9 @@ export type Database = {
           temp_min?: number | null
           temperatura_planta?: number | null
           ultima_sync?: string | null
+          uptime_s?: number | null
           valvulas?: Json
+          wifi_reconexoes?: number | null
         }
         Relationships: [
           {
@@ -1004,9 +1019,12 @@ export type Database = {
           _bancada_id: string
           _device_token: string
           _firmware_version: string
+          _heap_min?: number
           _ip_local: string
           _luz_ligada?: boolean
           _proximo_ciclo_segundos: number
+          _reset_reason?: string
+          _rssi?: number
           _rtc_bateria_fraca?: boolean
           _rtc_desvio_segundos?: number
           _rtc_hora_perdida?: boolean
@@ -1016,7 +1034,9 @@ export type Database = {
           _tem_rtc?: boolean
           _temperatura_planta?: number
           _temperatura_valida?: boolean
+          _uptime_s?: number
           _valvulas: Json
+          _wifi_reconexoes?: number
         }
         Returns: Json
       }
