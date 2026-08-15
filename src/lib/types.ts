@@ -81,6 +81,13 @@ export interface Bancada {
   /** v2.5.6 — desvio (s) entre a hora do RTC no boot e a hora real do NTP. */
   rtc_desvio_segundos?: number | null;
 
+  /** v2.6.0 — diagnóstico do último reinício reportado pelo ESP32. */
+  reset_reason?: string | null;
+  uptime_s?: number | null;
+  heap_min?: number | null;
+  wifi_reconexoes?: number | null;
+  rssi?: number | null;
+
   sensor_travado?: boolean | null;
   sensor_reinicios?: number | null;
   ciclo_iniciado_em?: string | null;
