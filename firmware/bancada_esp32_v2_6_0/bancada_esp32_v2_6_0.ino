@@ -217,29 +217,11 @@ static uint32_t g_wifi_reconexoes = 0;     // quantas vezes o link caiu e voltou
 // pelo estado salvo na NVS (em vez de ficar horas com a válvula energizada).
 static const uint32_t WDT_TIMEOUT_S = 30;
 static bool g_wdt_armado = false;
+// (as funções nomeResetReason()/armarWatchdogPadrao() ficam mais abaixo, depois
+//  das declarações de tipos — o Arduino gera protótipos antes da 1ª função do
+//  sketch, e ter função aqui quebrava a declaração de FaseCiclo/LuzJanela.)
 
-static const char* nomeResetReason() {
-  switch (esp_reset_reason()) {
-    case ESP_RST_POWERON:  return "poweron";
-    case ESP_RST_BROWNOUT: return "brownout";
-    case ESP_RST_TASK_WDT: return "task_wdt";
-    case ESP_RST_INT_WDT:  return "int_wdt";
-    case ESP_RST_WDT:      return "wdt";
-    case ESP_RST_PANIC:    return "panic";
-    case ESP_RST_SW:       return "software";
-    case ESP_RST_EXT:      return "botao_reset";
-    case ESP_RST_DEEPSLEEP:return "deepsleep";
-    case ESP_RST_SDIO:     return "sdio";
-    default:               return "desconhecido";
-  }
-}
 
-void armarWatchdogPadrao() {
-  g_wdt_armado = (esp_task_wdt_init(WDT_TIMEOUT_S, true) == ESP_OK);
-  if (g_wdt_armado) esp_task_wdt_add(NULL);
-  Serial.printf("[WDT] watchdog global %s (%us)\n",
-                g_wdt_armado ? "armado" : "FALHOU", (unsigned)WDT_TIMEOUT_S);
-}
 
 // -------- SCD41 (CO2 ambiente — v2.4.0) --------
 // Sensor opcional; se não responder no I2C, os ticks de CO2 ficam desabilitados.
@@ -328,7 +310,32 @@ WiFiClientSecure httpsClient;
 HTTPClient       http;
 bool             httpInit = false;
 
+// -------- v2.6.0 — motivo do último boot / watchdog global --------
+static const char* nomeResetReason() {
+  switch (esp_reset_reason()) {
+    case ESP_RST_POWERON:  return "poweron";
+    case ESP_RST_BROWNOUT: return "brownout";
+    case ESP_RST_TASK_WDT: return "task_wdt";
+    case ESP_RST_INT_WDT:  return "int_wdt";
+    case ESP_RST_WDT:      return "wdt";
+    case ESP_RST_PANIC:    return "panic";
+    case ESP_RST_SW:       return "software";
+    case ESP_RST_EXT:      return "botao_reset";
+    case ESP_RST_DEEPSLEEP:return "deepsleep";
+    case ESP_RST_SDIO:     return "sdio";
+    default:               return "desconhecido";
+  }
+}
+
+void armarWatchdogPadrao() {
+  g_wdt_armado = (esp_task_wdt_init(WDT_TIMEOUT_S, true) == ESP_OK);
+  if (g_wdt_armado) esp_task_wdt_add(NULL);
+  Serial.printf("[WDT] watchdog global %s (%us)\n",
+                g_wdt_armado ? "armado" : "FALHOU", (unsigned)WDT_TIMEOUT_S);
+}
+
 // -------- Utilidades --------
+
 static const char* faseNome(FaseCiclo f) {
   switch (f) {
     case REPOUSO:    return "Repouso";
