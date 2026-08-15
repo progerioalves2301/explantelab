@@ -310,7 +310,32 @@ WiFiClientSecure httpsClient;
 HTTPClient       http;
 bool             httpInit = false;
 
+// -------- v2.6.0 — motivo do último boot / watchdog global --------
+static const char* nomeResetReason() {
+  switch (esp_reset_reason()) {
+    case ESP_RST_POWERON:  return "poweron";
+    case ESP_RST_BROWNOUT: return "brownout";
+    case ESP_RST_TASK_WDT: return "task_wdt";
+    case ESP_RST_INT_WDT:  return "int_wdt";
+    case ESP_RST_WDT:      return "wdt";
+    case ESP_RST_PANIC:    return "panic";
+    case ESP_RST_SW:       return "software";
+    case ESP_RST_EXT:      return "botao_reset";
+    case ESP_RST_DEEPSLEEP:return "deepsleep";
+    case ESP_RST_SDIO:     return "sdio";
+    default:               return "desconhecido";
+  }
+}
+
+void armarWatchdogPadrao() {
+  g_wdt_armado = (esp_task_wdt_init(WDT_TIMEOUT_S, true) == ESP_OK);
+  if (g_wdt_armado) esp_task_wdt_add(NULL);
+  Serial.printf("[WDT] watchdog global %s (%us)\n",
+                g_wdt_armado ? "armado" : "FALHOU", (unsigned)WDT_TIMEOUT_S);
+}
+
 // -------- Utilidades --------
+
 static const char* faseNome(FaseCiclo f) {
   switch (f) {
     case REPOUSO:    return "Repouso";
