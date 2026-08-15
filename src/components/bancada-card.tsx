@@ -410,6 +410,39 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             );
           })()}
 
+          {/* v2.6.0 — motivo do último reinício, quando foi anormal. */}
+          {(() => {
+            const motivo = bancada.reset_reason ?? null;
+            if (!motivo) return null;
+            const brownout = motivo === "brownout";
+            const travou = ["task_wdt", "int_wdt", "wdt", "panic"].includes(motivo);
+            if (!brownout && !travou) return null;
+            const uptime = bancada.uptime_s ?? null;
+            const desde =
+              uptime != null ? ` Ligada há ${formatShortDuration(uptime)}.` : "";
+            return (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                  brownout
+                    ? "border-red-500/70 bg-red-400/20 text-red-700 dark:text-red-300"
+                    : "border-amber-500/70 bg-amber-400/20 text-amber-700 dark:text-amber-300",
+                )}
+                title={
+                  brownout
+                    ? `Último reinício por queda de tensão (brownout) — a alimentação oscilou, provavelmente na comutação das válvulas.${desde}`
+                    : `Último reinício pelo watchdog: o programa travou e o equipamento se reiniciou sozinho.${desde}`
+                }
+                aria-label={
+                  brownout ? "Reiniciou por queda de tensão" : "Reiniciou pelo watchdog"
+                }
+              >
+                <BatteryWarning className="h-3 w-3" />
+                {brownout ? "Reset · energia" : "Reset · travou"}
+              </span>
+            );
+          })()}
+
 
           <StatusBadge status={bancada.status} />
         </div>

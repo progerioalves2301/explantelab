@@ -38,6 +38,12 @@ const telemetrySchema = z.object({
   rtc_desvio_segundos: z.number().int().min(-31_536_000).max(31_536_000).optional(),
   sensor_travado: z.boolean().optional(),
   sensor_reinicios: z.number().int().min(0).max(1_000_000).optional(),
+  // v2.6.0 — diagnóstico de reinício / rede
+  reset_reason: z.string().max(32).optional(),
+  uptime_s: z.number().int().min(0).max(31_536_000).optional(),
+  heap_min: z.number().int().min(0).max(10_000_000).optional(),
+  wifi_reconexoes: z.number().int().min(0).max(1_000_000).optional(),
+  rssi: z.number().int().min(-127).max(0).optional(),
 });
 
 function json(body: unknown, status = 200) {
@@ -101,6 +107,22 @@ export const Route = createFileRoute("/api/public/bench/telemetry")({
         if (payload.rtc_desvio_segundos !== undefined) {
           updatePayload.rtc_desvio_segundos = payload.rtc_desvio_segundos;
         }
+        if (payload.reset_reason !== undefined) {
+          updatePayload.reset_reason = payload.reset_reason;
+        }
+        if (payload.uptime_s !== undefined) {
+          updatePayload.uptime_s = payload.uptime_s;
+        }
+        if (payload.heap_min !== undefined) {
+          updatePayload.heap_min = payload.heap_min;
+        }
+        if (payload.wifi_reconexoes !== undefined) {
+          updatePayload.wifi_reconexoes = payload.wifi_reconexoes;
+        }
+        if (payload.rssi !== undefined) {
+          updatePayload.rssi = payload.rssi;
+        }
+
 
         if (payload.sensor_reinicios !== undefined) {
           updatePayload.sensor_reinicios = payload.sensor_reinicios;
