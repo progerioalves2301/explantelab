@@ -292,6 +292,33 @@ Após o pareamento, as credenciais são salvas na NVS e o portal não abre mais,
 
 ---
 
+## 13.1 Diagnóstico de reinício e travamento (v2.6.0)
+
+A telemetria passa a carregar o **motivo do último boot** e indicadores de saúde:
+
+| Campo | Significado |
+| :--- | :--- |
+| `reset_reason` | `poweron`, `brownout`, `task_wdt`, `int_wdt`, `panic`, `software`, `botao_reset`. |
+| `uptime_s` | Segundos ligada desde o último boot. |
+| `heap_min` | Menor heap livre já observado (detecta vazamento de memória). |
+| `wifi_reconexoes` | Quantas vezes o link caiu e voltou. |
+| `rssi` | Intensidade do sinal Wi-Fi (dBm). |
+
+Como interpretar:
+
+- `brownout` → a alimentação oscilou. Causa típica: transiente do solenoide 220 Vac na comutação do relé. Correção é de **hardware** (snubber RC 100 Ω / 100 nF 275 Vac em paralelo com a bobina, MOV na entrada, 1000 µF + 100 nF nas entradas de 12 V e 5 V, separação física entre a fiação AC e os sinais DC).
+- `task_wdt` / `int_wdt` / `panic` → travamento de **software**; o watchdog global reiniciou o equipamento.
+- `poweron` → queda de energia real ou primeiro boot.
+
+Proteções acrescentadas na v2.6.0:
+
+1. **Watchdog global de 30 s**, armado no fim do `setup()` (o portal Wi-Fi pode bloquear por minutos e não deve reiniciar nada). Realimentado a cada volta do `loop()`; após o OTA ele é rearmado.
+2. **Teto de segurança por fase**: Injeção/Pausa/Retorno que passe do dobro do tempo configurado (+60 s) fecha todas as válvulas e volta ao Repouso. Evita o cenário de válvula aberta por horas depois de um travamento.
+3. **Comutação escalonada**: o par que desliga age primeiro, há espera de ~150 ms e só então o outro par energiza — os dois transientes deixam de coincidir.
+
+---
+
+
 ## 14. Arquivos relacionados
 
 - `firmware/bancada_esp32_v2_5_7/bancada_esp32_v2_5_7.ino` — código fonte.
