@@ -119,7 +119,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.5.9";
+static const char* FIRMWARE_VERSION = "2.6.0";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -206,6 +206,40 @@ uint32_t   g_rtc_epoch_boot   = 0;       // unixtime lido do RTC no boot (0 = in
 uint32_t   g_rtc_epoch_boot_ms = 0;      // millis() no instante dessa leitura
 // Desvio tolerado antes de considerar o relógio/bateria suspeitos.
 const int32_t RTC_DESVIO_MAX_S = 120;
+
+// -------- v2.6.0 — Diagnóstico de reinício / rede --------
+// Objetivo: descobrir POR QUE a prateleira sai do ar (brownout na comutação da
+// válvula 220 Vac x travamento de software). Tudo é publicado na telemetria.
+static const char* g_reset_reason = "?";   // motivo do último boot
+static uint32_t g_heap_min        = 0xFFFFFFFF; // menor heap livre visto
+static uint32_t g_wifi_reconexoes = 0;     // quantas vezes o link caiu e voltou
+// Watchdog global: se o loop travar, o ESP32 reinicia sozinho e retoma o ciclo
+// pelo estado salvo na NVS (em vez de ficar horas com a válvula energizada).
+static const uint32_t WDT_TIMEOUT_S = 30;
+static bool g_wdt_armado = false;
+
+static const char* nomeResetReason() {
+  switch (esp_reset_reason()) {
+    case ESP_RST_POWERON:  return "poweron";
+    case ESP_RST_BROWNOUT: return "brownout";
+    case ESP_RST_TASK_WDT: return "task_wdt";
+    case ESP_RST_INT_WDT:  return "int_wdt";
+    case ESP_RST_WDT:      return "wdt";
+    case ESP_RST_PANIC:    return "panic";
+    case ESP_RST_SW:       return "software";
+    case ESP_RST_EXT:      return "botao_reset";
+    case ESP_RST_DEEPSLEEP:return "deepsleep";
+    case ESP_RST_SDIO:     return "sdio";
+    default:               return "desconhecido";
+  }
+}
+
+void armarWatchdogPadrao() {
+  g_wdt_armado = (esp_task_wdt_init(WDT_TIMEOUT_S, true) == ESP_OK);
+  if (g_wdt_armado) esp_task_wdt_add(NULL);
+  Serial.printf("[WDT] watchdog global %s (%us)\n",
+                g_wdt_armado ? "armado" : "FALHOU", (unsigned)WDT_TIMEOUT_S);
+}
 
 // -------- SCD41 (CO2 ambiente — v2.4.0) --------
 // Sensor opcional; se não responder no I2C, os ticks de CO2 ficam desabilitados.
@@ -308,11 +342,25 @@ static const char* faseNome(FaseCiclo f) {
   return "Offline";
 }
 
+// v2.6.0 — Comutação ESCALONADA. Antes os dois pares mudavam no mesmo instante;
+// desligar/ligar solenoides de 220 Vac juntos soma os transientes e é o momento
+// exato em que a prateleira saía do ar. Agora desliga primeiro, espera ~150 ms
+// e só então energiza o outro par.
 void escreverValvulas(bool v1, bool v2, bool v3, bool v4, bool /*v5*/) {
-  // V1 e V4 compartilham GPIO (par injecao) -> abre se qualquer um pedir
-  relayWrite(PIN_V1_V4, v1 || v4);
-  // V2 e V3 compartilham GPIO (par retorno) -> abre se qualquer um pedir
-  relayWrite(PIN_V2_V3, v2 || v3);
+  const bool inj = (v1 || v4);   // par injecao (V1 + V4) — GPIO 25
+  const bool ret = (v2 || v3);   // par retorno (V2 + V3) — GPIO 26
+  const bool inj_atual = relayRead(PIN_V1_V4);
+  const bool ret_atual = relayRead(PIN_V2_V3);
+
+  bool desligou = false;
+  if (!inj && inj_atual) { relayWrite(PIN_V1_V4, false); desligou = true; }
+  if (!ret && ret_atual) { relayWrite(PIN_V2_V3, false); desligou = true; }
+
+  const bool vai_ligar = (inj && !inj_atual) || (ret && !ret_atual);
+  if (desligou && vai_ligar) delay(150);   // separa os transientes
+
+  if (inj && !inj_atual) relayWrite(PIN_V1_V4, true);
+  if (ret && !ret_atual) relayWrite(PIN_V2_V3, true);
   // v5 ignorado (válvula removida do projeto na v1.9.2)
 }
 
@@ -1164,6 +1212,18 @@ bool enviarTelemetria() {
   doc["_sensor_travado"]         = g_sensor_travado;
   doc["_sensor_reinicios"]       = g_temp_reinicios;
 
+  // v2.6.0 — diagnóstico de queda: motivo do último boot, tempo ligado, menor
+  // heap livre já visto, quedas de Wi-Fi e força do sinal.
+  {
+    uint32_t heap_agora = ESP.getFreeHeap();
+    if (heap_agora < g_heap_min) g_heap_min = heap_agora;
+  }
+  doc["_reset_reason"]           = g_reset_reason;
+  doc["_uptime_s"]               = (uint32_t)(millis() / 1000UL);
+  doc["_heap_min"]               = (uint32_t)(g_heap_min == 0xFFFFFFFF ? 0 : g_heap_min);
+  doc["_wifi_reconexoes"]        = g_wifi_reconexoes;
+  doc["_rssi"]                   = (int)WiFi.RSSI();
+
   // v2.0.1: envia somente leitura real do DS18B20. Não reenvia temperatura
   // em cache como válida, porque isso fazia o dashboard parecer travado/atual.
   if (g_temperatura_valida && !isnan(g_temperatura_planta)) {
@@ -1656,6 +1716,7 @@ void tratarComando(JsonObject cmd) {
     });
     t_httpUpdate_return ret = httpUpdate.update(otaClient, String(url));
     if (wdtArmado) esp_task_wdt_delete(NULL);
+    armarWatchdogPadrao();   // v2.6.0 — volta ao watchdog global de 30 s
     switch (ret) {
       case HTTP_UPDATE_FAILED:
         Serial.printf("[OTA] FALHOU: (%d) %s (heap=%u)\n",
@@ -1705,6 +1766,24 @@ void tickCiclo() {
   if (fase == MANUAL) return;   // controle manual — nao interferir
   if (pausado_manual) { aplicarFase(REPOUSO); return; }
   uint32_t decorrido = (millis() - fase_inicio_ms) / 1000;
+
+  // v2.6.0 — TETO DE SEGURANÇA por fase: se por qualquer motivo (relógio,
+  // config corrompida, travamento recuperado) uma fase passar do DOBRO do
+  // tempo configurado, fecha tudo e volta ao Repouso. Nunca mais válvula
+  // aberta por horas.
+  if (fase == INJETANDO || fase == PAUSADO || fase == RETORNANDO) {
+    uint32_t limite = 60;
+    if (fase == INJETANDO)  limite = cfg.tempo_injecao_segundos;
+    if (fase == PAUSADO)    limite = cfg.tempo_pausa_segundos;
+    if (fase == RETORNANDO) limite = cfg.tempo_retorno_segundos;
+    if (limite < 10) limite = 10;
+    if (decorrido > (uint32_t)(limite * 2 + 60)) {
+      Serial.printf("[SEGURANCA] fase %s durou %us (limite %us) -> Repouso\n",
+                    faseNome(fase), (unsigned)decorrido, (unsigned)limite);
+      aplicarFase(REPOUSO);
+      return;
+    }
+  }
   switch (fase) {
     case REPOUSO:
       // Não dispara sozinho: o backend agenda os ciclos por horário
@@ -1913,6 +1992,12 @@ void setup() {
   Serial.begin(115200);
   delay(200);
   Serial.printf("\n== VitroCeres Prateleira ESP32 v%s (direct-Supabase) ==\n", FIRMWARE_VERSION);
+  // v2.6.0 — motivo do último boot (brownout = queda de tensão na comutação da
+  // válvula; task_wdt/panic = travamento de software).
+  g_reset_reason = nomeResetReason();
+  Serial.printf("[BOOT] motivo do reset: %s | heap=%u\n",
+                g_reset_reason, (unsigned)ESP.getFreeHeap());
+  armarWatchdogPadrao();
   Serial.printf("[RELAY] valvulas: ACTIVE_%s | luz: ACTIVE_%s\n",
                 RELAY_ACTIVE_LOW ? "LOW" : "HIGH",
                 LUZ_ACTIVE_LOW ? "LOW" : "HIGH");
@@ -2148,6 +2233,7 @@ void tickWifiWatchdog(unsigned long now) {
   static uint8_t tentativas = 0;
 
   if (WiFi.status() == WL_CONNECTED) {
+    if (downSince != 0) g_wifi_reconexoes++;   // v2.6.0 — conta quedas de link
     downSince = 0;
     tentativas = 0;
     return;
@@ -2273,6 +2359,13 @@ void tickLedStatus(unsigned long now) {
 
 void loop() {
   unsigned long now = millis();
+
+  // v2.6.0 — realimenta o watchdog global e acompanha o piso de memória.
+  if (g_wdt_armado) esp_task_wdt_reset();
+  {
+    uint32_t heap_agora = ESP.getFreeHeap();
+    if (heap_agora < g_heap_min) g_heap_min = heap_agora;
+  }
 
   // v1.9.0 — intervalos adaptativos p/ suportar 100+ bancadas na mesma
   // instância Supabase. Em REPOUSO (>99% do tempo) reduz drasticamente
