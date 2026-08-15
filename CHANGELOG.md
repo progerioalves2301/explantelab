@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-08-15 — Firmware v2.6.0 + diagnóstico de queda
+
+**Contexto**: a prateleira P8S12 saía do ar todos os dias no mesmo minuto (17:13), exatamente no instante em que a injeção termina e o par de válvulas V1/V4 desliga. Ela ficava travada em "Injetando" por horas — com as válvulas possivelmente energizadas.
+
+**Firmware (v2.6.0 — sem mudança de pinagem)**
+- **Motivo do último reinício na telemetria** (`esp_reset_reason`): `poweron`, `brownout`, `task_wdt`, `panic`, `botao_reset`, etc. É isso que separa "queda de tensão na comutação da válvula" de "travamento de software".
+- **Diagnóstico de rede/memória**: tempo ligado (`uptime_s`), menor heap livre já visto (`heap_min`), número de quedas de Wi-Fi (`wifi_reconexoes`) e intensidade do sinal (`rssi`).
+- **Watchdog global de 30 s** (antes existia só durante o OTA): se o loop travar, o ESP32 reinicia sozinho e retoma o ciclo pelo estado salvo na NVS. Armado no fim do `setup()` para não interferir no portal Wi-Fi.
+- **Teto de segurança por fase**: se Injeção/Pausa/Retorno passar do dobro do tempo configurado (+60 s), o firmware fecha todas as válvulas e volta ao Repouso — mesmo sem internet.
+- **Comutação escalonada das válvulas**: o par que desliga vai primeiro, espera ~150 ms e só então o outro par energiza. Antes os dois transientes de 220 Vac aconteciam no mesmo instante.
+
+**Backend**
+- `bancadas` ganhou `reset_reason`, `uptime_s`, `heap_min`, `wifi_reconexoes`, `rssi`; `bench_push_telemetry` e `POST /api/public/bench/telemetry` aceitam os novos campos (a versão antiga da função foi removida para não criar sobrecarga ambígua).
+- **Ar-condicionado sem ping-pong**: `decidir_ar_condicionado()` agora exige a histerese **também para ligar** (liga em `> max + histerese`, desliga em `<= max - histerese`), respeita um intervalo mínimo de 300 s entre comandos e descarta comandos `AC_CONTROL` pendentes antigos em vez de acumular fila de códigos IR.
+
+**App**
+- Selo no card: **"Reset · energia"** (vermelho) quando o último boot foi por brownout e **"Reset · travou"** (âmbar) quando foi pelo watchdog/pânico, com explicação no tooltip.
+
+**Ação**: compilar `firmware/bancada_esp32_v2_6_0/bancada_esp32_v2_6_0.ino` e atualizar por OTA. Depois do primeiro reinício, o selo do card diz se a causa é elétrica (hardware: snubber RC 100 Ω/100 nF 275 Vac na bobina + desacoplamento nas fontes de 12 V e 5 V) ou de software.
+
+---
+
+
 ## 2026-08-12 — Firmware v2.5.9
 
 **Firmware — confiabilidade do OTA e vida útil da memória**
