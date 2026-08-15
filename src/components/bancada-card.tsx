@@ -419,7 +419,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             if (!brownout && !travou) return null;
             const uptime = bancada.uptime_s ?? null;
             const desde =
-              uptime != null ? ` Ligada há ${formatShortDuration(uptime)}.` : "";
+              uptime != null ? ` Ligada há ${formatShortDuration(uptime * 1000)}.` : "";
             return (
               <span
                 className={cn(
