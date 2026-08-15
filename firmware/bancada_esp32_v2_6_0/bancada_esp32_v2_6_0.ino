@@ -1997,7 +1997,7 @@ void setup() {
   g_reset_reason = nomeResetReason();
   Serial.printf("[BOOT] motivo do reset: %s | heap=%u\n",
                 g_reset_reason, (unsigned)ESP.getFreeHeap());
-  armarWatchdogPadrao();
+  // (o watchdog global é armado no FIM do setup, depois do portal Wi-Fi)
   Serial.printf("[RELAY] valvulas: ACTIVE_%s | luz: ACTIVE_%s\n",
                 RELAY_ACTIVE_LOW ? "LOW" : "HIGH",
                 LUZ_ACTIVE_LOW ? "LOW" : "HIGH");
@@ -2087,6 +2087,10 @@ void setup() {
   }
 
   restaurarCiclo();
+
+  // v2.6.0 — watchdog global só aqui: o portal Wi-Fi e o pareamento podem
+  // bloquear por minutos e não devem provocar reinício.
+  armarWatchdogPadrao();
 }
 
 // (timers movidos para antes de tratarComando)
