@@ -95,7 +95,14 @@ function GraficoTemperaturaPage() {
   }));
 
   // Log para debug no console do navegador (auxilia o suporte)
-  console.log("Grafico:", { totalPontos: pontos.length, intervalosLuz, janelas: bancada?.config?.luz_janelas });
+  console.log("Grafico:", { 
+    id,
+    totalPontos: pontos.length, 
+    intervalosLuz, 
+    janelas: bancada?.config?.luz_janelas,
+    currentTime: format(new Date(), "HH:mm:ss"),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  });
 
   return (
     <div className="space-y-4">
@@ -211,7 +218,7 @@ function GraficoTemperaturaPage() {
 
                     const programada = bancada?.config?.luz_janelas?.some((j: any) => {
                       if (!j.ligar || !j.desligar) return false;
-                      return tsTime >= j.ligar && tsTime <= j.desligar;
+                      return tsTime >= j.ligar && tsTime < j.desligar;
                     });
                     
                     const formattedLabel = typeof label === 'number' 
