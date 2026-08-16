@@ -351,7 +351,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          {(temLuz || temBalanca || temCo2) && (
+          {temLuz && (
             <span
               className={cn(
                 "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors",
