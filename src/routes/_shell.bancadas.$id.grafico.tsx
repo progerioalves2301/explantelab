@@ -205,13 +205,12 @@ function GraficoTemperaturaPage() {
                     const dataPoint = payload[0]?.payload;
                     const ts = dataPoint?.ts;
                     
-                    // Se não temos logs reais, podemos usar o agendamento da bancada como fallback visual
-                    // ou apenas mostrar o dado real. O usuário reclamou que "só tem temperatura",
-                    // implicando que os logs de luz podem estar vazios ou não aparecendo.
-                    const acesa = intervalosLuz.some(i => {
-                      const ini = new Date(i.inicio).getTime();
-                      const fim = new Date(i.fim).getTime();
-                      return ts >= ini && ts <= fim;
+                    const tsDate = new Date(ts);
+                    const tsTime = format(tsDate, "HH:mm");
+
+                    const programada = bancada?.config?.luz_janelas?.some((j: any) => {
+                      if (!j.ligar || !j.desligar) return false;
+                      return tsTime >= j.ligar && tsTime <= j.desligar;
                     });
                     
                     const formattedLabel = typeof label === 'number' 
@@ -221,39 +220,17 @@ function GraficoTemperaturaPage() {
                     return (
                       <div className="flex flex-col gap-1">
                         <div className="font-medium text-foreground">{formattedLabel}</div>
-                        {acesa && (
+                        {programada && (
                           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-yellow-500">
                             <span className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
-                            Luz Acesa
+                            Luz Programada
                           </div>
                         )}
                       </div>
                     );
                   }}
                 />
-                {/* Histórico Real de Luz */}
-                {intervalosLuz.map((i, idx) => (
-                  <ReferenceArea
-                    key={`real-${idx}`}
-                    x1={new Date(i.inicio).getTime()}
-                    x2={new Date(i.fim).getTime()}
-                    fill="#facc15"
-                    fillOpacity={0.4}
-                    stroke="none"
-                    ifOverflow="visible"
-                  >
-                    <Label
-                      value="LUZ ACESA"
-                      position="insideTop"
-                      fill="#000000"
-                      fontSize={12}
-                      fontWeight={800}
-                      offset={10}
-                    />
-                  </ReferenceArea>
-                ))}
-
-                {/* Fallback: Janelas de Luz configuradas */}
+                {/* Janelas de Luz (Baseadas na Programação) */}
                 {bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
                   if (!j.ligar || !j.desligar) return null;
                   
@@ -268,22 +245,20 @@ function GraficoTemperaturaPage() {
 
                     return (
                       <ReferenceArea
-                        key={`fallback-${idx}-${offset}`}
+                        key={`prog-${idx}-${offset}`}
                         x1={x1}
                         x2={x2}
                         fill="#facc15"
-                        fillOpacity={0.2}
-                        stroke="#facc15"
-                        strokeOpacity={0.2}
-                        strokeDasharray="3 3"
+                        fillOpacity={0.3}
+                        stroke="none"
                         ifOverflow="visible"
                       >
                         <Label
-                          value="PROGRAMADO"
+                          value="LUZ PROGRAMADA"
                           position="insideTop"
                           fill="#000000"
-                          fontSize={10}
-                          fontWeight={700}
+                          fontSize={11}
+                          fontWeight={800}
                           offset={10}
                         />
                       </ReferenceArea>
