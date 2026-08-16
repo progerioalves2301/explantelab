@@ -371,7 +371,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               {bancada.luz_ligada ? "ON" : "OFF"}
             </span>
           )}
-          {bancada.tem_rtc != null && (() => {
+          {(temLuz || temBalanca || temCo2 || bancada.tem_rtc != null) && (() => {
             const desvio = bancada.rtc_desvio_segundos ?? 0;
             const desvioAlto = Math.abs(desvio) > 120;
             const semHora = bancada.tem_rtc === true && bancada.rtc_hora_perdida === true;
@@ -383,6 +383,14 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             if (desvioAlto) motivos.push(`desvio de ${Math.round(Math.abs(desvio) / 60)} min em relação à hora real`);
             if (bancada.rtc_bateria_fraca) motivos.push("oscilador do DS3231 parou (OSF)");
             const rotulo = alerta ? (semHora ? "RTC · sem hora" : "RTC · bateria") : "RTC";
+            
+            // Se não tem RTC físico e não é módulo sensor, mostramos o badge apagado (o padrão anterior)
+            // Mas se for módulo sensor, forçamos a exibição do badge de RTC mesmo que o valor seja null/false
+            // para que o usuário veja o status.
+            const mostrarRTC = bancada.tem_rtc != null || isModuloSensor;
+            
+            if (!mostrarRTC) return null;
+
             return (
               <span
                 className={cn(
