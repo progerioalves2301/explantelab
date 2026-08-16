@@ -237,6 +237,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
       : sendValves(PRESET_MEIO, "Bio Reator Meio ligado");
 
   const handleDelete = async () => {
+    if (!confirm(`Excluir prateleira "${bancada.nome}" permanentemente?`)) return;
     setDeleting(true);
     try {
       await excluir({ data: { id: bancada.id } });
