@@ -179,7 +179,10 @@ function GraficoTemperaturaPage() {
               >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis
-                  dataKey="label"
+                  dataKey="ts"
+                  type="number"
+                  domain={['dataMin', 'dataMax']}
+                  tickFormatter={(ts) => format(new Date(ts), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
                   minTickGap={40}
                   tick={{ fontSize: 11 }}
                 />
@@ -223,42 +226,45 @@ function GraficoTemperaturaPage() {
                     );
                   }}
                 />
-                {intervalosLuz.length > 0 ? (
-                  intervalosLuz.map((i, idx) => (
-                    <ReferenceArea
-                      key={idx}
-                      x1={format(new Date(i.inicio), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
-                      x2={format(new Date(i.fim), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
-                      fill="#facc15"
-                      fillOpacity={0.4}
-                      stroke="none"
-                    />
-                  ))
-                ) : (
-                  bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
-                    if (!j.ligar || !j.desligar) return null;
-                    
-                    const hoje = new Date().toISOString().split('T')[0];
-                    const iniStr = `${hoje}T${j.ligar}:00`;
-                    const fimStr = `${hoje}T${j.desligar}:00`;
-                    
-                    const x1 = format(new Date(iniStr), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
-                    const x2 = format(new Date(fimStr), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
+                {/* Histórico Real de Luz */}
+                {intervalosLuz.map((i, idx) => (
+                  <ReferenceArea
+                    key={`real-${idx}`}
+                    x1={new Date(i.inicio).getTime()}
+                    x2={new Date(i.fim).getTime()}
+                    fill="#facc15"
+                    fillOpacity={0.4}
+                    stroke="none"
+                    ifOverflow="visible"
+                  />
+                ))}
+
+                {/* Fallback: Janelas de Luz configuradas */}
+                {bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
+                  if (!j.ligar || !j.desligar) return null;
+                  
+                  return [-1, 0, 1].map(offset => {
+                    const d = new Date();
+                    d.setDate(d.getDate() + offset);
+                    const base = d.toISOString().split('T')[0];
+                    const x1 = new Date(`${base}T${j.ligar}:00`).getTime();
+                    const x2 = new Date(`${base}T${j.desligar}:00`).getTime();
 
                     return (
                       <ReferenceArea
-                        key={`fallback-${idx}`}
+                        key={`fallback-${idx}-${offset}`}
                         x1={x1}
                         x2={x2}
                         fill="#facc15"
-                        fillOpacity={0.25}
+                        fillOpacity={0.3}
                         stroke="#facc15"
-                        strokeOpacity={0.3}
+                        strokeOpacity={0.4}
                         strokeDasharray="3 3"
+                        ifOverflow="visible"
                       />
                     );
-                  })
-                )}
+                  });
+                })}
                 {tempMin != null && (
                   <ReferenceLine
                     y={Number(tempMin)}
