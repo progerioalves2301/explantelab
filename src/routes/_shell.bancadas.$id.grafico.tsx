@@ -268,9 +268,12 @@ function GraficoTemperaturaPage() {
                     const d = new Date();
                     d.setDate(d.getDate() + offset);
                     
-                    // Horários de referência da controladora
-                    const [lH, lM] = j.ligar.split(':').map(Number);
-                    const [dH, dM] = j.desligar.split(':').map(Number);
+                    // Horários de referência da controladora (FORÇAR 03:00 se for P8S12 ou conforme solicitado)
+                    const ligarStr = luzFonte?.nome === 'P8S12' ? '03:00' : j.ligar;
+                    const desligarStr = luzFonte?.nome === 'P8S12' ? '17:00' : j.desligar;
+
+                    const [lH, lM] = ligarStr.split(':').map(Number);
+                    const [dH, dM] = desligarStr.split(':').map(Number);
                     
                     // x1 e x2 no tempo local do browser
                     const x1 = new Date(d.getFullYear(), d.getMonth(), d.getDate(), lH, lM, 0).getTime();
