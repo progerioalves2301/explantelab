@@ -231,29 +231,7 @@ function GraficoTemperaturaPage() {
                     );
                   }}
                 />
-                {/* Histórico Real de Luz */}
-                {intervalosLuz.map((i, idx) => (
-                  <ReferenceArea
-                    key={`real-${idx}`}
-                    x1={new Date(i.inicio).getTime()}
-                    x2={new Date(i.fim).getTime()}
-                    fill="#facc15"
-                    fillOpacity={0.4}
-                    stroke="none"
-                    ifOverflow="visible"
-                  >
-                    <Label
-                      value="LUZ ACESA"
-                      position="insideTop"
-                      fill="#000000"
-                      fontSize={12}
-                      fontWeight={800}
-                      offset={10}
-                    />
-                  </ReferenceArea>
-                ))}
-
-                {/* Fallback: Janelas de Luz configuradas */}
+                {/* Janelas de Luz (Baseadas na Programação) */}
                 {bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
                   if (!j.ligar || !j.desligar) return null;
                   
@@ -268,22 +246,20 @@ function GraficoTemperaturaPage() {
 
                     return (
                       <ReferenceArea
-                        key={`fallback-${idx}-${offset}`}
+                        key={`prog-${idx}-${offset}`}
                         x1={x1}
                         x2={x2}
                         fill="#facc15"
-                        fillOpacity={0.2}
-                        stroke="#facc15"
-                        strokeOpacity={0.2}
-                        strokeDasharray="3 3"
+                        fillOpacity={0.3}
+                        stroke="none"
                         ifOverflow="visible"
                       >
                         <Label
-                          value="PROGRAMADO"
+                          value="LUZ PROGRAMADA"
                           position="insideTop"
                           fill="#000000"
-                          fontSize={10}
-                          fontWeight={700}
+                          fontSize={11}
+                          fontWeight={800}
                           offset={10}
                         />
                       </ReferenceArea>
