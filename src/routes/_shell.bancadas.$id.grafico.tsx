@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
   ReferenceLine,
+  ReferenceArea,
 } from "recharts";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -23,6 +24,7 @@ import {
   type PontoTemperatura,
 } from "@/lib/medicoes.functions";
 import { listBancadas } from "@/lib/bancadas.functions";
+import { listarHistoricoLuz, type IntervaloLuz } from "@/lib/luz.functions";
 import type { Bancada } from "@/lib/types";
 
 export const Route = createFileRoute("/_shell/bancadas/$id/grafico")({
@@ -43,8 +45,10 @@ function GraficoTemperaturaPage() {
   const { id } = useParams({ from: "/_shell/bancadas/$id/grafico" });
   const listar = useServerFn(listarHistoricoTemperatura);
   const listB = useServerFn(listBancadas);
+  const listarLuz = useServerFn(listarHistoricoLuz);
 
   const [pontos, setPontos] = useState<PontoTemperatura[]>([]);
+  const [intervalosLuz, setIntervalosLuz] = useState<IntervaloLuz[]>([]);
   const [periodo, setPeriodo] = useState<PeriodoGrafico>("24h");
   const [loading, setLoading] = useState(true);
   const [bancada, setBancada] = useState<Bancada | null>(null);
@@ -52,11 +56,17 @@ function GraficoTemperaturaPage() {
   const carregar = async () => {
     setLoading(true);
     try {
-      const [dados, bs] = await Promise.all([
+      const horasMap = { "6h": 6, "24h": 24, "7d": 168, "30d": 720, "60d": 1440, "120d": 2880 };
+      const horas = horasMap[periodo as keyof typeof horasMap] || 24;
+      const desde = new Date(Date.now() - horas * 3600 * 1000).toISOString();
+
+      const [dados, bs, luz] = await Promise.all([
         listar({ data: { bancada_id: id, periodo } }),
         listB(),
+        listarLuz({ data: { bancada_id: id, desde } }),
       ]);
       setPontos(dados);
+      setIntervalosLuz(luz);
       setBancada(bs.find((b) => b.id === id) ?? null);
     } finally {
       setLoading(false);
@@ -184,7 +194,26 @@ function GraficoTemperaturaPage() {
                     borderRadius: 6,
                     fontSize: 12,
                   }}
+                  labelFormatter={(label, payload) => {
+                    const ts = payload[0]?.payload?.ts;
+                    const acesa = intervalosLuz.some(i => {
+                      const ini = new Date(i.inicio).getTime();
+                      const fim = new Date(i.fim).getTime();
+                      return ts >= ini && ts <= fim;
+                    });
+                    return `${label}${acesa ? " (Luz Acesa)" : ""}`;
+                  }}
                 />
+                {intervalosLuz.map((i, idx) => (
+                  <ReferenceArea
+                    key={idx}
+                    x1={format(new Date(i.inicio), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
+                    x2={format(new Date(i.fim), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
+                    fill="hsl(var(--warning))"
+                    fillOpacity={0.08}
+                    stroke="none"
+                  />
+                ))}
                 {tempMin != null && (
                   <ReferenceLine
                     y={Number(tempMin)}
