@@ -10,6 +10,17 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   criarDestino,
   listarDestinos,
   removerDestino,
@@ -143,18 +154,37 @@ function DestinosPage() {
                 <Button size="sm" variant="outline" onClick={() => handleTestar(d)}>
                   <Send className="mr-1.5 h-3.5 w-3.5" />Testar
                 </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={async () => {
-                    if (!confirm(`Remover destino "${d.nome}"?`)) return;
-                    await remover({ data: { id: d.id } });
-                    toast.success("Destino removido");
-                    carregar();
-                  }}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remover destino?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Deseja remover o destino <strong>{d.nome}</strong> da lista de alertas do Telegram?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={async () => {
+                          await remover({ data: { id: d.id } });
+                          toast.success("Destino removido");
+                          carregar();
+                        }}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Remover
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             ))
           )}

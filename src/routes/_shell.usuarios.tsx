@@ -27,6 +27,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Select,
@@ -497,14 +498,34 @@ function UsuarioRow({
                 >
                   <Icon className="h-3 w-3" />
                   {ROLE_LABEL[role]}
-                  <button
-                    type="button"
-                    onClick={() => onRemover(role)}
-                    className="ml-1 opacity-70 transition-opacity hover:opacity-100"
-                    aria-label={`Remover papel ${ROLE_LABEL[role]}`}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        type="button"
+                        className="ml-1 opacity-70 transition-opacity hover:opacity-100"
+                        aria-label={`Remover papel ${ROLE_LABEL[role]}`}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remover papel?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Deseja remover o papel <strong>{ROLE_LABEL[role]}</strong> do usuário <strong>{usuario.email}</strong>?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => onRemover(role)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Remover
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </Badge>
               );
             })
@@ -538,17 +559,38 @@ function UsuarioRow({
       >
         <KeyRound className="h-4 w-4" />
       </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-        onClick={onExcluir}
-        disabled={isSelf}
-        title={isSelf ? "Não é possível remover seu próprio usuário" : "Remover usuário"}
-        aria-label="Remover usuário"
-      >
-        <UserX className="h-4 w-4" />
-      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            disabled={isSelf}
+            title={isSelf ? "Não é possível remover seu próprio usuário" : "Remover usuário"}
+            aria-label="Remover usuário"
+          >
+            <UserX className="h-4 w-4" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja remover permanentemente o usuário <strong>{usuario.email}</strong>?
+              Isso revogará todos os seus acessos imediatamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={onExcluir}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
