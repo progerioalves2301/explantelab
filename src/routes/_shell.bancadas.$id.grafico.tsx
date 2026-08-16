@@ -213,9 +213,13 @@ function GraficoTemperaturaPage() {
                       return ts >= ini && ts <= fim;
                     });
                     
+                    const formattedLabel = typeof label === 'number' 
+                      ? format(new Date(label), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")
+                      : label;
+
                     return (
                       <div className="flex flex-col gap-1">
-                        <div className="font-medium text-foreground">{label}</div>
+                        <div className="font-medium text-foreground">{formattedLabel}</div>
                         {acesa && (
                           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-yellow-500">
                             <span className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
