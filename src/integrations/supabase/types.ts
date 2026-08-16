@@ -635,6 +635,35 @@ export type Database = {
         }
         Relationships: []
       }
+      luz_status_log: {
+        Row: {
+          bancada_id: string
+          changed_at: string
+          id: number
+          ligada: boolean
+        }
+        Insert: {
+          bancada_id: string
+          changed_at?: string
+          id?: number
+          ligada: boolean
+        }
+        Update: {
+          bancada_id?: string
+          changed_at?: string
+          id?: number
+          ligada?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "luz_status_log_bancada_id_fkey"
+            columns: ["bancada_id"]
+            isOneToOne: false
+            referencedRelation: "bancadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medicoes_co2: {
         Row: {
           created_at: string
@@ -1056,6 +1085,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      listar_historico_luz: {
+        Args: { _bancada_id: string; _desde: string }
+        Returns: {
+          fim: string
+          inicio: string
+          ligada: boolean
+        }[]
       }
       scale_can_sample: { Args: { _device_token: string }; Returns: Json }
       scale_push_reading: {
