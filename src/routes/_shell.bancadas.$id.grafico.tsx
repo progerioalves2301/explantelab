@@ -240,6 +240,13 @@ function GraficoTemperaturaPage() {
                     fillOpacity={0.4}
                     stroke="none"
                     ifOverflow="visible"
+                    label={{
+                      value: "LUZ ACESA",
+                      position: "insideTop",
+                      fill: "#854d0e",
+                      fontSize: 10,
+                      fontWeight: "bold",
+                    }}
                   />
                 ))}
 
@@ -268,6 +275,13 @@ function GraficoTemperaturaPage() {
                         strokeOpacity={0.2}
                         strokeDasharray="3 3"
                         ifOverflow="visible"
+                        label={offset === 0 ? {
+                          value: "PROGRAMADO",
+                          position: "insideTop",
+                          fill: "#a16207",
+                          fontSize: 9,
+                          fontWeight: "bold",
+                        } : undefined}
                       />
                     );
                   });
