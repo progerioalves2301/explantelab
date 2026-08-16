@@ -306,12 +306,13 @@ export function BancadaConfigDialog({
             </div>
           </div>
 
-          <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 text-primary" />
-                <Label className="text-xs font-semibold">Configurar Ciclos Diários</Label>
-              </div>
+          {acess.tem_luz && (
+            <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-primary" />
+                  <Label className="text-xs font-semibold">Configurar Ciclos Diários</Label>
+                </div>
               <div className="group relative">
                 <span className="cursor-help rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary hover:bg-primary/20 transition-colors">?</span>
                 <div className="absolute right-0 top-6 z-50 w-64 scale-95 opacity-0 pointer-events-none group-hover:scale-100 group-hover:opacity-100 transition-all duration-200 origin-top-right rounded-md border bg-popover p-3 text-[11px] text-popover-foreground shadow-lg">
@@ -376,10 +377,12 @@ export function BancadaConfigDialog({
                   </div>
                 ))}
               </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {acess.tem_luz && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div className="grid gap-2">
               <Label htmlFor="inj" className="text-xs">Injeção (s)</Label>
               <Input id="inj" type="number" min={1} value={config.tempo_injecao_segundos}
@@ -395,7 +398,8 @@ export function BancadaConfigDialog({
               <Input id="ret" type="number" min={1} value={config.tempo_retorno_segundos}
                 onChange={(e) => update("tempo_retorno_segundos", e.target.value)} />
             </div>
-          </div>
+            </div>
+          )}
 
           <div className="grid gap-2 rounded-md border bg-muted/30 p-3">
             <Label className="text-xs font-semibold">
