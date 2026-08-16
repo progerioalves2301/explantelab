@@ -559,17 +559,38 @@ function UsuarioRow({
       >
         <KeyRound className="h-4 w-4" />
       </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-        onClick={onExcluir}
-        disabled={isSelf}
-        title={isSelf ? "Não é possível remover seu próprio usuário" : "Remover usuário"}
-        aria-label="Remover usuário"
-      >
-        <UserX className="h-4 w-4" />
-      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            disabled={isSelf}
+            title={isSelf ? "Não é possível remover seu próprio usuário" : "Remover usuário"}
+            aria-label="Remover usuário"
+          >
+            <UserX className="h-4 w-4" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja remover permanentemente o usuário <strong>{usuario.email}</strong>?
+              Isso revogará todos os seus acessos imediatamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={onExcluir}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
