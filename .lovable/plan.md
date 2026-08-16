@@ -5,8 +5,8 @@ O objetivo é implementar uma visualização que relacione a curva de temperatur
 ## Alterações
 
 ### Backend (Banco de Dados e Funções)
-- Criar a tabela `luz_status_log` (se não existir) para persistir as mudanças de estado da iluminação (`true`/`false`) enviadas pela telemetria.
-- Atualizar a RPC de telemetria para registrar mudanças no campo `luz_ligada`.
+- Criar a tabela `luz_status_log` para persistir as mudanças de estado da iluminação (`true`/`false`) enviadas pela telemetria.
+- Atualizar a função de telemetria para registrar mudanças no campo `luz_ligada`.
 - Criar a função `listar_historico_luz` para retornar os intervalos (ligado/desligado) em um período determinado.
 
 ### Frontend (Aplicação)
