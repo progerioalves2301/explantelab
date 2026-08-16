@@ -62,16 +62,14 @@ function GraficoTemperaturaPage() {
       const horas = horasMap[periodo as keyof typeof horasMap] || 24;
       const desde = new Date(Date.now() - horas * 3600 * 1000).toISOString();
 
-      const [dados, bs, luz] = await Promise.all([
+      const [dados, bs] = await Promise.all([
         listar({ data: { bancada_id: id, periodo } }),
         listB(),
-        listarLuz({ data: { bancada_id: id, desde } }),
       ]);
       
       const currentBancada = bs.find((b) => b.id === id) ?? null;
       setBancada(currentBancada);
       setPontos(dados);
-      setIntervalosLuz(luz);
       
       // Encontra a prateleira controladora de luz na mesma sala/laboratório
       // Prioriza a P8S12, ou qualquer uma que tenha luz_janelas configurado
@@ -81,6 +79,11 @@ function GraficoTemperaturaPage() {
       );
       
       setLuzFonte(controladora || currentBancada);
+
+      // Agora que temos a luzFonte, buscamos os logs dela
+      const fonteId = controladora?.id || id;
+      const luz = await listarLuz({ data: { bancada_id: fonteId, desde } });
+      setIntervalosLuz(luz);
     } finally {
       setLoading(false);
     }
