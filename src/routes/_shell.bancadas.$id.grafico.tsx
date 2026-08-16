@@ -93,6 +93,9 @@ function GraficoTemperaturaPage() {
     valor: Number(p.valor),
   }));
 
+  // Log para debug no console do navegador (auxilia o suporte)
+  console.log("Grafico:", { totalPontos: pontos.length, intervalosLuz, janelas: bancada?.config?.luz_janelas });
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
@@ -211,8 +214,8 @@ function GraficoTemperaturaPage() {
                       <div className="flex flex-col gap-1">
                         <div className="font-medium text-foreground">{label}</div>
                         {acesa && (
-                          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-500">
-                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-yellow-500">
+                            <span className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
                             Luz Acesa
                           </div>
                         )}
@@ -226,14 +229,12 @@ function GraficoTemperaturaPage() {
                       key={idx}
                       x1={format(new Date(i.inicio), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
                       x2={format(new Date(i.fim), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
-                      fill="hsl(var(--warning))"
-                      fillOpacity={0.15}
+                      fill="#facc15"
+                      fillOpacity={0.4}
                       stroke="none"
                     />
                   ))
                 ) : (
-                  // Fallback: Mostrar as janelas configuradas se não houver telemetria histórica 
-                  // para ajudar o usuário a conferir a agenda vs temperatura
                   bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
                     if (!j.ligar || !j.desligar) return null;
                     
@@ -241,7 +242,6 @@ function GraficoTemperaturaPage() {
                     const iniStr = `${hoje}T${j.ligar}:00`;
                     const fimStr = `${hoje}T${j.desligar}:00`;
                     
-                    // Formata para o eixo X do gráfico
                     const x1 = format(new Date(iniStr), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
                     const x2 = format(new Date(fimStr), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
 
@@ -250,9 +250,10 @@ function GraficoTemperaturaPage() {
                         key={`fallback-${idx}`}
                         x1={x1}
                         x2={x2}
-                        fill="hsl(var(--warning))"
-                        fillOpacity={0.05}
-                        stroke="hsl(var(--warning) / 0.2)"
+                        fill="#facc15"
+                        fillOpacity={0.25}
+                        stroke="#facc15"
+                        strokeOpacity={0.3}
                         strokeDasharray="3 3"
                       />
                     );
