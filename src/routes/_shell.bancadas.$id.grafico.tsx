@@ -214,8 +214,8 @@ function GraficoTemperaturaPage() {
                       <div className="flex flex-col gap-1">
                         <div className="font-medium text-foreground">{label}</div>
                         {acesa && (
-                          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-500">
-                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-yellow-500">
+                            <span className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
                             Luz Acesa
                           </div>
                         )}
