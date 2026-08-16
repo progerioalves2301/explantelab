@@ -226,14 +226,12 @@ function GraficoTemperaturaPage() {
                       key={idx}
                       x1={format(new Date(i.inicio), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
                       x2={format(new Date(i.fim), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
-                      fill="hsl(var(--warning))"
-                      fillOpacity={0.15}
+                      fill="#facc15"
+                      fillOpacity={0.3}
                       stroke="none"
                     />
                   ))
                 ) : (
-                  // Fallback: Mostrar as janelas configuradas se não houver telemetria histórica 
-                  // para ajudar o usuário a conferir a agenda vs temperatura
                   bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
                     if (!j.ligar || !j.desligar) return null;
                     
@@ -241,7 +239,6 @@ function GraficoTemperaturaPage() {
                     const iniStr = `${hoje}T${j.ligar}:00`;
                     const fimStr = `${hoje}T${j.desligar}:00`;
                     
-                    // Formata para o eixo X do gráfico
                     const x1 = format(new Date(iniStr), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
                     const x2 = format(new Date(fimStr), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
 
@@ -250,9 +247,10 @@ function GraficoTemperaturaPage() {
                         key={`fallback-${idx}`}
                         x1={x1}
                         x2={x2}
-                        fill="hsl(var(--warning))"
-                        fillOpacity={0.05}
-                        stroke="hsl(var(--warning) / 0.2)"
+                        fill="#facc15"
+                        fillOpacity={0.15}
+                        stroke="#facc15"
+                        strokeOpacity={0.3}
                         strokeDasharray="3 3"
                       />
                     );
