@@ -232,11 +232,30 @@ function GraficoTemperaturaPage() {
                     />
                   ))
                 ) : (
-                  // Caso não haja logs, tentamos inferir das janelas de luz da bancada para o dia atual 
-                  // apenas como guia se o usuário estiver visualizando o período curto
+                  // Fallback: Mostrar as janelas configuradas se não houver telemetria histórica 
+                  // para ajudar o usuário a conferir a agenda vs temperatura
                   bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
-                    // Nota: Isso é apenas uma estimativa visual baseada na config se não houver telemetria histórica
-                    return null; 
+                    if (!j.ligar || !j.desligar) return null;
+                    
+                    const hoje = new Date().toISOString().split('T')[0];
+                    const iniStr = `${hoje}T${j.ligar}:00`;
+                    const fimStr = `${hoje}T${j.desligar}:00`;
+                    
+                    // Formata para o eixo X do gráfico
+                    const x1 = format(new Date(iniStr), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
+                    const x2 = format(new Date(fimStr), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
+
+                    return (
+                      <ReferenceArea
+                        key={`fallback-${idx}`}
+                        x1={x1}
+                        x2={x2}
+                        fill="hsl(var(--warning))"
+                        fillOpacity={0.05}
+                        stroke="hsl(var(--warning) / 0.2)"
+                        strokeDasharray="3 3"
+                      />
+                    );
                   })
                 )}
                 {tempMin != null && (
