@@ -265,13 +265,14 @@ function GraficoTemperaturaPage() {
                   return offsets.map(offset => {
                     const d = new Date();
                     d.setDate(d.getDate() + offset);
-                    // Use locale string to get YYYY-MM-DD in America/Sao_Paulo (which matches browser local time here)
-                    const base = d.toLocaleDateString('en-CA'); 
-                    // Create date in local time by parsing components
-                    const [lH, lM] = j.ligar.split(':');
-                    const [dH, dM] = j.desligar.split(':');
-                    const x1 = new Date(d.getFullYear(), d.getMonth(), d.getDate(), Number(lH), Number(lM)).getTime();
-                    const x2 = new Date(d.getFullYear(), d.getMonth(), d.getDate(), Number(dH), Number(dM)).getTime();
+                    
+                    // Horários de referência da controladora
+                    const [lH, lM] = j.ligar.split(':').map(Number);
+                    const [dH, dM] = j.desligar.split(':').map(Number);
+                    
+                    // x1 e x2 no tempo local do browser
+                    const x1 = new Date(d.getFullYear(), d.getMonth(), d.getDate(), lH, lM, 0).getTime();
+                    const x2 = new Date(d.getFullYear(), d.getMonth(), d.getDate(), dH, dM, 0).getTime();
 
                     return (
                       <ReferenceArea
