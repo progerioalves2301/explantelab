@@ -81,10 +81,12 @@ function GraficoTemperaturaPage() {
         (b.config?.luz_janelas && b.config.luz_janelas.length > 0)
       );
       
-      setLuzFonte(controladora || currentBancada);
+      const fonteLuz = controladora || currentBancada;
+      setLuzFonte(fonteLuz);
 
-      // Agora que temos a luzFonte, buscamos os logs dela
-      const fonteId = controladora?.id || id;
+      // Agora que temos a luzFonte, buscamos os logs dela (se houver sensor de luz no futuro)
+      // Mas conforme pedido, a visualização "Luz Programada" sempre virá da fonteLuz.config
+      const fonteId = fonteLuz?.id || id;
       const luz = await listarLuz({ data: { bancada_id: fonteId, desde } });
       setIntervalosLuz(luz);
     } finally {
