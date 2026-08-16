@@ -180,7 +180,6 @@ function ArCondicionadoPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir configuração do ar-condicionado?")) return;
     try {
       await excluir({ data: { id } });
       toast.success("Removido");
