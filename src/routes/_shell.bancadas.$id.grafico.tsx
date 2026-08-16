@@ -243,7 +243,7 @@ function GraficoTemperaturaPage() {
                     label={{
                       value: "LUZ ACESA",
                       position: "insideTop",
-                      fill: "#854d0e",
+                      fill: "#000000",
                       fontSize: 10,
                       fontWeight: "bold",
                     }}
@@ -278,7 +278,7 @@ function GraficoTemperaturaPage() {
                         label={offset === 0 ? {
                           value: "PROGRAMADO",
                           position: "insideTop",
-                          fill: "#a16207",
+                          fill: "#000000",
                           fontSize: 9,
                           fontWeight: "bold",
                         } : undefined}
