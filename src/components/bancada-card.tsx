@@ -351,25 +351,25 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          {temLuz && (
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors",
-              bancada.luz_ligada
-                ? "border-yellow-500/60 bg-yellow-400/15 text-yellow-700 dark:text-yellow-300"
-                : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
-            )}
-            title={bancada.luz_ligada ? "Luzes ligadas" : "Luzes desligadas"}
-            aria-label={bancada.luz_ligada ? "Luzes ligadas" : "Luzes desligadas"}
-          >
-            <Lightbulb
+          {(temLuz || temBalanca || temCo2) && (
+            <span
               className={cn(
-                "h-3 w-3",
-                bancada.luz_ligada && "fill-current",
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors",
+                bancada.luz_ligada
+                  ? "border-yellow-500/60 bg-yellow-400/15 text-yellow-700 dark:text-yellow-300"
+                  : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
               )}
-            />
-            {bancada.luz_ligada ? "ON" : "OFF"}
-          </span>
+              title={bancada.luz_ligada ? "Luzes ligadas" : "Luzes desligadas"}
+              aria-label={bancada.luz_ligada ? "Luzes ligadas" : "Luzes desligadas"}
+            >
+              <Lightbulb
+                className={cn(
+                  "h-3 w-3",
+                  bancada.luz_ligada && "fill-current",
+                )}
+              />
+              {bancada.luz_ligada ? "ON" : "OFF"}
+            </span>
           )}
           {bancada.tem_rtc != null && (() => {
             const desvio = bancada.rtc_desvio_segundos ?? 0;
@@ -384,39 +384,39 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             if (bancada.rtc_bateria_fraca) motivos.push("oscilador do DS3231 parou (OSF)");
             const rotulo = alerta ? (semHora ? "RTC · sem hora" : "RTC · bateria") : "RTC";
             return (
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
-                alerta
-                  ? "border-red-500/70 bg-red-400/20 text-red-700 dark:text-red-300"
-                  : bancada.tem_rtc
-                    ? "border-emerald-500/60 bg-emerald-400/15 text-emerald-700 dark:text-emerald-300"
-                    : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
-              )}
-              title={
-                alerta
-                  ? `Troque a bateria CR2032 — ${motivos.join("; ")}.`
-                  : bancada.tem_rtc
-                    ? "DS3231 detectado — hora local independente de internet. A bateria só é avaliada após uma queda de energia."
-                    : "Sem DS3231 — hora vem do NTP + millis()"
-              }
-              aria-label={
-                alerta
-                  ? semHora
-                    ? "RTC voltou sem hora válida"
-                    : "Bateria do RTC fraca"
-                  : bancada.tem_rtc
-                    ? "RTC físico ativo"
-                    : "Sem RTC físico"
-              }
-            >
-              {alerta ? (
-                <BatteryWarning className="h-3 w-3" />
-              ) : (
-                <Clock3 className="h-3 w-3" />
-              )}
-              {rotulo}
-            </span>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                  alerta
+                    ? "border-red-500/70 bg-red-400/20 text-red-700 dark:text-red-300"
+                    : bancada.tem_rtc
+                      ? "border-emerald-500/60 bg-emerald-400/15 text-emerald-700 dark:text-emerald-300"
+                      : "border-dashed border-muted-foreground/30 text-muted-foreground/60",
+                )}
+                title={
+                  alerta
+                    ? `Troque a bateria CR2032 — ${motivos.join("; ")}.`
+                    : bancada.tem_rtc
+                      ? "DS3231 detectado — hora local independente de internet. A bateria só é avaliada após uma queda de energia."
+                      : "Sem DS3231 — hora vem do NTP + millis()"
+                }
+                aria-label={
+                  alerta
+                    ? semHora
+                      ? "RTC voltou sem hora válida"
+                      : "Bateria do RTC fraca"
+                    : bancada.tem_rtc
+                      ? "RTC físico ativo"
+                      : "Sem RTC físico"
+                }
+              >
+                {alerta ? (
+                  <BatteryWarning className="h-3 w-3" />
+                ) : (
+                  <Clock3 className="h-3 w-3" />
+                )}
+                {rotulo}
+              </span>
             );
           })()}
 
