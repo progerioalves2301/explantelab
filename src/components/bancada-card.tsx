@@ -786,15 +786,6 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-                <AlertDialogAction
-                  onClick={handleDelete}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Excluir
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
       </CardContent>
 
