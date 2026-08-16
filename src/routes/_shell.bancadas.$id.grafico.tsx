@@ -223,42 +223,65 @@ function GraficoTemperaturaPage() {
                     );
                   }}
                 />
-                {intervalosLuz.length > 0 ? (
-                  intervalosLuz.map((i, idx) => (
+                {/* Histórico Real de Luz */}
+                {intervalosLuz.map((i, idx) => {
+                  const x1 = format(new Date(i.inicio), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
+                  const x2 = format(new Date(i.fim), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
+                  
+                  // Se o intervalo é grande e os pontos do eixo X não coincidem exatamente,
+                  // o Recharts pode não renderizar se não encontrar os labels exatos no dataset.
+                  // Mas como ReferenceArea em Recharts usa os labels do XAxis, vamos garantir
+                  // que estamos passando labels que existem ou que o Recharts consiga interpolar.
+                  return (
                     <ReferenceArea
-                      key={idx}
-                      x1={format(new Date(i.inicio), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
-                      x2={format(new Date(i.fim), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
+                      key={`real-${idx}`}
+                      x1={x1}
+                      x2={x2}
                       fill="#facc15"
                       fillOpacity={0.4}
                       stroke="none"
+                      ifOverflow="visible"
                     />
-                  ))
-                ) : (
-                  bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
-                    if (!j.ligar || !j.desligar) return null;
-                    
-                    const hoje = new Date().toISOString().split('T')[0];
-                    const iniStr = `${hoje}T${j.ligar}:00`;
-                    const fimStr = `${hoje}T${j.desligar}:00`;
-                    
-                    const x1 = format(new Date(iniStr), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
-                    const x2 = format(new Date(fimStr), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
+                  );
+                })}
 
+                {/* Fallback: Janelas de Luz configuradas (se não houver logs ou para completar o gráfico) */}
+                {bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
+                  if (!j.ligar || !j.desligar) return null;
+                  
+                  // Criamos datas para o dia de hoje, ontem e amanhã para cobrir a janela do gráfico (24h)
+                  const datas = [-1, 0, 1].map(offset => {
+                    const d = new Date();
+                    d.setDate(d.getDate() + offset);
+                    const base = d.toISOString().split('T')[0];
+                    return {
+                      inicio: `${base}T${j.ligar}:00`,
+                      fim: `${base}T${j.desligar}:00`
+                    };
+                  });
+
+                  return datas.map((d, dIdx) => {
+                    const x1 = format(new Date(d.inicio), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
+                    const x2 = format(new Date(d.fim), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm");
+
+                    // Verifica se o intervalo de tempo se sobrepõe ao período visual do gráfico
+                    // O Recharts ReferenceArea precisa que x1 e x2 existam no array de dados ou 
+                    // que o componente consiga lidar com valores contínuos se o XAxis for type="number".
                     return (
                       <ReferenceArea
-                        key={`fallback-${idx}`}
+                        key={`fallback-${idx}-${dIdx}`}
                         x1={x1}
                         x2={x2}
                         fill="#facc15"
-                        fillOpacity={0.25}
+                        fillOpacity={0.2}
                         stroke="#facc15"
-                        strokeOpacity={0.3}
+                        strokeOpacity={0.2}
                         strokeDasharray="3 3"
+                        ifOverflow="visible"
                       />
                     );
-                  })
-                )}
+                  });
+                })}
                 {tempMin != null && (
                   <ReferenceLine
                     y={Number(tempMin)}
