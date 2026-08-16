@@ -236,9 +236,12 @@ function GraficoTemperaturaPage() {
                     const tsDate = new Date(ts);
                     const tsTime = format(tsDate, "HH:mm");
 
+                    const ligarStr = luzFonte?.nome === 'P8S12' ? '03:00' : j.ligar;
+                    const desligarStr = luzFonte?.nome === 'P8S12' ? '17:00' : j.desligar;
+
                     const programada = luzFonte?.config?.luz_janelas?.some((j: any) => {
                       if (!j.ligar || !j.desligar) return false;
-                      return tsTime >= j.ligar && tsTime < j.desligar;
+                      return tsTime >= ligarStr && tsTime < desligarStr;
                     });
                     
                     const formattedLabel = typeof label === 'number' 
