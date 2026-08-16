@@ -30,6 +30,8 @@ import {
   listarBancadasParaOta,
   disparaOtaBancada,
   disparaOtaTodas,
+  cancelaOtaBancada,
+  cancelaOtaTodas,
   type FirmwareItem,
   type BancadaFirmwareInfo,
 } from "@/lib/atualizacao.functions";
@@ -63,6 +65,8 @@ function AtualizacaoPage() {
   const listarBancadas = useServerFn(listarBancadasParaOta);
   const otaOne = useServerFn(disparaOtaBancada);
   const otaAll = useServerFn(disparaOtaTodas);
+  const cancelOtaOne = useServerFn(cancelaOtaBancada);
+  const cancelOtaAll = useServerFn(cancelaOtaTodas);
   const meus = useServerFn(meusPapeis);
 
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -73,7 +77,9 @@ function AtualizacaoPage() {
   const [uploading, setUploading] = useState(false);
   const [selecionado, setSelecionado] = useState<string>("");
   const [dispatchingId, setDispatchingId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [dispatchingAll, setDispatchingAll] = useState(false);
+  const [cancellingAll, setCancellingAll] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   // Guarda "versão esperada" por prateleira após disparar OTA.
   // Quando a telemetria trouxer essa versão, exibe toast de sucesso.
@@ -296,6 +302,37 @@ function AtualizacaoPage() {
     }
   };
 
+  const handleCancelOtaOne = async (bancada_id: string) => {
+    setCancellingId(bancada_id);
+    try {
+      await cancelOtaOne({ data: { bancada_id } });
+      setAguardando((p) => {
+        const novo = { ...p };
+        delete novo[bancada_id];
+        return novo;
+      });
+      toast.info("Atualização cancelada.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao cancelar OTA");
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const handleCancelOtaAll = async () => {
+    if (!confirm("Deseja cancelar a atualização em TODAS as prateleiras?")) return;
+    setCancellingAll(true);
+    try {
+      await cancelOtaAll();
+      setAguardando({});
+      toast.info("Atualizações canceladas em massa.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao cancelar OTA");
+    } finally {
+      setCancellingAll(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground">
@@ -454,7 +491,7 @@ function AtualizacaoPage() {
             </div>
             <Button
               onClick={handleOtaAll}
-              disabled={!selecionado || dispatchingAll || bancadas.length === 0}
+              disabled={!selecionado || dispatchingAll || cancellingAll || bancadas.length === 0}
             >
               {dispatchingAll ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -463,6 +500,20 @@ function AtualizacaoPage() {
               )}
               Atualizar todas ({bancadas.length})
             </Button>
+            {Object.keys(aguardando).length > 0 && (
+              <Button
+                variant="destructive"
+                onClick={handleCancelOtaAll}
+                disabled={cancellingAll}
+              >
+                {cancellingAll ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                Parar todas
+              </Button>
+            )}
           </div>
 
           <div className="rounded-md border">
@@ -508,20 +559,36 @@ function AtualizacaoPage() {
                   >
                     {statusMostrado}
                   </Badge>
-                  <div className="text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={!selecionado || dispatchingId === b.id}
-                      onClick={() => handleOtaOne(b.id)}
-                    >
-                      {dispatchingId === b.id ? (
-                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                      ) : (
-                        <Rocket className="mr-1 h-3 w-3" />
-                      )}
-                      Atualizar
-                    </Button>
+                  <div className="flex justify-end gap-2">
+                    {esperada ? (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={cancellingId === b.id}
+                        onClick={() => handleCancelOtaOne(b.id)}
+                      >
+                        {cancellingId === b.id ? (
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="mr-1 h-3 w-3" />
+                        )}
+                        Parar
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!selecionado || dispatchingId === b.id}
+                        onClick={() => handleOtaOne(b.id)}
+                      >
+                        {dispatchingId === b.id ? (
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Rocket className="mr-1 h-3 w-3" />
+                        )}
+                        Atualizar
+                      </Button>
+                    )}
                   </div>
                 </div>
                 );

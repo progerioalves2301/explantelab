@@ -101,6 +101,7 @@ export type ComandoTipo =
   | "RESUME"
   | "SET_VALVE"
   | "OTA_UPDATE"
+  | "OTA_CANCEL"
   | "AC_CONTROL"
   | "LUZ_TESTE";
 
