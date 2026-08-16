@@ -117,9 +117,15 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
   const novoCiclo = useServerFn(iniciarNovoCiclo);
   const sensorReinicios = bancada.sensor_reinicios ?? 0;
   const temTemperatura = bancada.temperatura_planta != null;
-  // Perfil declarado da prateleira. Quando o acessório não foi declarado
-  // (registros antigos), cai no comportamento anterior de inferência.
+  
+  // Perfil da prateleira
   const temLuz = bancada.tem_luz !== false;
+  const temBalanca = bancada.tem_balanca === true;
+  const temCo2 = bancada.tem_co2 === true;
+  // Se for apenas um sensor (Balança ou CO2) e não tiver válvulas (tem_luz false e sem controle ar), 
+  // consideramos um "Módulo Sensor" independente que não precisa de controles de ciclo.
+  const isModuloSensor = (temBalanca || temCo2) && !temLuz && !bancada.controla_ar;
+
   const semSensor =
     bancada.tem_sensor_temp === false ||
     (bancada.tem_sensor_temp == null && !temTemperatura && sensorReinicios === 0);
@@ -310,12 +316,14 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               </span>
             )}
           </CardTitle>
-          <span
-            className="shrink-0 text-[10px] tabular-nums text-muted-foreground"
-            title={`Tempo no estado atual (${bancada.status}). A comunicação com o dispositivo é mostrada em "Última sync".`}
-          >
-            {bancada.status === "Repouso" ? "Repouso a" : `${bancada.status} há`} {formatShortDuration(tempoNoEstado(bancada, clock))}
-          </span>
+          {!isModuloSensor && (
+            <span
+              className="shrink-0 text-[10px] tabular-nums text-muted-foreground"
+              title={`Tempo no estado atual (${bancada.status}). A comunicação com o dispositivo é mostrada em "Última sync".`}
+            >
+              {bancada.status === "Repouso" ? "Repouso a" : `${bancada.status} há`} {formatShortDuration(tempoNoEstado(bancada, clock))}
+            </span>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {laboratorio ? (
@@ -444,18 +452,20 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
           })()}
 
 
-          <StatusBadge status={bancada.status} />
+          {!isModuloSensor && <StatusBadge status={bancada.status} />}
         </div>
       </CardHeader>
 
 
 
       <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
-        <div className="h-1.5">
-          {segments && segments.length > 0 && (
-            <StatusTimeline segments={segments} now={clock} />
-          )}
-        </div>
+        {!isModuloSensor && (
+          <div className="h-1.5">
+            {segments && segments.length > 0 && (
+              <StatusTimeline segments={segments} now={clock} />
+            )}
+          </div>
+        )}
 
         <Tabs
           value={tab}
@@ -471,27 +481,67 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             value="status"
             className="mt-3 min-h-[208px] space-y-4"
           >
-            <div className="rounded-lg border bg-muted/40 p-3">
-              <ValveIndicator valvulas={valvulas} mode={mode} />
-            </div>
+            {!isModuloSensor && (
+              <div className="rounded-lg border bg-muted/40 p-3">
+                <ValveIndicator valvulas={valvulas} mode={mode} />
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Timer className="h-3.5 w-3.5 text-primary" />
-                <div>
-                  <div className="text-[10px] uppercase tracking-wide">
-                    Próximo ciclo
-                  </div>
-                  <div className="font-mono text-sm text-foreground">
-                    {(() => {
-                      const s = proximoDisparoSegundos(
-                        bancada.config?.horarios_disparo,
-                      );
-                      return s == null ? "—" : formatCountdown(s);
-                    })()}
+              {temBalanca && (
+                <div className="col-span-2 flex items-center gap-3 rounded-md border border-emerald-500/30 bg-emerald-500/5 px-2.5 py-3 text-emerald-700 dark:text-emerald-300">
+                  <Scale className="h-5 w-5 shrink-0" />
+                  <div className="flex-1">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600/80 dark:text-emerald-400/80">
+                      Peso Atual
+                    </div>
+                    <div className="font-mono text-2xl font-bold">
+                      {bancada.ultima_sync && bancada.status !== "Offline" 
+                        ? (bancada.valvulas as any).peso != null 
+                          ? `${Number((bancada.valvulas as any).peso).toFixed(2)} g`
+                          : "0.00 g"
+                        : "—"}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {temCo2 && (
+                <div className="col-span-2 flex items-center gap-3 rounded-md border border-sky-500/30 bg-sky-500/5 px-2.5 py-3 text-sky-700 dark:text-sky-300">
+                  <Wind className="h-5 w-5 shrink-0" />
+                  <div className="flex-1">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-sky-600/80 dark:text-sky-400/80">
+                      Nível CO₂
+                    </div>
+                    <div className="font-mono text-2xl font-bold">
+                      {bancada.ultima_sync && bancada.status !== "Offline" 
+                        ? (bancada.valvulas as any).co2 != null 
+                          ? `${Number((bancada.valvulas as any).co2).toFixed(0)} ppm`
+                          : "—"
+                        : "—"}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!isModuloSensor && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Timer className="h-3.5 w-3.5 text-primary" />
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide">
+                      Próximo ciclo
+                    </div>
+                    <div className="font-mono text-sm text-foreground">
+                      {(() => {
+                        const s = proximoDisparoSegundos(
+                          bancada.config?.horarios_disparo,
+                        );
+                        return s == null ? "—" : formatCountdown(s);
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-3.5 w-3.5 text-fluid" />
                 <div>
@@ -689,61 +739,65 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               <LineChart className="h-4 w-4" />
             </Link>
           </Button>
-          <Button
-            size="sm"
-            onClick={() => setNovoCicloOpen(true)}
-            className="h-8 px-2 text-xs bg-emerald-600 text-white hover:bg-emerald-700"
-            aria-label="Iniciar novo ciclo de mudas"
-            title="Iniciar novo ciclo de mudas"
-          >
-            <RotateCcw className="mr-1 h-3.5 w-3.5 shrink-0" />
-            Novo Ciclo
-          </Button>
-          {tab === "manual" ? (
-            <Button
-              size="sm"
-              onClick={async () => {
-                setTab("status");
-                setOptimistic(PRESET_OFF);
-                try {
-                  await comandar({
-                    data: { bancada_id: bancada.id, tipo: "PAUSE" },
-                  });
-                  toast.success("Modo repouso — aguardando próximo ciclo");
-                } catch (e) {
-                  setOptimistic(null);
-                  toast.error(
-                    e instanceof Error ? e.message : "Falha ao entrar em repouso",
-                  );
-                }
-              }}
-              className="h-8 px-2 text-xs bg-yellow-400 text-yellow-950 hover:bg-yellow-500"
-              aria-label="Sair do modo manual e entrar em repouso"
-            >
-              <ArrowLeft className="mr-1 h-3.5 w-3.5 shrink-0" />
-              Sair
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              onClick={() => setTab("manual")}
-              className="h-8 px-2 text-xs bg-blue-600 text-white hover:bg-blue-700"
-              aria-label="Abrir modo manual"
-            >
-              <SlidersHorizontal className="mr-1 h-3.5 w-3.5 shrink-0" />
-              Manual
-            </Button>
+          {!isModuloSensor && (
+            <>
+              <Button
+                size="sm"
+                onClick={() => setNovoCicloOpen(true)}
+                className="h-8 px-2 text-xs bg-emerald-600 text-white hover:bg-emerald-700"
+                aria-label="Iniciar novo ciclo de mudas"
+                title="Iniciar novo ciclo de mudas"
+              >
+                <RotateCcw className="mr-1 h-3.5 w-3.5 shrink-0" />
+                Novo Ciclo
+              </Button>
+              {tab === "manual" ? (
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    setTab("status");
+                    setOptimistic(PRESET_OFF);
+                    try {
+                      await comandar({
+                        data: { bancada_id: bancada.id, tipo: "PAUSE" },
+                      });
+                      toast.success("Modo repouso — aguardando próximo ciclo");
+                    } catch (e) {
+                      setOptimistic(null);
+                      toast.error(
+                        e instanceof Error ? e.message : "Falha ao entrar em repouso",
+                      );
+                    }
+                  }}
+                  className="h-8 px-2 text-xs bg-yellow-400 text-yellow-950 hover:bg-yellow-500"
+                  aria-label="Sair do modo manual e entrar em repouso"
+                >
+                  <ArrowLeft className="mr-1 h-3.5 w-3.5 shrink-0" />
+                  Sair
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => setTab("manual")}
+                  className="h-8 px-2 text-xs bg-blue-600 text-white hover:bg-blue-700"
+                  aria-label="Abrir modo manual"
+                >
+                  <SlidersHorizontal className="mr-1 h-3.5 w-3.5 shrink-0" />
+                  Manual
+                </Button>
+              )}
+              <Button
+                size="sm"
+                onClick={handleStop}
+                disabled={stopping}
+                className="h-8 px-2 text-xs bg-red-600 text-white hover:bg-red-700"
+                aria-label="Parar prateleira"
+              >
+                <Square className="mr-1 h-3 w-3 shrink-0 fill-current" />
+                {stopping ? "…" : "STOP"}
+              </Button>
+            </>
           )}
-          <Button
-            size="sm"
-            onClick={handleStop}
-            disabled={stopping}
-            className="h-8 px-2 text-xs bg-red-600 text-white hover:bg-red-700"
-            aria-label="Parar prateleira"
-          >
-            <Square className="mr-1 h-3 w-3 shrink-0 fill-current" />
-            {stopping ? "…" : "STOP"}
-          </Button>
           <Button
             variant="outline"
             size="icon"
