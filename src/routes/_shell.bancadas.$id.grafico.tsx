@@ -204,7 +204,8 @@ function GraficoTemperaturaPage() {
                   labelFormatter={(label, payload) => {
                     const dataPoint = payload[0]?.payload;
                     const ts = dataPoint?.ts;
-                    
+                    if (!ts) return label;
+
                     const tsDate = new Date(ts);
                     const tsTime = format(tsDate, "HH:mm");
 
