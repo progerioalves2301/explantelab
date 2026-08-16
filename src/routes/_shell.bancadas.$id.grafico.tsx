@@ -261,8 +261,11 @@ function GraficoTemperaturaPage() {
                     d.setDate(d.getDate() + offset);
                     // Use locale string to get YYYY-MM-DD in America/Sao_Paulo (which matches browser local time here)
                     const base = d.toLocaleDateString('en-CA'); 
-                    const x1 = new Date(`${base}T${j.ligar}:00`).getTime();
-                    const x2 = new Date(`${base}T${j.desligar}:00`).getTime();
+                    // Create date in local time by parsing components
+                    const [lH, lM] = j.ligar.split(':');
+                    const [dH, dM] = j.desligar.split(':');
+                    const x1 = new Date(d.getFullYear(), d.getMonth(), d.getDate(), Number(lH), Number(lM)).getTime();
+                    const x2 = new Date(d.getFullYear(), d.getMonth(), d.getDate(), Number(dH), Number(dM)).getTime();
 
                     return (
                       <ReferenceArea
