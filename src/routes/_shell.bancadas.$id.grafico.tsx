@@ -211,7 +211,7 @@ function GraficoTemperaturaPage() {
 
                     const programada = bancada?.config?.luz_janelas?.some((j: any) => {
                       if (!j.ligar || !j.desligar) return false;
-                      return tsTime >= j.ligar && tsTime <= j.desligar;
+                      return tsTime >= j.ligar && tsTime < j.desligar;
                     });
                     
                     const formattedLabel = typeof label === 'number' 
