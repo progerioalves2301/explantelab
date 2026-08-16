@@ -119,7 +119,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.6.2";
+static const char* FIRMWARE_VERSION = "2.6.0";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -2256,15 +2256,15 @@ void tickWifiWatchdog(unsigned long now) {
     Serial.println("[WIFI] link caiu — watchdog ativo");
   }
 
-  if (now - lastTry < 10000UL) return; // v2.6.2: reconexão mais agressiva (10s)
+  if (now - lastTry < 20000UL) return;
   lastTry = now;
   tentativas++;
 
   Serial.printf("[WIFI] tentativa %u de reconexão (%.1fs offline)\n",
                 tentativas, (now - downSince) / 1000.0);
 
-  // v2.6.2: a cada ~3 min offline reinicia o rádio inteiro (antes eram 5 min).
-  if (now - downSince > 180000UL) {
+  // A cada ~5 min offline reinicia o rádio inteiro (mode OFF/STA + begin).
+  if (now - downSince > 300000UL) {
     Serial.println("[WIFI] 5 min sem link — reiniciando rádio Wi-Fi");
     WiFi.disconnect(true, false); // limpa estado, mantém credenciais
     delay(200);
