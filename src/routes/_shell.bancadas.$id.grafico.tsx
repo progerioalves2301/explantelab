@@ -259,7 +259,8 @@ function GraficoTemperaturaPage() {
                   return offsets.map(offset => {
                     const d = new Date();
                     d.setDate(d.getDate() + offset);
-                    const base = d.toISOString().split('T')[0];
+                    // Use locale string to get YYYY-MM-DD in America/Sao_Paulo (which matches browser local time here)
+                    const base = d.toLocaleDateString('en-CA'); 
                     const x1 = new Date(`${base}T${j.ligar}:00`).getTime();
                     const x2 = new Date(`${base}T${j.desligar}:00`).getTime();
 
