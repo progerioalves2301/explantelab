@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-08-16 — Firmware v2.6.1 + Cancelamento de OTA
+
+**App / Backend**
+- **Parada de Emergência OTA**: Implementado botão "Parar" (individual) e "Parar todas" (massa) na aba de Atualização.
+- **Funcionamento**: O sistema agora permite cancelar uma atualização que já foi disparada, desde que o ESP32 ainda não tenha concluído o download. O comando `OTA_CANCEL` limpa a fila de comandos pendentes no banco e notifica o dispositivo para ignorar o agendamento de flash.
+
+**Firmware (v2.6.1)**
+- **OTA_CANCEL**: Adicionado tratamento para o comando de cancelamento explícito no loop de processamento de comandos.
+
 ## 2026-08-15 — Firmware v2.6.0 + diagnóstico de queda
 
 **Contexto**: a prateleira P8S12 saía do ar todos os dias no mesmo minuto (17:13), exatamente no instante em que a injeção termina e o par de válvulas V1/V4 desliga. Ela ficava travada em "Injetando" por horas — com as válvulas possivelmente energizadas.
