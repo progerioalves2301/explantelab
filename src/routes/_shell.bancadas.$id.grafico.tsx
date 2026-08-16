@@ -230,7 +230,7 @@ function GraficoTemperaturaPage() {
                       x1={format(new Date(i.inicio), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
                       x2={format(new Date(i.fim), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
                       fill="#facc15"
-                      fillOpacity={0.3}
+                      fillOpacity={0.4}
                       stroke="none"
                     />
                   ))
