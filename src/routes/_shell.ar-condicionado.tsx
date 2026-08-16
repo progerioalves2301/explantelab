@@ -492,14 +492,34 @@ function ArCondicionadoPage() {
                 <Button size="sm" variant="ghost" onClick={() => startEdit(ar)}>
                   Editar
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-red-600 hover:text-red-600"
-                  onClick={() => handleDelete(ar.id)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-600 hover:text-red-600"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir ar-condicionado?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Deseja remover a configuração de ar-condicionado da sala <strong>{lab?.nome}</strong>?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDelete(ar.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
