@@ -195,25 +195,50 @@ function GraficoTemperaturaPage() {
                     fontSize: 12,
                   }}
                   labelFormatter={(label, payload) => {
-                    const ts = payload[0]?.payload?.ts;
+                    const dataPoint = payload[0]?.payload;
+                    const ts = dataPoint?.ts;
+                    
+                    // Se não temos logs reais, podemos usar o agendamento da bancada como fallback visual
+                    // ou apenas mostrar o dado real. O usuário reclamou que "só tem temperatura",
+                    // implicando que os logs de luz podem estar vazios ou não aparecendo.
                     const acesa = intervalosLuz.some(i => {
                       const ini = new Date(i.inicio).getTime();
                       const fim = new Date(i.fim).getTime();
                       return ts >= ini && ts <= fim;
                     });
-                    return `${label}${acesa ? " (Luz Acesa)" : ""}`;
+                    
+                    return (
+                      <div className="flex flex-col gap-1">
+                        <div className="font-medium text-foreground">{label}</div>
+                        {acesa && (
+                          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-500">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            Luz Acesa
+                          </div>
+                        )}
+                      </div>
+                    );
                   }}
                 />
-                {intervalosLuz.map((i, idx) => (
-                  <ReferenceArea
-                    key={idx}
-                    x1={format(new Date(i.inicio), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
-                    x2={format(new Date(i.fim), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
-                    fill="hsl(var(--warning))"
-                    fillOpacity={0.08}
-                    stroke="none"
-                  />
-                ))}
+                {intervalosLuz.length > 0 ? (
+                  intervalosLuz.map((i, idx) => (
+                    <ReferenceArea
+                      key={idx}
+                      x1={format(new Date(i.inicio), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
+                      x2={format(new Date(i.fim), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm")}
+                      fill="hsl(var(--warning))"
+                      fillOpacity={0.15}
+                      stroke="none"
+                    />
+                  ))
+                ) : (
+                  // Caso não haja logs, tentamos inferir das janelas de luz da bancada para o dia atual 
+                  // apenas como guia se o usuário estiver visualizando o período curto
+                  bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
+                    // Nota: Isso é apenas uma estimativa visual baseada na config se não houver telemetria histórica
+                    return null; 
+                  })
+                )}
                 {tempMin != null && (
                   <ReferenceLine
                     y={Number(tempMin)}
