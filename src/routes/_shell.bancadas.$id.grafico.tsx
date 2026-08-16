@@ -72,16 +72,21 @@ function GraficoTemperaturaPage() {
       setPontos(dados);
       
       // Encontra a prateleira controladora de luz na mesma sala/laboratório
-      // Prioriza a P8S12, ou qualquer uma que tenha luz_janelas configurado
+      // FORÇAR: Sempre usar a configuração da P8S12 como fonte global de iluminação para a sala
       const controladora = bs.find(b => 
         b.laboratorio_id === currentBancada?.laboratorio_id && 
-        (b.nome === 'P8S12' || (b.config?.luz_janelas && b.config.luz_janelas.length > 0))
+        b.nome === 'P8S12'
+      ) || bs.find(b => 
+        b.laboratorio_id === currentBancada?.laboratorio_id && 
+        (b.config?.luz_janelas && b.config.luz_janelas.length > 0)
       );
       
-      setLuzFonte(controladora || currentBancada);
+      const fonteLuz = controladora || currentBancada;
+      setLuzFonte(fonteLuz);
 
-      // Agora que temos a luzFonte, buscamos os logs dela
-      const fonteId = controladora?.id || id;
+      // Agora que temos a luzFonte, buscamos os logs dela (se houver sensor de luz no futuro)
+      // Mas conforme pedido, a visualização "Luz Programada" sempre virá da fonteLuz.config
+      const fonteId = fonteLuz?.id || id;
       const luz = await listarLuz({ data: { bancada_id: fonteId, desde } });
       setIntervalosLuz(luz);
     } finally {
@@ -233,7 +238,9 @@ function GraficoTemperaturaPage() {
 
                     const programada = luzFonte?.config?.luz_janelas?.some((j: any) => {
                       if (!j.ligar || !j.desligar) return false;
-                      return tsTime >= j.ligar && tsTime < j.desligar;
+                      const ligarStr = luzFonte?.nome === 'P8S12' ? '03:00' : j.ligar;
+                      const desligarStr = luzFonte?.nome === 'P8S12' ? '17:00' : j.desligar;
+                      return tsTime >= ligarStr && tsTime < desligarStr;
                     });
                     
                     const formattedLabel = typeof label === 'number' 
@@ -262,13 +269,17 @@ function GraficoTemperaturaPage() {
                   return offsets.map(offset => {
                     const d = new Date();
                     d.setDate(d.getDate() + offset);
-                    // Use locale string to get YYYY-MM-DD in America/Sao_Paulo (which matches browser local time here)
-                    const base = d.toLocaleDateString('en-CA'); 
-                    // Create date in local time by parsing components
-                    const [lH, lM] = j.ligar.split(':');
-                    const [dH, dM] = j.desligar.split(':');
-                    const x1 = new Date(d.getFullYear(), d.getMonth(), d.getDate(), Number(lH), Number(lM)).getTime();
-                    const x2 = new Date(d.getFullYear(), d.getMonth(), d.getDate(), Number(dH), Number(dM)).getTime();
+                    
+                    // Horários de referência da controladora (FORÇAR 03:00 se for P8S12 ou conforme solicitado)
+                    const ligarStr = luzFonte?.nome === 'P8S12' ? '03:00' : j.ligar;
+                    const desligarStr = luzFonte?.nome === 'P8S12' ? '17:00' : j.desligar;
+
+                    const [lH, lM] = ligarStr.split(':').map(Number);
+                    const [dH, dM] = desligarStr.split(':').map(Number);
+                    
+                    // x1 e x2 no tempo local do browser
+                    const x1 = new Date(d.getFullYear(), d.getMonth(), d.getDate(), lH, lM, 0).getTime();
+                    const x2 = new Date(d.getFullYear(), d.getMonth(), d.getDate(), dH, dM, 0).getTime();
 
                     return (
                       <ReferenceArea
