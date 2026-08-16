@@ -165,3 +165,57 @@ export const disparaOtaTodas = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, total: rows.length };
   });
+
+/** Cancela um comando OTA pendente para uma bancada. Apenas admin. */
+export const cancelaOtaBancada = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((d: { bancada_id: string }) =>
+    z.object({ bancada_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    // Remove comandos OTA_UPDATE ainda não entregues para esta bancada
+    const { error } = await context.supabase
+      .from("comandos")
+      .delete()
+      .eq("bancada_id", data.bancada_id)
+      .eq("tipo", "OTA_UPDATE")
+      .is("entregue_em", null);
+
+    if (error) throw new Error(error.message);
+
+    // Enfileira um comando de cancelamento explícito caso o ESP já tenha pego a URL mas não começado o flash
+    await context.supabase.from("comandos").insert({
+      bancada_id: data.bancada_id,
+      tipo: "OTA_CANCEL",
+      payload: {} as never,
+    });
+
+    return { ok: true };
+  });
+
+/** Cancela comandos OTA pendentes para todas as bancadas. Apenas admin. */
+export const cancelaOtaTodas = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase
+      .from("comandos")
+      .delete()
+      .eq("tipo", "OTA_UPDATE")
+      .is("entregue_em", null);
+
+    if (error) throw new Error(error.message);
+
+    const { data: bs } = await context.supabase.from("bancadas").select("id");
+    if (bs && bs.length > 0) {
+      const rows = bs.map((b) => ({
+        bancada_id: b.id,
+        tipo: "OTA_CANCEL" as const,
+        payload: {} as never,
+      }));
+      await context.supabase.from("comandos").insert(rows);
+    }
+
+    return { ok: true };
+  });
