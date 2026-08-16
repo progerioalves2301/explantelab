@@ -12,6 +12,7 @@ import {
   YAxis,
   ReferenceLine,
   ReferenceArea,
+  Label,
 } from "recharts";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -240,22 +241,23 @@ function GraficoTemperaturaPage() {
                     fillOpacity={0.4}
                     stroke="none"
                     ifOverflow="visible"
-                    label={{
-                      value: "LUZ ACESA",
-                      position: "insideTop",
-                      fill: "#000000",
-                      fontSize: 10,
-                      fontWeight: "bold",
-                    }}
-                  />
+                  >
+                    <Label
+                      value="LUZ ACESA"
+                      position="insideTop"
+                      fill="#000000"
+                      fontSize={10}
+                      fontWeight="bold"
+                      offset={10}
+                    />
+                  </ReferenceArea>
                 ))}
 
                 {/* Fallback: Janelas de Luz configuradas */}
                 {bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
                   if (!j.ligar || !j.desligar) return null;
                   
-                  // Expandimos o fallback para cobrir até 120 dias atrás
-                  const offsets = Array.from({ length: 125 }, (_, i) => i - 122); // de -122 a 2 dias
+                  const offsets = Array.from({ length: 125 }, (_, i) => i - 122);
 
                   return offsets.map(offset => {
                     const d = new Date();
@@ -275,14 +277,18 @@ function GraficoTemperaturaPage() {
                         strokeOpacity={0.2}
                         strokeDasharray="3 3"
                         ifOverflow="visible"
-                        label={offset === 0 ? {
-                          value: "PROGRAMADO",
-                          position: "insideTop",
-                          fill: "#000000",
-                          fontSize: 9,
-                          fontWeight: "bold",
-                        } : undefined}
-                      />
+                      >
+                        {offset === 0 && (
+                          <Label
+                            value="PROGRAMADO"
+                            position="insideTop"
+                            fill="#000000"
+                            fontSize={9}
+                            fontWeight="bold"
+                            offset={20}
+                          />
+                        )}
+                      </ReferenceArea>
                     );
                   });
                 })}
