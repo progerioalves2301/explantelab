@@ -246,8 +246,8 @@ function GraficoTemperaturaPage() {
                       value="LUZ ACESA"
                       position="insideTop"
                       fill="#000000"
-                      fontSize={10}
-                      fontWeight="bold"
+                      fontSize={12}
+                      fontWeight={800}
                       offset={10}
                     />
                   </ReferenceArea>
@@ -278,16 +278,14 @@ function GraficoTemperaturaPage() {
                         strokeDasharray="3 3"
                         ifOverflow="visible"
                       >
-                        {offset === 0 && (
-                          <Label
-                            value="PROGRAMADO"
-                            position="insideTop"
-                            fill="#000000"
-                            fontSize={9}
-                            fontWeight="bold"
-                            offset={20}
-                          />
-                        )}
+                        <Label
+                          value="PROGRAMADO"
+                          position="insideTop"
+                          fill="#000000"
+                          fontSize={10}
+                          fontWeight={700}
+                          offset={10}
+                        />
                       </ReferenceArea>
                     );
                   });
