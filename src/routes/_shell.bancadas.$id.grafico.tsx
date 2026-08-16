@@ -93,6 +93,9 @@ function GraficoTemperaturaPage() {
     valor: Number(p.valor),
   }));
 
+  // Log para debug no console do navegador (auxilia o suporte)
+  console.log("Grafico:", { totalPontos: pontos.length, intervalosLuz, janelas: bancada?.config?.luz_janelas });
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
