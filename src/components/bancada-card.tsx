@@ -18,6 +18,8 @@ import {
   Thermometer,
   Timer,
   Trash2,
+  Scale,
+  Wind,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
