@@ -72,10 +72,13 @@ function GraficoTemperaturaPage() {
       setPontos(dados);
       
       // Encontra a prateleira controladora de luz na mesma sala/laboratório
-      // Prioriza a P8S12, ou qualquer uma que tenha luz_janelas configurado
+      // FORÇAR: Sempre usar a configuração da P8S12 como fonte global de iluminação para a sala
       const controladora = bs.find(b => 
         b.laboratorio_id === currentBancada?.laboratorio_id && 
-        (b.nome === 'P8S12' || (b.config?.luz_janelas && b.config.luz_janelas.length > 0))
+        b.nome === 'P8S12'
+      ) || bs.find(b => 
+        b.laboratorio_id === currentBancada?.laboratorio_id && 
+        (b.config?.luz_janelas && b.config.luz_janelas.length > 0)
       );
       
       setLuzFonte(controladora || currentBancada);
