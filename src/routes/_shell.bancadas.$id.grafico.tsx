@@ -251,7 +251,7 @@ function GraficoTemperaturaPage() {
                         x1={x1}
                         x2={x2}
                         fill="#facc15"
-                        fillOpacity={0.15}
+                        fillOpacity={0.25}
                         stroke="#facc15"
                         strokeOpacity={0.3}
                         strokeDasharray="3 3"
