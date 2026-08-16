@@ -769,15 +769,23 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Excluir {bancada.nome}?</AlertDialogTitle>
+                <AlertDialogTitle>Excluir prateleira?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Isso remove a prateleira, seu token e todos os comandos
-                  pendentes. O ESP32 deixará de conseguir enviar telemetria.
-                  Ação irreversível.
+                  Deseja realmente excluir a prateleira <strong>{bancada.nome}</strong> permanentemente?
+                  Esta ação não pode ser desfeita.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
                 <AlertDialogAction
                   onClick={handleDelete}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
