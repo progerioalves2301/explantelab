@@ -243,7 +243,6 @@ function GraficoTemperaturaPage() {
                 {bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
                   if (!j.ligar || !j.desligar) return null;
                   
-                  // Cobrimos 3 dias para garantir que a janela apareça no gráfico de 24h/6h independente do fuso
                   return [-1, 0, 1].map(offset => {
                     const d = new Date();
                     d.setDate(d.getDate() + offset);
@@ -257,9 +256,9 @@ function GraficoTemperaturaPage() {
                         x1={x1}
                         x2={x2}
                         fill="#facc15"
-                        fillOpacity={0.2}
+                        fillOpacity={0.3}
                         stroke="#facc15"
-                        strokeOpacity={0.2}
+                        strokeOpacity={0.4}
                         strokeDasharray="3 3"
                         ifOverflow="visible"
                       />
