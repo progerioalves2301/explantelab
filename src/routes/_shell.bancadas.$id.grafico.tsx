@@ -247,7 +247,10 @@ function GraficoTemperaturaPage() {
                 {bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
                   if (!j.ligar || !j.desligar) return null;
                   
-                  return [-1, 0, 1].map(offset => {
+                  // Expandimos o fallback para cobrir até 120 dias atrás
+                  const offsets = Array.from({ length: 125 }, (_, i) => i - 122); // de -122 a 2 dias
+
+                  return offsets.map(offset => {
                     const d = new Date();
                     d.setDate(d.getDate() + offset);
                     const base = d.toISOString().split('T')[0];
@@ -260,9 +263,9 @@ function GraficoTemperaturaPage() {
                         x1={x1}
                         x2={x2}
                         fill="#facc15"
-                        fillOpacity={0.3}
+                        fillOpacity={0.2}
                         stroke="#facc15"
-                        strokeOpacity={0.4}
+                        strokeOpacity={0.2}
                         strokeDasharray="3 3"
                         ifOverflow="visible"
                       />
