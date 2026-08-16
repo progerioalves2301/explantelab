@@ -53,6 +53,7 @@ function GraficoTemperaturaPage() {
   const [periodo, setPeriodo] = useState<PeriodoGrafico>("24h");
   const [loading, setLoading] = useState(true);
   const [bancada, setBancada] = useState<Bancada | null>(null);
+  const [luzFonte, setLuzFonte] = useState<Bancada | null>(null);
 
   const carregar = async () => {
     setLoading(true);
@@ -66,9 +67,20 @@ function GraficoTemperaturaPage() {
         listB(),
         listarLuz({ data: { bancada_id: id, desde } }),
       ]);
+      
+      const currentBancada = bs.find((b) => b.id === id) ?? null;
+      setBancada(currentBancada);
       setPontos(dados);
       setIntervalosLuz(luz);
-      setBancada(bs.find((b) => b.id === id) ?? null);
+      
+      // Encontra a prateleira controladora de luz na mesma sala/laboratório
+      // Prioriza a P8S12, ou qualquer uma que tenha luz_janelas configurado
+      const controladora = bs.find(b => 
+        b.laboratorio_id === currentBancada?.laboratorio_id && 
+        (b.nome === 'P8S12' || (b.config?.luz_janelas && b.config.luz_janelas.length > 0))
+      );
+      
+      setLuzFonte(controladora || currentBancada);
     } finally {
       setLoading(false);
     }
@@ -216,7 +228,7 @@ function GraficoTemperaturaPage() {
                     const tsDate = new Date(ts);
                     const tsTime = format(tsDate, "HH:mm");
 
-                    const programada = bancada?.config?.luz_janelas?.some((j: any) => {
+                    const programada = luzFonte?.config?.luz_janelas?.some((j: any) => {
                       if (!j.ligar || !j.desligar) return false;
                       return tsTime >= j.ligar && tsTime < j.desligar;
                     });
@@ -239,7 +251,7 @@ function GraficoTemperaturaPage() {
                   }}
                 />
                 {/* Janelas de Luz (Baseadas na Programação) */}
-                {bancada?.config?.luz_janelas?.map((j: any, idx: number) => {
+                {luzFonte?.config?.luz_janelas?.map((j: any, idx: number) => {
                   if (!j.ligar || !j.desligar) return null;
                   
                   const offsets = Array.from({ length: 125 }, (_, i) => i - 122);
