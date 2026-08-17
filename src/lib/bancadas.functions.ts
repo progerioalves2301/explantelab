@@ -49,6 +49,7 @@ const acessoriosSchema = {
   tem_balanca: z.boolean().optional(),
   tem_co2: z.boolean().optional(),
   controla_ar: z.boolean().optional(),
+  is_teste: z.boolean().optional(),
 };
 
 export type AcessoriosBancada = {
@@ -57,6 +58,7 @@ export type AcessoriosBancada = {
   tem_balanca?: boolean;
   tem_co2?: boolean;
   controla_ar?: boolean;
+  is_teste?: boolean;
 };
 
 // Cria bancada + device_token + código de pareamento de 6 dígitos.
@@ -102,6 +104,7 @@ export const criarBancada = createServerFn({ method: "POST" })
       tem_balanca: data.tem_balanca ?? false,
       tem_co2: data.tem_co2 ?? false,
       controla_ar: data.controla_ar ?? false,
+      is_teste: data.is_teste ?? false,
       offline_threshold_segundos: 420,
     };
     if (initialConfig) insertRow.config = initialConfig;
@@ -287,6 +290,7 @@ export const atualizarBancada = createServerFn({ method: "POST" })
       "tem_balanca",
       "tem_co2",
       "controla_ar",
+      "is_teste",
     ] as const) {
       if (rest[k] !== undefined) patch[k] = rest[k];
     }
