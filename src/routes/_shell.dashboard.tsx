@@ -91,6 +91,7 @@ function DashboardPage() {
         supabase
           .from("bancadas")
           .select("*")
+          .eq("is_teste", false)
           .order("created_at", { ascending: true }),
         supabase
           .from("laboratorios")
@@ -196,6 +197,7 @@ function DashboardPage() {
       const { data } = await supabase
         .from("bancadas")
         .select("*")
+        .eq("is_teste", false)
         .order("created_at", { ascending: true });
       if (!alive || !data) return;
       setBancadas(data as unknown as Bancada[]);

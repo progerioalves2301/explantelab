@@ -36,6 +36,7 @@ type Item = { title: string; url: string; icon: typeof LayoutDashboard; adminOnl
 
 const items: readonly Item[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Área de Testes", url: "/area-testes", icon: FlaskConical, adminOnly: true },
   { title: "Salas Bioreator", url: "/laboratorios", icon: FlaskConical },
   { title: "Nova prateleira", url: "/bancadas/nova", icon: PlusCircle },
   { title: "Mudas & Pesagem", url: "/mudas", icon: Sprout },

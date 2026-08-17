@@ -438,6 +438,7 @@ export type Database = {
           heap_min: number | null
           id: string
           ip_local: string | null
+          is_teste: boolean
           laboratorio_id: string | null
           luz_ligada: boolean
           nome: string
@@ -477,6 +478,7 @@ export type Database = {
           heap_min?: number | null
           id?: string
           ip_local?: string | null
+          is_teste?: boolean
           laboratorio_id?: string | null
           luz_ligada?: boolean
           nome: string
@@ -516,6 +518,7 @@ export type Database = {
           heap_min?: number | null
           id?: string
           ip_local?: string | null
+          is_teste?: boolean
           laboratorio_id?: string | null
           luz_ligada?: boolean
           nome?: string

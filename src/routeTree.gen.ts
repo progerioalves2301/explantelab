@@ -26,6 +26,7 @@ import { Route as ShellDadosRouteImport } from './routes/_shell.dados'
 import { Route as ShellConfiguracoesRouteImport } from './routes/_shell.configuracoes'
 import { Route as ShellCo2RouteImport } from './routes/_shell.co2'
 import { Route as ShellAtualizacaoRouteImport } from './routes/_shell.atualizacao'
+import { Route as ShellAreaTestesRouteImport } from './routes/_shell.area-testes'
 import { Route as ShellArCondicionadoRouteImport } from './routes/_shell.ar-condicionado'
 import { Route as ShellAlertasIndexRouteImport } from './routes/_shell.alertas.index'
 import { Route as ShellMudasIdRouteImport } from './routes/_shell.mudas.$id'
@@ -125,6 +126,11 @@ const ShellAtualizacaoRoute = ShellAtualizacaoRouteImport.update({
   path: '/atualizacao',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellAreaTestesRoute = ShellAreaTestesRouteImport.update({
+  id: '/area-testes',
+  path: '/area-testes',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellArCondicionadoRoute = ShellArCondicionadoRouteImport.update({
   id: '/ar-condicionado',
   path: '/ar-condicionado',
@@ -197,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/tv': typeof TvRoute
   '/ar-condicionado': typeof ShellArCondicionadoRoute
+  '/area-testes': typeof ShellAreaTestesRoute
   '/atualizacao': typeof ShellAtualizacaoRoute
   '/co2': typeof ShellCo2Route
   '/configuracoes': typeof ShellConfiguracoesRoute
@@ -228,6 +235,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/tv': typeof TvRoute
   '/ar-condicionado': typeof ShellArCondicionadoRoute
+  '/area-testes': typeof ShellAreaTestesRoute
   '/atualizacao': typeof ShellAtualizacaoRoute
   '/co2': typeof ShellCo2Route
   '/configuracoes': typeof ShellConfiguracoesRoute
@@ -261,6 +269,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/tv': typeof TvRoute
   '/_shell/ar-condicionado': typeof ShellArCondicionadoRoute
+  '/_shell/area-testes': typeof ShellAreaTestesRoute
   '/_shell/atualizacao': typeof ShellAtualizacaoRoute
   '/_shell/co2': typeof ShellCo2Route
   '/_shell/configuracoes': typeof ShellConfiguracoesRoute
@@ -294,6 +303,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/tv'
     | '/ar-condicionado'
+    | '/area-testes'
     | '/atualizacao'
     | '/co2'
     | '/configuracoes'
@@ -325,6 +335,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/tv'
     | '/ar-condicionado'
+    | '/area-testes'
     | '/atualizacao'
     | '/co2'
     | '/configuracoes'
@@ -357,6 +368,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/tv'
     | '/_shell/ar-condicionado'
+    | '/_shell/area-testes'
     | '/_shell/atualizacao'
     | '/_shell/co2'
     | '/_shell/configuracoes'
@@ -519,6 +531,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellAtualizacaoRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/area-testes': {
+      id: '/_shell/area-testes'
+      path: '/area-testes'
+      fullPath: '/area-testes'
+      preLoaderRoute: typeof ShellAreaTestesRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/ar-condicionado': {
       id: '/_shell/ar-condicionado'
       path: '/ar-condicionado'
@@ -627,6 +646,7 @@ const ShellMudasRouteWithChildren = ShellMudasRoute._addFileChildren(
 
 interface ShellRouteChildren {
   ShellArCondicionadoRoute: typeof ShellArCondicionadoRoute
+  ShellAreaTestesRoute: typeof ShellAreaTestesRoute
   ShellAtualizacaoRoute: typeof ShellAtualizacaoRoute
   ShellCo2Route: typeof ShellCo2Route
   ShellConfiguracoesRoute: typeof ShellConfiguracoesRoute
@@ -648,6 +668,7 @@ interface ShellRouteChildren {
 
 const ShellRouteChildren: ShellRouteChildren = {
   ShellArCondicionadoRoute: ShellArCondicionadoRoute,
+  ShellAreaTestesRoute: ShellAreaTestesRoute,
   ShellAtualizacaoRoute: ShellAtualizacaoRoute,
   ShellCo2Route: ShellCo2Route,
   ShellConfiguracoesRoute: ShellConfiguracoesRoute,
