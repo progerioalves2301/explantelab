@@ -33,6 +33,7 @@ import {
 import { listLaboratorios } from "@/lib/laboratorios.functions";
 import { listBancadas } from "@/lib/bancadas.functions";
 import type { Laboratorio, Bancada } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_shell/mudas")({
   head: () => ({
@@ -169,7 +170,13 @@ function MudasPage() {
                     </div>
                   )}
                   <div className="flex flex-wrap gap-2 pt-2">
-                    <Button size="sm" variant="default" onClick={() => setOpenPesar(m)} disabled={!m.ativa}>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => setOpenPesar(m)}
+                      disabled={!m.ativa}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
                       <Scale className="mr-1 h-3.5 w-3.5" /> Pesar
                     </Button>
                     <Button size="sm" variant="outline" asChild>
@@ -461,44 +468,112 @@ function PesarDialog({
   const [valor, setValor] = useState("");
   const [obs, setObs] = useState("");
   const [saving, setSaving] = useState(false);
+  const [reading, setReading] = useState(false);
+
+  const obterPeso = async () => {
+    setReading(true);
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const response = await (supabase
+        .from("balancas" as any)
+        .select("ultima_leitura_g, ultima_sync")
+        .eq("laboratorio_id", muda.laboratorio_id)
+        .eq("ativa", true)
+        .order("ultima_sync", { ascending: false })
+        .limit(1)
+        .maybeSingle() as any);
+      const { data, error } = response;
+
+      if (error) throw error;
+      if (!data?.ultima_leitura_g) {
+        toast.error("Nenhuma balança ativa enviando dados nesta sala");
+        return;
+      }
+
+      const diff = Date.now() - new Date(data.ultima_sync).getTime();
+      if (diff > 30000) {
+        toast.error("Balança offline ou dados desatualizados");
+        return;
+      }
+
+      setValor(Number(data.ultima_leitura_g).toFixed(2));
+      toast.success("Peso capturado da balança!");
+    } catch (e) {
+      toast.error("Erro ao ler balança");
+    } finally {
+      setReading(false);
+    }
+  };
 
   return (
     <DialogContent>
       <DialogHeader>
         <DialogTitle>Pesar muda — {muda.identificador}</DialogTitle>
       </DialogHeader>
-      <div className="space-y-3">
-        <div>
-          <Label>Peso atual (g) *</Label>
-          <Input
-            type="number" step="0.01" min="0" autoFocus
-            value={valor} onChange={(e) => setValor(e.target.value)}
-          />
+      <div className="space-y-4 pt-2">
+        <div className="flex items-end gap-2">
+          <div className="flex-1">
+            <Label>Peso (g) *</Label>
+            <Input
+              type="number"
+              step="0.01"
+              autoFocus
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              placeholder="0.00"
+              className="text-lg font-semibold h-11"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            className="h-11 px-4"
+            onClick={obterPeso}
+            disabled={reading || !muda.laboratorio_id}
+            title="Capturar peso atual da balança configurada nesta sala"
+          >
+            <Scale className={cn("mr-2 h-4 w-4", reading && "animate-spin")} />
+            {reading ? "Lendo..." : "Ler Balança"}
+          </Button>
         </div>
         <div>
           <Label>Observações</Label>
-          <Textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2} />
+          <Textarea
+            value={obs}
+            onChange={(e) => setObs(e.target.value)}
+            rows={2}
+            placeholder="Opcional..."
+          />
         </div>
       </div>
-      <DialogFooter>
+      <DialogFooter className="mt-4">
+        <Button variant="outline" onClick={onDone} disabled={saving}>Cancelar</Button>
         <Button
           onClick={async () => {
-            const v = Number(valor);
-            if (!Number.isFinite(v) || v < 0) { toast.error("Peso inválido"); return; }
+            if (!valor || Number(valor) <= 0) {
+              toast.error("Informe um peso válido");
+              return;
+            }
             setSaving(true);
             try {
-              await pesar({ data: { muda_id: muda.id, valor_g: v, observacoes: obs.trim() || null } });
+              await pesar({
+                data: {
+                  muda_id: muda.id,
+                  valor_g: Number(valor),
+                  observacoes: obs.trim() || null,
+                },
+              });
               toast.success("Pesagem registrada");
               onDone();
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Erro ao registrar");
+              toast.error(e instanceof Error ? e.message : "Erro ao pesar");
             } finally {
               setSaving(false);
             }
           }}
-          disabled={saving}
+          disabled={saving || reading}
         >
-          {saving ? "Salvando…" : "Registrar"}
+          {saving ? "Salvando…" : "Salvar Pesagem"}
         </Button>
       </DialogFooter>
     </DialogContent>

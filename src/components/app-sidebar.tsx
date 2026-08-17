@@ -15,6 +15,7 @@ import {
   Sprout,
   Database,
   Wind,
+  Scale,
 } from "lucide-react";
 import {
   Sidebar,
@@ -40,6 +41,7 @@ const items: readonly Item[] = [
   { title: "Salas Bioreator", url: "/laboratorios", icon: FlaskConical },
   { title: "Nova prateleira", url: "/bancadas/nova", icon: PlusCircle },
   { title: "Mudas & Pesagem", url: "/mudas", icon: Sprout },
+  { title: "Balanças", url: "/balancas", icon: Scale },
   { title: "Sensores CO₂", url: "/co2", icon: Wind },
   { title: "Alertas", url: "/alertas", icon: Bell },
   { title: "Ar-condicionado", url: "/ar-condicionado", icon: AirVent },
