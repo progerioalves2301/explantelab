@@ -474,14 +474,15 @@ function PesarDialog({
     setReading(true);
     try {
       const { supabase } = await import("@/integrations/supabase/client");
-      const { data, error } = await (supabase
+      const response = await (supabase
         .from("balancas" as any)
         .select("ultima_leitura_g, ultima_sync")
         .eq("laboratorio_id", muda.laboratorio_id)
         .eq("ativa", true)
         .order("ultima_sync", { ascending: false })
         .limit(1)
-        .maybeSingle() as Promise<{ data: any; error: any }>);
+        .maybeSingle() as any);
+      const { data, error } = response;
 
       if (error) throw error;
       if (!data?.ultima_leitura_g) {
