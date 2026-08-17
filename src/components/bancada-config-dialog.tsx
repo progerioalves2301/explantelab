@@ -45,6 +45,7 @@ type Acessorios = {
   tem_balanca: boolean;
   tem_co2: boolean;
   controla_ar: boolean;
+  is_teste: boolean;
 };
 
 const ACESSORIOS: { key: keyof Acessorios; label: string }[] = [
@@ -53,6 +54,7 @@ const ACESSORIOS: { key: keyof Acessorios; label: string }[] = [
   { key: "tem_balanca", label: "Balança" },
   { key: "tem_co2", label: "Sensor de CO₂" },
   { key: "controla_ar", label: "Controla ar-condicionado" },
+  { key: "is_teste", label: "Equipamento de Teste" },
 ];
 
 export function BancadaConfigDialog({
@@ -76,6 +78,7 @@ export function BancadaConfigDialog({
     tem_balanca: false,
     tem_co2: false,
     controla_ar: false,
+    is_teste: false,
   });
   const salvar = useServerFn(salvarConfig);
   const salvarLimites = useServerFn(salvarLimitesAlerta);
@@ -106,6 +109,7 @@ export function BancadaConfigDialog({
         tem_balanca: bancada.tem_balanca ?? false,
         tem_co2: bancada.tem_co2 ?? false,
         controla_ar: bancada.controla_ar ?? false,
+        is_teste: (bancada as any).is_teste ?? false,
       });
     }
   }, [bancada]);
