@@ -306,8 +306,15 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
       <div
         className="h-1.5 w-full"
         style={{ background: laboratorio?.cor ?? "transparent" }}
-        aria-hidden
+      aria-hidden
       />
+      {bancada.is_teste && (
+        <div className="absolute top-0 right-0 z-20">
+          <div className="rounded-bl-lg bg-primary px-2 py-0.5 text-[9px] font-bold text-primary-foreground shadow-sm uppercase tracking-wider">
+            Teste
+          </div>
+        </div>
+      )}
       <CardHeader className="flex flex-col gap-2 space-y-0 p-4 pb-3 sm:p-6 sm:pb-3">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="min-w-0 flex-1 break-words text-base font-semibold leading-tight">

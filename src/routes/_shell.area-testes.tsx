@@ -38,9 +38,20 @@ function AreaTestesPage() {
     const refetch = async () => {
       const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
       const [bRes, lRes, logRes] = await Promise.all([
-        supabase.from("bancadas").select("*").eq("is_teste", true).order("created_at", { ascending: true }),
-        supabase.from("laboratorios").select("*").order("ordem", { ascending: true }),
-        supabase.from("bancada_status_log").select("bancada_id,status,changed_at").gte("changed_at", since).order("changed_at", { ascending: true }),
+        supabase
+          .from("bancadas")
+          .select("*")
+          .eq("is_teste", true)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("laboratorios")
+          .select("*")
+          .order("ordem", { ascending: true }),
+        supabase
+          .from("bancada_status_log")
+          .select("bancada_id,status,changed_at")
+          .gte("changed_at", since)
+          .order("changed_at", { ascending: true }),
       ]);
       if (!alive) return;
       setBancadas((bRes.data ?? []) as unknown as Bancada[]);
@@ -50,10 +61,39 @@ function AreaTestesPage() {
     };
 
     void refetch();
+
+    const channel = supabase
+      .channel("bancadas-test-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bancadas" },
+        (payload) => {
+          setBancadas((prev) => {
+            if (payload.eventType === "DELETE") {
+              return prev.filter((b) => b.id !== (payload.old as Bancada).id);
+            }
+            const row = payload.new as unknown as Bancada;
+
+            // Se o item não é teste, removemos da área de testes
+            if (!row.is_teste) {
+              return prev.filter((b) => b.id !== row.id);
+            }
+
+            const idx = prev.findIndex((b) => b.id === row.id);
+            if (idx === -1) return [...prev, row];
+            const copy = prev.slice();
+            copy[idx] = row;
+            return copy;
+          });
+        },
+      )
+      .subscribe();
+
     const timer = window.setInterval(refetch, 10_000);
     return () => {
       alive = false;
       window.clearInterval(timer);
+      supabase.removeChannel(channel);
     };
   }, []);
 

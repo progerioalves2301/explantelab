@@ -133,6 +133,12 @@ function DashboardPage() {
               return prev.filter((b) => b.id !== (payload.old as Bancada).id);
             }
             const row = payload.new as unknown as Bancada;
+            
+            // Se o item agora é teste, removemos do dashboard (se ele estava aqui)
+            if (row.is_teste) {
+              return prev.filter((b) => b.id !== row.id);
+            }
+
             const idx = prev.findIndex((b) => b.id === row.id);
             if (idx === -1) return [...prev, row];
             const copy = prev.slice();
