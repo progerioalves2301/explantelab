@@ -134,13 +134,18 @@ function DashboardPage() {
             }
             const row = payload.new as unknown as Bancada;
             
-            // Se o item agora é teste, removemos do dashboard (se ele estava aqui)
+            const idx = prev.findIndex((b) => b.id === row.id);
+            if (idx === -1) {
+              // Se é novo e não é teste, adiciona
+              if (!row.is_teste) return [...prev, row];
+              return prev;
+            }
+            
+            // Se já existia mas agora virou teste, remove
             if (row.is_teste) {
               return prev.filter((b) => b.id !== row.id);
             }
 
-            const idx = prev.findIndex((b) => b.id === row.id);
-            if (idx === -1) return [...prev, row];
             const copy = prev.slice();
             copy[idx] = row;
             return copy;
