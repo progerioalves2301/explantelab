@@ -74,13 +74,18 @@ function AreaTestesPage() {
             }
             const row = payload.new as unknown as Bancada;
 
-            // Se o item não é teste, removemos da área de testes
+            const idx = prev.findIndex((b) => b.id === row.id);
+            if (idx === -1) {
+              // Se é novo e é teste, adiciona
+              if (row.is_teste) return [...prev, row];
+              return prev;
+            }
+
+            // Se já existia mas agora não é mais teste, remove
             if (!row.is_teste) {
               return prev.filter((b) => b.id !== row.id);
             }
 
-            const idx = prev.findIndex((b) => b.id === row.id);
-            if (idx === -1) return [...prev, row];
             const copy = prev.slice();
             copy[idx] = row;
             return copy;
