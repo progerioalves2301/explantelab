@@ -65,6 +65,11 @@ const ACESSORIOS = [
     label: "Controla ar-condicionado",
     hint: "Emissor IR instalado — pode comandar o ar da sala.",
   },
+  {
+    key: "is_teste" as const,
+    label: "Equipamento de Teste",
+    hint: "Visível apenas na Área de Testes (restrito a administradores).",
+  },
 ];
 
 type Acessorios = {
@@ -73,6 +78,7 @@ type Acessorios = {
   tem_balanca: boolean;
   tem_co2: boolean;
   controla_ar: boolean;
+  is_teste: boolean;
 };
 
 function NovaBancadaPage() {
@@ -88,6 +94,7 @@ function NovaBancadaPage() {
     tem_balanca: false,
     tem_co2: false,
     controla_ar: false,
+    is_teste: false,
   });
   const [result, setResult] = useState<{
     bancada: Bancada;
