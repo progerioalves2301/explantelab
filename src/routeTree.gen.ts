@@ -25,6 +25,7 @@ import { Route as ShellDashboardRouteImport } from './routes/_shell.dashboard'
 import { Route as ShellDadosRouteImport } from './routes/_shell.dados'
 import { Route as ShellConfiguracoesRouteImport } from './routes/_shell.configuracoes'
 import { Route as ShellCo2RouteImport } from './routes/_shell.co2'
+import { Route as ShellBalancasRouteImport } from './routes/_shell.balancas'
 import { Route as ShellAtualizacaoRouteImport } from './routes/_shell.atualizacao'
 import { Route as ShellAreaTestesRouteImport } from './routes/_shell.area-testes'
 import { Route as ShellArCondicionadoRouteImport } from './routes/_shell.ar-condicionado'
@@ -121,6 +122,11 @@ const ShellCo2Route = ShellCo2RouteImport.update({
   path: '/co2',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellBalancasRoute = ShellBalancasRouteImport.update({
+  id: '/balancas',
+  path: '/balancas',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellAtualizacaoRoute = ShellAtualizacaoRouteImport.update({
   id: '/atualizacao',
   path: '/atualizacao',
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/ar-condicionado': typeof ShellArCondicionadoRoute
   '/area-testes': typeof ShellAreaTestesRoute
   '/atualizacao': typeof ShellAtualizacaoRoute
+  '/balancas': typeof ShellBalancasRoute
   '/co2': typeof ShellCo2Route
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dados': typeof ShellDadosRoute
@@ -237,6 +244,7 @@ export interface FileRoutesByTo {
   '/ar-condicionado': typeof ShellArCondicionadoRoute
   '/area-testes': typeof ShellAreaTestesRoute
   '/atualizacao': typeof ShellAtualizacaoRoute
+  '/balancas': typeof ShellBalancasRoute
   '/co2': typeof ShellCo2Route
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dados': typeof ShellDadosRoute
@@ -271,6 +279,7 @@ export interface FileRoutesById {
   '/_shell/ar-condicionado': typeof ShellArCondicionadoRoute
   '/_shell/area-testes': typeof ShellAreaTestesRoute
   '/_shell/atualizacao': typeof ShellAtualizacaoRoute
+  '/_shell/balancas': typeof ShellBalancasRoute
   '/_shell/co2': typeof ShellCo2Route
   '/_shell/configuracoes': typeof ShellConfiguracoesRoute
   '/_shell/dados': typeof ShellDadosRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/ar-condicionado'
     | '/area-testes'
     | '/atualizacao'
+    | '/balancas'
     | '/co2'
     | '/configuracoes'
     | '/dados'
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
     | '/ar-condicionado'
     | '/area-testes'
     | '/atualizacao'
+    | '/balancas'
     | '/co2'
     | '/configuracoes'
     | '/dados'
@@ -370,6 +381,7 @@ export interface FileRouteTypes {
     | '/_shell/ar-condicionado'
     | '/_shell/area-testes'
     | '/_shell/atualizacao'
+    | '/_shell/balancas'
     | '/_shell/co2'
     | '/_shell/configuracoes'
     | '/_shell/dados'
@@ -524,6 +536,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellCo2RouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/balancas': {
+      id: '/_shell/balancas'
+      path: '/balancas'
+      fullPath: '/balancas'
+      preLoaderRoute: typeof ShellBalancasRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/atualizacao': {
       id: '/_shell/atualizacao'
       path: '/atualizacao'
@@ -648,6 +667,7 @@ interface ShellRouteChildren {
   ShellArCondicionadoRoute: typeof ShellArCondicionadoRoute
   ShellAreaTestesRoute: typeof ShellAreaTestesRoute
   ShellAtualizacaoRoute: typeof ShellAtualizacaoRoute
+  ShellBalancasRoute: typeof ShellBalancasRoute
   ShellCo2Route: typeof ShellCo2Route
   ShellConfiguracoesRoute: typeof ShellConfiguracoesRoute
   ShellDadosRoute: typeof ShellDadosRoute
@@ -670,6 +690,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellArCondicionadoRoute: ShellArCondicionadoRoute,
   ShellAreaTestesRoute: ShellAreaTestesRoute,
   ShellAtualizacaoRoute: ShellAtualizacaoRoute,
+  ShellBalancasRoute: ShellBalancasRoute,
   ShellCo2Route: ShellCo2Route,
   ShellConfiguracoesRoute: ShellConfiguracoesRoute,
   ShellDadosRoute: ShellDadosRoute,

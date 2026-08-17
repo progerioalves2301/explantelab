@@ -1,0 +1,373 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Scale, Plus, Trash2, Pencil, CheckCircle2, XCircle, Info, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { listarBalancas, criarBalanca, editarBalanca, excluirBalanca, type Balanca } from "@/lib/balancas.functions";
+import { listLaboratorios } from "@/lib/laboratorios.functions";
+import type { Laboratorio } from "@/lib/types";
+
+export const Route = createFileRoute("/_shell/balancas")({
+  head: () => ({
+    meta: [
+      { title: "Gerenciamento de Balanças — VitroCeres OS" },
+      { name: "description", content: "Configuração de balanças HX711 para pesagem autônoma." },
+    ],
+  }),
+  component: BalancasPage,
+});
+
+const SEM_LAB = "__sem__";
+
+function BalancasPage() {
+  const getBalancas = useServerFn(listarBalancas);
+  const getLabs = useServerFn(listLaboratorios);
+  const addBalanca = useServerFn(criarBalanca);
+  const modBalanca = useServerFn(editarBalanca);
+  const delBalanca = useServerFn(excluirBalanca);
+
+  const [balancas, setBalancas] = useState<Balanca[]>([]);
+  const [labs, setLabs] = useState<Laboratorio[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [openNova, setOpenNova] = useState(false);
+  const [editing, setEditing] = useState<Balanca | null>(null);
+
+  const carregar = async () => {
+    setLoading(true);
+    try {
+      const [b, l] = await Promise.all([getBalancas(), getLabs()]);
+      setBalancas(b);
+      setLabs(l);
+    } catch (e) {
+      toast.error("Erro ao carregar dados");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { void carregar(); }, []);
+
+  const handleExcluir = async (id: string) => {
+    try {
+      await delBalanca({ data: { id } });
+      toast.success("Balança excluída");
+      setBalancas(prev => prev.filter(b => b.id !== id));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao excluir");
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+            <Scale className="h-6 w-6 text-primary" />
+            Gerenciamento de Balanças
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Configure e monitore as balanças HX711 integradas às prateleiras.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={carregar} disabled={loading}>
+            <RefreshCw className={cn("mr-1.5 h-4 w-4", loading && "animate-spin")} />
+            Atualizar
+          </Button>
+          <Dialog open={openNova} onOpenChange={setOpenNova}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="mr-1.5 h-4 w-4" /> Nova balança
+              </Button>
+            </DialogTrigger>
+            <NovaBalancaDialog
+              labs={labs}
+              onDone={() => { setOpenNova(false); carregar(); }}
+              criar={addBalanca}
+            />
+          </Dialog>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex h-40 items-center justify-center text-muted-foreground">Carregando balanças...</div>
+      ) : balancas.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <Scale className="mb-4 h-12 w-12 text-muted-foreground/30" />
+            <div className="text-lg font-medium">Nenhuma balança cadastrada</div>
+            <p className="mb-6 text-sm text-muted-foreground">
+              Cadastre a primeira balança para começar a monitorar o peso das mudas.
+            </p>
+            <Button onClick={() => setOpenNova(true)}>
+              <Plus className="mr-1.5 h-4 w-4" /> Cadastrar agora
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {balancas.map(b => (
+            <Card key={b.id} className={cn("relative overflow-hidden", !b.ativa && "opacity-70")}>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <CardTitle className="text-base truncate">{b.nome}</CardTitle>
+                    <CardDescription className="text-xs">
+                      {labs.find(l => l.id === b.laboratorio_id)?.nome ?? "Sem sala"}
+                    </CardDescription>
+                  </div>
+                  <Badge variant={b.ativa ? "secondary" : "outline"}>
+                    {b.ativa ? "ativa" : "inativa"}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-0">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-md bg-muted/50 p-2">
+                    <div className="text-muted-foreground">Último peso</div>
+                    <div className="text-lg font-bold tabular-nums">
+                      {b.ultima_leitura_g != null ? `${b.ultima_leitura_g.toFixed(2)}g` : "—"}
+                    </div>
+                  </div>
+                  <div className="rounded-md bg-muted/50 p-2">
+                    <div className="text-muted-foreground">Sync</div>
+                    <div className="text-[10px] font-medium mt-1">
+                      {b.ultima_sync ? new Date(b.ultima_sync).toLocaleTimeString("pt-BR") : "Nunca"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1 text-[11px]">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Token:</span>
+                    <span className="font-mono text-[9px] truncate ml-2 max-w-[120px]">{b.device_token}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Estabilização:</span>
+                    <span>{b.minutos_estabilizacao} min</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditing(b)}>
+                    <Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir balança?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Isso removerá a configuração da balança <strong>{b.nome}</strong>. O histórico de pesagens já gravado nas mudas será mantido.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleExcluir(b.id)} className="bg-destructive text-destructive-foreground">
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={!!editing} onOpenChange={v => !v && setEditing(null)}>
+        {editing && (
+          <EditarBalancaDialog
+            balanca={editing}
+            labs={labs}
+            onDone={() => { setEditing(null); carregar(); }}
+            editar={modBalanca}
+          />
+        )}
+      </Dialog>
+    </div>
+  );
+}
+
+function NovaBalancaDialog({ labs, onDone, criar }: { labs: Laboratorio[], onDone: () => void, criar: any }) {
+  const [nome, setNome] = useState("");
+  const [labId, setLabId] = useState(SEM_LAB);
+  const [token, setToken] = useState("");
+  const [estabilizacao, setEstabilizacao] = useState("5");
+  const [outlier, setOutlier] = useState("10.0");
+  const [saving, setSaving] = useState(false);
+
+  const handleSalvar = async () => {
+    if (!nome.trim()) return toast.error("Informe o nome");
+    if (!token.trim()) return toast.error("Informe o token do dispositivo");
+    setSaving(true);
+    try {
+      await criar({
+        data: {
+          nome: nome.trim(),
+          laboratorio_id: labId === SEM_LAB ? null : labId,
+          device_token: token.trim(),
+          minutos_estabilizacao: Number(estabilizacao),
+          outlier_delta_g: Number(outlier),
+        }
+      });
+      toast.success("Balança cadastrada");
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao cadastrar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Nova balança</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-4 pt-4">
+        <div className="space-y-2">
+          <Label>Nome da Balança *</Label>
+          <Input placeholder="Ex: Balança P8S12, Prateleira 01..." value={nome} onChange={e => setNome(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label>Sala Bioreator</Label>
+          <Select value={labId} onValueChange={setLabId}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={SEM_LAB}>Nenhuma</SelectItem>
+              {labs.map(l => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Token do Dispositivo (colado no portal Wi-Fi) *</Label>
+          <Input placeholder="Token alfanumérico longo" value={token} onChange={e => setToken(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Estabilização (min)</Label>
+            <Input type="number" value={estabilizacao} onChange={e => setEstabilizacao(e.target.value)} />
+            <p className="text-[10px] text-muted-foreground">Espera pós-ciclo hidráulico.</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Filtro Outlier (g)</Label>
+            <Input type="number" step="0.1" value={outlier} onChange={e => setOutlier(e.target.value)} />
+            <p className="text-[10px] text-muted-foreground">Delta máximo entre leituras.</p>
+          </div>
+        </div>
+      </div>
+      <DialogFooter className="mt-6">
+        <Button variant="outline" onClick={onDone} disabled={saving}>Cancelar</Button>
+        <Button onClick={handleSalvar} disabled={saving}>
+          {saving ? "Salvando..." : "Cadastrar"}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
+
+function EditarBalancaDialog({ balanca, labs, onDone, editar }: { balanca: Balanca, labs: Laboratorio[], onDone: () => void, editar: any }) {
+  const [nome, setNome] = useState(balanca.nome);
+  const [labId, setLabId] = useState(balanca.laboratorio_id ?? SEM_LAB);
+  const [ativa, setAtiva] = useState(balanca.ativa);
+  const [estabilizacao, setEstabilizacao] = useState(balanca.minutos_estabilizacao.toString());
+  const [outlier, setOutlier] = useState(balanca.outlier_delta_g.toString());
+  const [saving, setSaving] = useState(false);
+
+  const handleSalvar = async () => {
+    setSaving(true);
+    try {
+      await editar({
+        data: {
+          id: balanca.id,
+          nome: nome.trim(),
+          laboratorio_id: labId === SEM_LAB ? null : labId,
+          ativa,
+          minutos_estabilizacao: Number(estabilizacao),
+          outlier_delta_g: Number(outlier),
+        }
+      });
+      toast.success("Balança atualizada");
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Editar balança</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-4 pt-4">
+        <div className="space-y-2">
+          <Label>Nome</Label>
+          <Input value={nome} onChange={e => setNome(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label>Sala Bioreator</Label>
+          <Select value={labId} onValueChange={setLabId}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={SEM_LAB}>Nenhuma</SelectItem>
+              {labs.map(l => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-3">
+          <Label>Balança Ativa</Label>
+          <Switch checked={ativa} onCheckedChange={setAtiva} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Estabilização (min)</Label>
+            <Input type="number" value={estabilizacao} onChange={e => setEstabilizacao(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Filtro Outlier (g)</Label>
+            <Input type="number" step="0.1" value={outlier} onChange={e => setOutlier(e.target.value)} />
+          </div>
+        </div>
+      </div>
+      <DialogFooter className="mt-6">
+        <Button variant="outline" onClick={onDone} disabled={saving}>Cancelar</Button>
+        <Button onClick={handleSalvar} disabled={saving}>
+          {saving ? "Salvando..." : "Salvar alterações"}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
+
+import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
