@@ -310,7 +310,7 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
       />
       {bancada.is_teste && (
         <div className="absolute top-0 right-0 z-20">
-          <div className="rounded-bl-lg bg-primary px-2 py-0.5 text-[9px] font-bold text-primary-foreground shadow-sm uppercase tracking-wider">
+          <div className="rounded-bl-lg bg-destructive px-2 py-0.5 text-[9px] font-bold text-destructive-foreground shadow-sm uppercase tracking-wider">
             Teste
           </div>
         </div>
