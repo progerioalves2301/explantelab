@@ -7,28 +7,25 @@ Criar uma área restrita para o administrador (`admin@admin.com.br`) testar novo
 ### Banco de Dados
 - Criar coluna `is_teste` (boolean, default false) na tabela `public.bancadas`.
 - Atualizar as RLS Policies da tabela `bancadas` para que prateleiras com `is_teste = true` sejam visíveis apenas por administradores.
-- Atualizar a função `detectar_alertas` (se existir) para ignorar equipamentos em teste ou tratá-los separadamente.
+- Ajustar `GRANT` e permissões para a nova coluna.
 
 ### Frontend
 - **Nova Rota**: Criar `src/routes/_shell.area-testes.tsx` para listar e gerenciar apenas equipamentos marcados como teste.
 - **Sidebar**: Adicionar o link "Área de Testes" no `src/components/app-sidebar.tsx`, visível apenas para administradores.
-- **Dashboard**: Filtrar a listagem principal para NÃO exibir equipamentos marcados como teste (a menos que o usuário seja admin e escolha vê-los, ou mantê-los estritamente na nova aba).
-- **Formulário de Cadastro**: Adicionar a opção "Equipamento de Teste" ao criar/editar uma prateleira.
+- **Dashboard**: Filtrar a listagem principal para NÃO exibir equipamentos marcados como teste por padrão.
+- **Configuracao**: Adicionar a opção "Equipamento de Teste" em `src/components/bancada-config-dialog.tsx`.
 
 ## Detalhes Tecnicos
-- A filtragem será feita via RLS no banco de dados para garantir segurança máxima:
+- SQL Migration para adicionar `is_teste` e atualizar policies:
   ```sql
-  -- Policy existente de leitura pública será restrita:
-  DROP POLICY "public read bancadas" ON public.bancadas;
-  CREATE POLICY "read non-test benches" ON public.bancadas
-    FOR SELECT TO authenticated
-    USING (is_teste = false);
-  CREATE POLICY "admin read all benches" ON public.bancadas
-    FOR SELECT TO authenticated
-    USING (public.has_role(auth.uid(), 'admin'));
+  ALTER TABLE public.bancadas ADD COLUMN is_teste boolean NOT NULL DEFAULT false;
+  DROP POLICY IF EXISTS "public read bancadas" ON public.bancadas;
+  CREATE POLICY "read non-test benches" ON public.bancadas FOR SELECT TO authenticated USING (is_teste = false);
+  CREATE POLICY "admin read all benches" ON public.bancadas FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+  -- Adicionar policies similares para INSERT/UPDATE/DELETE se necessário
   ```
-- No frontend, o componente `BancadaCard` poderá ter um badge visual indicando "MODO TESTE".
+- O componente `BancadaCard` receberá um tratamento visual (badge ou borda diferenciada) para itens de teste.
 
 ## Verificacao
-- Acessar com conta não-admin e verificar que prateleiras de teste não aparecem no Dashboard nem na Sidebar.
-- Acessar como `admin@admin.com.br` e verificar o acesso à nova área e a visibilidade dos equipamentos.
+- Login como administrador: deve ver a nova aba e prateleiras de teste.
+- Login como operador/visualizador: não deve ver a aba nem os equipamentos de teste.
