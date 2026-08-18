@@ -1,7 +1,7 @@
 # Documentação Técnica do Firmware — VitroCeres Prateleira ESP32
 
-> Versão atual: **v2.6.4**  
-> Arquivo: `firmware/bancada_esp32_v2.6.4/bancada_esp32_v2.6.4.ino`
+> Versão atual: **v2.6.5**  
+> Arquivo: `firmware/bancada_esp32_v2_6_5/bancada_esp32_v2_6_5.ino`
 
 Este documento explica como o firmware funciona, pinagem, lógica de ciclos, luzes, ar-condicionado, sensores e atualização OTA. Use-o para entender o comportamento esperado, diagnosticar problemas e saber quando é necessário atualizar os equipamentos.
 
@@ -323,7 +323,7 @@ Proteções acrescentadas na v2.6.0:
 
 ## 14. Arquivos relacionados
 
-- `firmware/bancada_esp32_v2.6.4/bancada_esp32_v2.6.4.ino` — código fonte.
+- `firmware/bancada_esp32_v2_6_5/bancada_esp32_v2_6_5.ino` — código fonte.
 - `firmware/FIACAO_VALVULAS.md` — diagrama de fiação e endereçamento.
 - `CHANGELOG.md` — histórico de alterações.
 - `mem://index.md` — memória consolidada do projeto.
