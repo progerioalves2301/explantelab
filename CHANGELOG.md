@@ -2,6 +2,14 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-18 — Firmware v2.6.8: temperatura vem do SCD41 quando não há DS18B20
+
+- **Problema**: em módulos só com SCD41 (CO₂), o loop imprimia `[TEMP] leitura invalida (t=-127...)` indefinidamente e o 1-Wire era varrido a cada 30 s.
+- **Correção**: o SCD41 passa a ser a fonte **primária** de temperatura quando o DS18B20 não está instalado. Enquanto a 1ª amostra não chega, o log é um aviso único a cada 30 s (`aguardando temperatura do SCD41`), sem marcar "sensor travado" nem forçar reinícios do 1-Wire. Re-scan do DS18B20 cai para 5 min quando há SCD41. O log de leitura boa agora indica a origem: `[TEMP] 24.3 C (SCD41)`.
+- **Ação**: compilar `firmware/bancada_esp32_v2_6_8/bancada_esp32_v2_6_8.ino` e atualizar via OTA.
+
+---
+
 ## 2026-08-18 — Correção crítica: prateleiras ficando offline ao entrar em Repouso
 
 - **Causa**: o gatilho `tg_bancada_fim_ciclo_balanca` (criado na integração da balança) consultava `balancas.laboratorio_id`, coluna que não existe. Toda telemetria com status `Repouso` era abortada com erro `42703`, então cada prateleira parava de atualizar exatamente no fim da fase de Retorno e aparecia como Offline (os ESP32 seguiam funcionando normalmente).
