@@ -376,7 +376,7 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
 
       <DialogFooter className="pt-4 border-t">
         <Button variant="ghost" onClick={onDone}>Fechar</Button>
-      </AlertDialogFooter>
+      </DialogFooter>
     </DialogContent>
   );
 }
