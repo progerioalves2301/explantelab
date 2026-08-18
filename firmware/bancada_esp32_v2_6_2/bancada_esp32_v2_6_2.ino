@@ -1644,6 +1644,41 @@ void tratarComando(JsonObject cmd) {
                     (unsigned)timeout_s, ar_id, modo);
       reportarIrDebug("iniciado", 0); // v2.4.3 — avisa UI que receptor está escutando
     }
+  } else if (strcmp(tipo, "BALANCA_TARA") == 0) {
+    // v2.6.2 — Zera a balança localmente e salva o offset na NVS
+    if (g_tem_hx711) {
+      Serial.println("[HX711] Comando TARA recebido...");
+      g_hx_zero_offset = g_balanca.read_average(20);
+      Preferences p;
+      p.begin("balanca", false);
+      p.putLong("zero", g_hx_zero_offset);
+      p.end();
+      Serial.printf("[HX711] Novo zero_offset: %ld (salvo na NVS)\n", g_hx_zero_offset);
+      lastTelem = 0;
+    }
+  } else if (strcmp(tipo, "BALANCA_CALIBRAR") == 0) {
+    // v2.6.2 — Atualiza o fator de calibração e salva na NVS
+    // Payload esperado: { "fator": 420.5 }
+    JsonVariantConst pv = cmd["payload"];
+    JsonDocument tmpDoc;
+    JsonObjectConst p;
+    if (pv.is<const char*>()) {
+      if (deserializeJson(tmpDoc, pv.as<const char*>()) == DeserializationError::Ok) {
+        p = tmpDoc.as<JsonObjectConst>();
+      }
+    } else {
+      p = pv.as<JsonObjectConst>();
+    }
+    float novoFator = p["fator"] | 0.0f;
+    if (g_tem_hx711 && novoFator != 0.0f) {
+      g_hx_fator_cal = novoFator;
+      Preferences p;
+      p.begin("balanca", false);
+      p.putFloat("fator", g_hx_fator_cal);
+      p.end();
+      Serial.printf("[HX711] Novo fator_calibracao: %.4f (salvo na NVS)\n", g_hx_fator_cal);
+      lastTelem = 0;
+    }
   } else if (strcmp(tipo, "OTA_UPDATE") == 0) {
     // Payload: { "url": "<https signed url>", "filename": "..." }
     JsonVariantConst pv = cmd["payload"];
