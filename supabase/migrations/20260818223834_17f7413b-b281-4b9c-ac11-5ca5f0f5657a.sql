@@ -1,0 +1,1 @@
+UPDATE public.bancadas SET tem_sensor_temp = true WHERE id = 'ba969a8a-c9a8-43e4-b5ec-b50341accc27';
