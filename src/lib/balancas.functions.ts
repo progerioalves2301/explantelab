@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireTecnico } from "@/lib/role-middleware";
+import { requireOperador, requireTecnico } from "@/lib/role-middleware";
 
 export type Balanca = {
   id: string;
