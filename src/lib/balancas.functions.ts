@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireTecnico } from "@/lib/role-middleware";
+import { requireOperador, requireTecnico } from "@/lib/role-middleware";
 
 export type Balanca = {
   id: string;
@@ -9,6 +9,8 @@ export type Balanca = {
   bancada_associada_id: string | null;
   device_token: string;
   ativa: boolean;
+  fator_calibracao: number;
+  tara_g: number;
   ultima_leitura_g: number | null;
   ultima_sync: string | null;
   ultimo_ciclo_fim: string | null;
@@ -87,5 +89,39 @@ export const excluirBalanca = createServerFn({ method: "POST" })
       .delete()
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const enviarComandoBalanca = createServerFn({ method: "POST" })
+  .middleware([requireOperador])
+  .inputValidator(z.object({
+    balanca_id: z.string().uuid(),
+    tipo: z.enum(["BALANCA_TARA", "BALANCA_CALIBRAR", "BALANCA_RESET"]),
+    payload: z.record(z.string(), z.unknown()).optional(),
+  }))
+  .handler(async ({ data, context }) => {
+    // 1. Busca o device_token da balança e a prateleira associada
+    const { data: balanca, error: bErr } = await context.supabase
+      .from("balancas")
+      .select("device_token, bancada_associada_id")
+      .eq("id", data.balanca_id)
+      .single();
+    if (bErr || !balanca) throw new Error("Balança não encontrada");
+
+    // 2. Se tiver prateleira, manda comando para o ID da prateleira também
+    // O comando é genérico, o ESP da balança escuta pelo device_token ou ID associado.
+    const { error: cErr } = await context.supabase
+      .from("comandos")
+      .insert({
+        bancada_id: balanca.bancada_associada_id as any,
+        tipo: data.tipo,
+        payload: {
+          ...data.payload,
+          device_token: balanca.device_token,
+          balanca_id: data.balanca_id,
+        } as any,
+      });
+
+    if (cErr) throw new Error(cErr.message);
     return { ok: true };
   });

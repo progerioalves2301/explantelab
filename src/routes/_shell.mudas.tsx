@@ -474,24 +474,41 @@ function PesarDialog({
     setReading(true);
     try {
       const { supabase } = await import("@/integrations/supabase/client");
-      const response = await (supabase
+      
+      let query = supabase
         .from("balancas" as any)
         .select("ultima_leitura_g, ultima_sync")
-        .eq("laboratorio_id", muda.laboratorio_id)
         .eq("ativa", true)
-        .order("ultima_sync", { ascending: false })
-        .limit(1)
-        .maybeSingle() as any);
+        .order("ultima_sync", { ascending: false });
+
+      // Se a muda estiver associada a uma prateleira, prioriza a balança dessa prateleira
+      if (muda.bancada_id) {
+        query = query.eq("bancada_associada_id", muda.bancada_id);
+      } else if (muda.laboratorio_id) {
+        // Fallback para sala se não tiver prateleira (comportamento anterior)
+        // Nota: A tabela agora usa bancada_associada_id, então precisamos buscar balanças
+        // que estejam em prateleiras desta sala.
+        const { data: bans } = await supabase.from("bancadas").select("id").eq("laboratorio_id", muda.laboratorio_id);
+        const ids = (bans ?? []).map(b => b.id);
+        if (ids.length > 0) {
+          query = query.in("bancada_associada_id", ids);
+        } else {
+          toast.error("Nenhuma prateleira encontrada nesta sala");
+          return;
+        }
+      }
+
+      const response = await (query.limit(1).maybeSingle() as any);
       const { data, error } = response;
 
       if (error) throw error;
       if (!data?.ultima_leitura_g) {
-        toast.error("Nenhuma balança ativa enviando dados nesta sala");
+        toast.error("Nenhuma balança ativa enviando dados");
         return;
       }
 
       const diff = Date.now() - new Date(data.ultima_sync).getTime();
-      if (diff > 30000) {
+      if (diff > 60000) { // Aumentado para 60s
         toast.error("Balança offline ou dados desatualizados");
         return;
       }

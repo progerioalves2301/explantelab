@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-08-18 — Firmware v2.6.2 + Ajustes de Balança (Tara e Calibração)
+
+**App / Backend**
+- **Ajustes de Balança**: Implementada interface para realizar **Tara** (zerar) e **Calibração** de balanças HX711 diretamente pelo painel de gerenciamento.
+- **Teste em Tempo Real**: Novo dialog de ajustes permite forçar a leitura do peso atual para validar a estabilidade e o fator de calibração.
+- **Integração no Dashboard**: Adicionado atalho rápido para ajustes de balança nos cards das prateleiras que possuem o sensor vinculado.
+
+**Firmware (v2.6.2)**
+- **BALANCA_TARA**: Novo comando para zerar o offset do HX711 e salvar na NVS.
+- **BALANCA_CALIBRAR**: Novo comando para atualizar o `fator_calibracao` no dispositivo e persistir localmente.
+- **Ação**: Compilar `firmware/bancada_esp32_v2_6_2/bancada_esp32_v2_6_2.ino` e atualizar via OTA.
+
 ## 2026-08-16 — Firmware v2.6.1 + Cancelamento de OTA
 
 **App / Backend**
