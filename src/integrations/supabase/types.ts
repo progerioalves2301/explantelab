@@ -881,6 +881,9 @@ export type Database = {
           ota_filename: string | null
           ota_solicitado_em: string | null
           ota_url: string | null
+          paired_at: string | null
+          pairing_code: string | null
+          pairing_expires_at: string | null
           ultima_leitura_ppm: number | null
           ultima_medicao_em: string | null
           ultima_temperatura_c: number | null
@@ -900,6 +903,9 @@ export type Database = {
           ota_filename?: string | null
           ota_solicitado_em?: string | null
           ota_url?: string | null
+          paired_at?: string | null
+          pairing_code?: string | null
+          pairing_expires_at?: string | null
           ultima_leitura_ppm?: number | null
           ultima_medicao_em?: string | null
           ultima_temperatura_c?: number | null
@@ -919,6 +925,9 @@ export type Database = {
           ota_filename?: string | null
           ota_solicitado_em?: string | null
           ota_url?: string | null
+          paired_at?: string | null
+          pairing_code?: string | null
+          pairing_expires_at?: string | null
           ultima_leitura_ppm?: number | null
           ultima_medicao_em?: string | null
           ultima_temperatura_c?: number | null
