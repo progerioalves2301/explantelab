@@ -8,6 +8,12 @@ import { z } from "zod";
 
 const bodySchema = z.object({
   ppm: z.number().min(0).max(50000),
+  // Firmware dedicado do CO2 (v3.0.0-co2) manda também temperatura/umidade do
+  // SCD41. Campos opcionais para manter compatibilidade com firmwares antigos.
+  temperatura_c: z.number().min(-50).max(125).nullable().optional(),
+  umidade_pct: z.number().min(0).max(100).nullable().optional(),
+  firmware_version: z.string().max(32).optional(),
+  ip_local: z.string().max(64).optional(),
 });
 
 function json(body: unknown, status = 200) {
@@ -37,6 +43,16 @@ export const Route = createFileRoute("/api/public/co2/reading")({
         const { data, error } = await supabaseAdmin.rpc("co2_push_reading", {
           _device_token: token,
           _ppm: payload.ppm,
+          ...(payload.temperatura_c != null
+            ? { _temperatura_c: payload.temperatura_c }
+            : {}),
+          ...(payload.umidade_pct != null
+            ? { _umidade_pct: payload.umidade_pct }
+            : {}),
+          ...(payload.firmware_version
+            ? { _firmware_version: payload.firmware_version }
+            : {}),
+          ...(payload.ip_local ? { _ip_local: payload.ip_local } : {}),
         });
         if (error) {
           const msg = error.message.toLowerCase();

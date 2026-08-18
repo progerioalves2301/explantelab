@@ -37,6 +37,7 @@ import { Route as ApiPublicScaleStatusRouteImport } from './routes/api/public/sc
 import { Route as ApiPublicScaleReadingRouteImport } from './routes/api/public/scale.reading'
 import { Route as ApiPublicHooksCheckAlertsRouteImport } from './routes/api/public/hooks/check-alerts'
 import { Route as ApiPublicCo2ReadingRouteImport } from './routes/api/public/co2.reading'
+import { Route as ApiPublicCo2CommandsRouteImport } from './routes/api/public/co2.commands'
 import { Route as ApiPublicBenchTelemetryRouteImport } from './routes/api/public/bench.telemetry'
 import { Route as ApiPublicBenchPairRouteImport } from './routes/api/public/bench.pair'
 import { Route as ApiPublicBenchCommandsRouteImport } from './routes/api/public/bench.commands'
@@ -183,6 +184,11 @@ const ApiPublicCo2ReadingRoute = ApiPublicCo2ReadingRouteImport.update({
   path: '/api/public/co2/reading',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCo2CommandsRoute = ApiPublicCo2CommandsRouteImport.update({
+  id: '/api/public/co2/commands',
+  path: '/api/public/co2/commands',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBenchTelemetryRoute = ApiPublicBenchTelemetryRouteImport.update({
   id: '/api/public/bench/telemetry',
   path: '/api/public/bench/telemetry',
@@ -232,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
+  '/api/public/co2/commands': typeof ApiPublicCo2CommandsRoute
   '/api/public/co2/reading': typeof ApiPublicCo2ReadingRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
+  '/api/public/co2/commands': typeof ApiPublicCo2CommandsRoute
   '/api/public/co2/reading': typeof ApiPublicCo2ReadingRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
@@ -300,6 +308,7 @@ export interface FileRoutesById {
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
   '/api/public/bench/telemetry': typeof ApiPublicBenchTelemetryRoute
+  '/api/public/co2/commands': typeof ApiPublicCo2CommandsRoute
   '/api/public/co2/reading': typeof ApiPublicCo2ReadingRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
@@ -335,6 +344,7 @@ export interface FileRouteTypes {
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
+    | '/api/public/co2/commands'
     | '/api/public/co2/reading'
     | '/api/public/hooks/check-alerts'
     | '/api/public/scale/reading'
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
+    | '/api/public/co2/commands'
     | '/api/public/co2/reading'
     | '/api/public/hooks/check-alerts'
     | '/api/public/scale/reading'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
     | '/api/public/bench/telemetry'
+    | '/api/public/co2/commands'
     | '/api/public/co2/reading'
     | '/api/public/hooks/check-alerts'
     | '/api/public/scale/reading'
@@ -416,6 +428,7 @@ export interface RootRouteChildren {
   ApiPublicBenchCommandsRoute: typeof ApiPublicBenchCommandsRoute
   ApiPublicBenchPairRoute: typeof ApiPublicBenchPairRoute
   ApiPublicBenchTelemetryRoute: typeof ApiPublicBenchTelemetryRoute
+  ApiPublicCo2CommandsRoute: typeof ApiPublicCo2CommandsRoute
   ApiPublicCo2ReadingRoute: typeof ApiPublicCo2ReadingRoute
   ApiPublicHooksCheckAlertsRoute: typeof ApiPublicHooksCheckAlertsRoute
   ApiPublicScaleReadingRoute: typeof ApiPublicScaleReadingRoute
@@ -620,6 +633,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCo2ReadingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/co2/commands': {
+      id: '/api/public/co2/commands'
+      path: '/api/public/co2/commands'
+      fullPath: '/api/public/co2/commands'
+      preLoaderRoute: typeof ApiPublicCo2CommandsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/bench/telemetry': {
       id: '/api/public/bench/telemetry'
       path: '/api/public/bench/telemetry'
@@ -719,6 +739,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBenchCommandsRoute: ApiPublicBenchCommandsRoute,
   ApiPublicBenchPairRoute: ApiPublicBenchPairRoute,
   ApiPublicBenchTelemetryRoute: ApiPublicBenchTelemetryRoute,
+  ApiPublicCo2CommandsRoute: ApiPublicCo2CommandsRoute,
   ApiPublicCo2ReadingRoute: ApiPublicCo2ReadingRoute,
   ApiPublicHooksCheckAlertsRoute: ApiPublicHooksCheckAlertsRoute,
   ApiPublicScaleReadingRoute: ApiPublicScaleReadingRoute,

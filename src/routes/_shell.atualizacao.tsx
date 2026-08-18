@@ -11,6 +11,7 @@ import {
   ShieldAlert,
   FileCode2,
   AlertTriangle,
+  Wind,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +34,11 @@ import {
   cancelaOtaBancada,
   cancelaOtaTodas,
   type FirmwareItem,
+  listarSensoresCo2ParaOta,
+  disparaOtaSensorCo2,
+  cancelaOtaSensorCo2,
   type BancadaFirmwareInfo,
+  type SensorCo2FirmwareInfo,
 } from "@/lib/atualizacao.functions";
 import { meusPapeis } from "@/lib/roles.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,12 +72,16 @@ function AtualizacaoPage() {
   const otaAll = useServerFn(disparaOtaTodas);
   const cancelOtaOne = useServerFn(cancelaOtaBancada);
   const cancelOtaAll = useServerFn(cancelaOtaTodas);
+  const listarCo2 = useServerFn(listarSensoresCo2ParaOta);
+  const otaCo2 = useServerFn(disparaOtaSensorCo2);
+  const cancelCo2 = useServerFn(cancelaOtaSensorCo2);
   const meus = useServerFn(meusPapeis);
 
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [semSessao, setSemSessao] = useState(false);
   const [firmwares, setFirmwares] = useState<FirmwareItem[]>([]);
   const [bancadas, setBancadas] = useState<BancadaFirmwareInfo[]>([]);
+  const [sensoresCo2, setSensoresCo2] = useState<SensorCo2FirmwareInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selecionado, setSelecionado] = useState<string>("");
@@ -135,6 +144,11 @@ function AtualizacaoPage() {
       }
       if (mudou) setAguardando(novoPend);
       setBancadas(bs);
+      try {
+        setSensoresCo2(await listarCo2());
+      } catch {
+        /* silencioso */
+      }
     } catch {
       /* silencioso — poll de fundo */
     }
@@ -162,6 +176,11 @@ function AtualizacaoPage() {
       });
       setFirmwares(fws);
       setBancadas(bs);
+      try {
+        setSensoresCo2(await listarCo2());
+      } catch {
+        /* sensores de CO2 são opcionais */
+      }
       if (fws.length > 0) selecionarMaisNovo(fws);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao carregar");
@@ -179,6 +198,33 @@ function AtualizacaoPage() {
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
+
+  const handleOtaCo2 = async (sensorId: string) => {
+    if (!selecionado) return;
+    setDispatchingId(sensorId);
+    try {
+      await otaCo2({ data: { sensor_id: sensorId, filename: selecionado } });
+      toast.success("OTA agendado — o sensor baixa na próxima consulta.");
+      await recarregarBancadas();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao disparar OTA");
+    } finally {
+      setDispatchingId(null);
+    }
+  };
+
+  const handleCancelOtaCo2 = async (sensorId: string) => {
+    setCancellingId(sensorId);
+    try {
+      await cancelCo2({ data: { sensor_id: sensorId } });
+      toast.success("OTA cancelado.");
+      await recarregarBancadas();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao cancelar OTA");
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   const handleUpload = async (file: File) => {
     if (!file.name.toLowerCase().endsWith(".bin")) {
@@ -592,6 +638,99 @@ function AtualizacaoPage() {
                     )}
                   </div>
                 </div>
+                );
+              })
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wind className="h-5 w-5" /> Sensores de CO₂ (firmware dedicado)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Módulos de CO₂ usam o sketch{" "}
+            <code>vitroceres_co2_v3_0_0.ino</code> (só Wi-Fi + SCD41 + OTA).
+            Selecione acima o <code>.bin</code> correspondente antes de disparar.
+          </p>
+          <div className="rounded-md border">
+            <div className="grid grid-cols-[1fr_120px_120px_140px] gap-2 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground">
+              <span>Sensor</span>
+              <span>Firmware</span>
+              <span>Status</span>
+              <span className="text-right">Ação</span>
+            </div>
+            {sensoresCo2.length === 0 ? (
+              <div className="p-4 text-sm text-muted-foreground">
+                Nenhum sensor de CO₂ cadastrado.
+              </div>
+            ) : (
+              sensoresCo2.map((s) => {
+                const idade = s.ultima_medicao_em
+                  ? (Date.now() - new Date(s.ultima_medicao_em).getTime()) / 1000
+                  : Infinity;
+                const online = idade < 180;
+                const pendente = !!s.ota_solicitado_em && !s.ota_entregue_em;
+                return (
+                  <div
+                    key={s.id}
+                    className="grid grid-cols-[1fr_120px_120px_140px] items-center gap-2 border-b px-3 py-2 text-sm last:border-b-0"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Wind className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{s.nome}</span>
+                    </div>
+                    <span className="font-mono text-xs flex items-center gap-1">
+                      {s.firmware_version ?? "—"}
+                      {pendente && (
+                        <span className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                          OTA
+                        </span>
+                      )}
+                    </span>
+                    <Badge
+                      variant={online ? "default" : "secondary"}
+                      className="w-fit"
+                    >
+                      {online ? "Online" : "Offline"}
+                    </Badge>
+                    <div className="flex justify-end gap-2">
+                      {pendente ? (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={cancellingId === s.id}
+                          onClick={() => handleCancelOtaCo2(s.id)}
+                        >
+                          {cancellingId === s.id ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="mr-1 h-3 w-3" />
+                          )}
+                          Parar
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!selecionado || dispatchingId === s.id}
+                          onClick={() => handleOtaCo2(s.id)}
+                        >
+                          {dispatchingId === s.id ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Rocket className="mr-1 h-3 w-3" />
+                          )}
+                          Atualizar
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 );
               })
             )}

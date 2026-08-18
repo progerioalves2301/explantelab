@@ -665,6 +665,8 @@ export type Database = {
           medido_em: string
           ppm: number
           sensor_id: string
+          temperatura_c: number | null
+          umidade_pct: number | null
         }
         Insert: {
           created_at?: string
@@ -673,6 +675,8 @@ export type Database = {
           medido_em?: string
           ppm: number
           sensor_id: string
+          temperatura_c?: number | null
+          umidade_pct?: number | null
         }
         Update: {
           created_at?: string
@@ -681,6 +685,8 @@ export type Database = {
           medido_em?: string
           ppm?: number
           sensor_id?: string
+          temperatura_c?: number | null
+          umidade_pct?: number | null
         }
         Relationships: [
           {
@@ -866,33 +872,57 @@ export type Database = {
           ativo: boolean
           created_at: string
           device_token: string
+          firmware_version: string | null
           id: string
+          ip_local: string | null
           laboratorio_id: string
           nome: string
+          ota_entregue_em: string | null
+          ota_filename: string | null
+          ota_solicitado_em: string | null
+          ota_url: string | null
           ultima_leitura_ppm: number | null
           ultima_medicao_em: string | null
+          ultima_temperatura_c: number | null
+          ultima_umidade_pct: number | null
           updated_at: string
         }
         Insert: {
           ativo?: boolean
           created_at?: string
           device_token: string
+          firmware_version?: string | null
           id?: string
+          ip_local?: string | null
           laboratorio_id: string
           nome: string
+          ota_entregue_em?: string | null
+          ota_filename?: string | null
+          ota_solicitado_em?: string | null
+          ota_url?: string | null
           ultima_leitura_ppm?: number | null
           ultima_medicao_em?: string | null
+          ultima_temperatura_c?: number | null
+          ultima_umidade_pct?: number | null
           updated_at?: string
         }
         Update: {
           ativo?: boolean
           created_at?: string
           device_token?: string
+          firmware_version?: string | null
           id?: string
+          ip_local?: string | null
           laboratorio_id?: string
           nome?: string
+          ota_entregue_em?: string | null
+          ota_filename?: string | null
+          ota_solicitado_em?: string | null
+          ota_url?: string | null
           ultima_leitura_ppm?: number | null
           ultima_medicao_em?: string | null
+          ultima_temperatura_c?: number | null
+          ultima_umidade_pct?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -1066,8 +1096,23 @@ export type Database = {
         Args: { _bancada_id: string; _max?: number }
         Returns: boolean
       }
+      co2_pull_commands: {
+        Args: {
+          _device_token: string
+          _firmware_version?: string
+          _ip_local?: string
+        }
+        Returns: Json
+      }
       co2_push_reading: {
-        Args: { _device_token: string; _ppm: number }
+        Args: {
+          _device_token: string
+          _firmware_version?: string
+          _ip_local?: string
+          _ppm: number
+          _temperatura_c?: number
+          _umidade_pct?: number
+        }
         Returns: Json
       }
       decidir_ar_condicionado: { Args: never; Returns: number }
