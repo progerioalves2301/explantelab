@@ -113,7 +113,7 @@ export const enviarComandoBalanca = createServerFn({ method: "POST" })
     const { error: cErr } = await context.supabase
       .from("comandos")
       .insert({
-        bancada_id: balanca.bancada_associada_id || null,
+        bancada_id: balanca.bancada_associada_id as any,
         tipo: data.tipo,
         payload: {
           ...data.payload,
