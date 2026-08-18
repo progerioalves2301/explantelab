@@ -109,3 +109,35 @@ export const listarHistoricoCo2 = createServerFn({ method: "GET" })
       ppm: Number(r.ppm),
     })) as PontoCo2[];
   });
+
+/**
+ * Gera uma senha de pareamento de 6 dígitos (válida 24 h) para o módulo de CO2.
+ * O firmware troca essa senha pelo device_token em POST /api/public/co2/pair.
+ */
+export const gerarCodigoPareamentoCo2 = createServerFn({ method: "POST" })
+  .middleware([requireTecnico])
+  .inputValidator((input: { id: string }) =>
+    z.object({ id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const expires_at = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+    let pairing_code = "";
+    let lastErr: string | null = null;
+    for (let i = 0; i < 6; i++) {
+      const n = new Uint32Array(1);
+      crypto.getRandomValues(n);
+      pairing_code = String(n[0]! % 1_000_000).padStart(6, "0");
+      const { error } = await context.supabase
+        .from("sensores_co2")
+        .update({ pairing_code, pairing_expires_at: expires_at })
+        .eq("id", data.id);
+      if (!error) {
+        lastErr = null;
+        break;
+      }
+      lastErr = error.message;
+      if (!/pairing_code/i.test(error.message)) break;
+    }
+    if (lastErr) throw new Error(lastErr);
+    return { pairing_code, expires_at };
+  });

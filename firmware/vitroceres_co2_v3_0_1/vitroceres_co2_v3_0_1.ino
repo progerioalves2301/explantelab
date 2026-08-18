@@ -37,7 +37,7 @@
 #include <esp_system.h>
 #include <time.h>
 
-static const char* FIRMWARE_VERSION = "3.0.0-co2";
+static const char* FIRMWARE_VERSION = "3.0.1-co2";
 
 // Host da aplicação (endpoints públicos autenticados por X-Device-Token)
 static const char* API_HOST = "https://explantelab.lovable.app";
@@ -56,6 +56,7 @@ static const uint32_t WDT_TIMEOUT_S         = 30;
 // -------- Estado persistido --------
 Preferences prefs;
 String g_token_co2 = "";
+String g_pair_code = "";  // senha de 6 digitos gerada no app (uso unico)
 String g_tz        = "<-03>3";  // America/Sao_Paulo (sem horário de verão)
 
 // -------- SCD41 --------
@@ -79,6 +80,7 @@ char     g_reset_reason[24] = "desconhecido";
 void carregarConfig() {
   prefs.begin("vc-co2", true);
   g_token_co2 = prefs.getString("tok", "");
+  g_pair_code = prefs.getString("pair", "");
   g_tz        = prefs.getString("tz", "<-03>3");
   prefs.end();
 }
@@ -86,6 +88,7 @@ void carregarConfig() {
 void salvarConfig() {
   prefs.begin("vc-co2", false);
   prefs.putString("tok", g_token_co2);
+  prefs.putString("pair", g_pair_code);
   prefs.putString("tz", g_tz);
   prefs.end();
 }
@@ -169,6 +172,63 @@ bool getPublic(const char* path, String& respOut) {
   return code >= 200 && code < 300;
 }
 
+// ===================== Pareamento por senha =====================
+// O app (aba CO2 → "Gerar senha") cria uma senha de 6 digitos valida por 24 h.
+// O modulo troca essa senha pelo token definitivo — nao e preciso digitar
+// token nem URL de API em nenhum momento.
+bool parearComSenha() {
+  if (WiFi.status() != WL_CONNECTED) return false;
+  if (g_pair_code.length() != 6) return false;
+
+  HTTPClient h;
+  WiFiClientSecure c;
+  c.setInsecure();
+  if (!h.begin(c, String(API_HOST) + "/api/public/co2/pair")) return false;
+  h.setTimeout(8000);
+  h.addHeader("Content-Type", "application/json");
+  String body = String("{\"pairing_code\":\"") + g_pair_code + "\"}";
+  int code = h.POST(body);
+  String resp = h.getString();
+  h.end();
+
+  if (code == 404 || code == 410) {
+    Serial.printf("[PAIR] senha invalida/expirada (%d) — gere outra no app\n", code);
+    g_pair_code = "";
+    salvarConfig();
+    return false;
+  }
+  if (code < 200 || code >= 300) {
+    Serial.printf("[PAIR] falha %d: %s\n", code, resp.c_str());
+    return false;
+  }
+
+  StaticJsonDocument<512> doc;
+  if (deserializeJson(doc, resp)) {
+    Serial.println("[PAIR] resposta invalida");
+    return false;
+  }
+  const char* tok = doc["device_token"] | "";
+  if (strlen(tok) < 8) {
+    Serial.println("[PAIR] token ausente na resposta");
+    return false;
+  }
+  g_token_co2 = String(tok);
+  g_pair_code = "";
+  salvarConfig();
+  Serial.println("[PAIR] pareado com sucesso — token salvo");
+  return true;
+}
+
+// Retenta o pareamento a cada 30 s enquanto nao houver token.
+void tickPareamento() {
+  static uint32_t ts = 0;
+  if (g_token_co2.length() >= 8) return;
+  if (g_pair_code.length() != 6) return;
+  if (millis() - ts < 30000UL) return;
+  ts = millis();
+  parearComSenha();
+}
+
 // ===================== Portal Wi-Fi =====================
 static const char PORTAL_HEAD[] PROGMEM =
   "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
@@ -201,10 +261,10 @@ void abrirPortalWifi(bool forcar) {
   std::vector<const char*> menu = {"wifi", "info", "exit"};
   wm.setMenu(menu);
 
-  WiFiManagerParameter p_tok("co2_tok", "Token do sensor de CO2",
-                             g_token_co2.c_str(), 64);
+  WiFiManagerParameter p_pair("co2_pair", "Senha de pareamento (6 digitos)",
+                              "", 6);
   WiFiManagerParameter p_tz("tz", "Fuso horario (POSIX TZ)", g_tz.c_str(), 40);
-  wm.addParameter(&p_tok);
+  wm.addParameter(&p_pair);
   wm.addParameter(&p_tz);
 
   uint64_t mac = ESP.getEfuseMac();
@@ -220,8 +280,11 @@ void abrirPortalWifi(bool forcar) {
       delay(3000);
       ESP.restart();
     }
-    String v = String(p_tok.getValue()); v.trim();
-    if (v.length() > 0) g_token_co2 = v;
+    String v = String(p_pair.getValue()); v.trim();
+    if (v.length() == 6) {
+      g_pair_code = v;
+      g_token_co2 = "";  // senha nova troca o token antigo
+    }
     v = String(p_tz.getValue()); v.trim();
     if (v.length() > 0) g_tz = v;
     salvarConfig();
@@ -353,7 +416,7 @@ void tickCo2() {
     g_soma_ppm = 0; g_soma_temp = 0; g_soma_umid = 0; g_amostras = 0;
 
     if (g_token_co2.length() < 8) {
-      Serial.printf("[CO2] media %u ppm NAO enviada — token vazio "
+      Serial.printf("[CO2] media %u ppm NAO enviada — sem token "
                     "(preencha no portal Wi-Fi)\n", (unsigned)media);
       return;
     }
@@ -479,8 +542,9 @@ void setup() {
                 (unsigned)ESP.getFreeHeap());
 
   carregarConfig();
-  Serial.printf("[CFG] token do sensor: %s | tz=%s\n",
-                g_token_co2.length() >= 8 ? "configurado" : "VAZIO (portal Wi-Fi)",
+  Serial.printf("[CFG] token: %s | senha pendente: %s | tz=%s\n",
+                g_token_co2.length() >= 8 ? "OK" : "ausente",
+                g_pair_code.length() == 6 ? g_pair_code.c_str() : "nenhuma",
                 g_tz.c_str());
 
   Wire.begin(21, 22);
@@ -488,7 +552,7 @@ void setup() {
   iniciarScd41();
 
   // Segurar o botão BOOT por 3 s abre o portal de configuração.
-  bool forcarPortal = g_token_co2.length() < 8;
+  bool forcarPortal = (g_token_co2.length() < 8 && g_pair_code.length() != 6);
   if (!forcarPortal && digitalRead(PIN_RESET_BTN) == LOW) {
     uint32_t t0 = millis();
     while (digitalRead(PIN_RESET_BTN) == LOW && millis() - t0 < 3200UL) delay(50);
@@ -499,6 +563,9 @@ void setup() {
   }
   abrirPortalWifi(forcarPortal);
   sincronizarHora();
+
+  // Troca a senha de 6 digitos pelo token definitivo (uma unica vez).
+  if (g_token_co2.length() < 8) parearComSenha();
 
   armarWatchdog();
 
@@ -512,6 +579,7 @@ void setup() {
 void loop() {
   alimentarWatchdog();
   tickWifi();
+  tickPareamento();
   tickCo2();
   tickComandos();
   tickLed();
