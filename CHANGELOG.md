@@ -2,7 +2,14 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-18 — Correção crítica: prateleiras ficando offline ao entrar em Repouso
+
+- **Causa**: o gatilho `tg_bancada_fim_ciclo_balanca` (criado na integração da balança) consultava `balancas.laboratorio_id`, coluna que não existe. Toda telemetria com status `Repouso` era abortada com erro `42703`, então cada prateleira parava de atualizar exatamente no fim da fase de Retorno e aparecia como Offline (os ESP32 seguiam funcionando normalmente).
+- **Correção**: o gatilho agora localiza a balança por `bancada_associada_id` e qualquer falha nessa etapa é ignorada, nunca derrubando a telemetria.
+- **Ação**: nenhuma — não exige atualização de firmware.
+
 ---
+
 
 ## 2026-08-18 — Firmware v2.6.6 + Resiliência de Sensores
 
