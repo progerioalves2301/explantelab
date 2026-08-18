@@ -1960,7 +1960,11 @@ void iniciarHx711() {
 float hxLerPesoG() {
   if (!g_tem_hx711 || !g_balanca.is_ready()) return g_hx_peso_g;
   long raw = g_balanca.read_average(10);
-  return (raw - g_hx_zero_offset) / g_hx_fator_cal;
+  float peso = (raw - g_hx_zero_offset) / g_hx_fator_cal;
+  // v2.6.3 — Log de debug para IDE do Arduino p/ verificar sinal da balança
+  Serial.printf("[DEBUG BALANCA] raw=%ld | zero=%ld | fator=%.4f | peso=%.2fg\n", 
+                raw, g_hx_zero_offset, g_hx_fator_cal, peso);
+  return peso;
 }
 
 void hxConsultarStatus() {
