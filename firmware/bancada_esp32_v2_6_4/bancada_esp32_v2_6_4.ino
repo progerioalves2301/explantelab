@@ -2055,7 +2055,7 @@ void setup() {
   Serial.begin(115200);
   delay(1000); // v2.6.4: Aumentado delay para garantir que o monitor serial pegue o início
   Serial.println("\n\n========================================================");
-  Serial.printf("== VitroCeres Prateleira ESP32 v%s ==\n", FIRMWARE_VERSION);
+  Serial.printf("\n\n== VitroCeres Prateleira ESP32 v%s ==\n", FIRMWARE_VERSION);
   Serial.println("========================================================");
   // v2.6.0 — motivo do último boot (brownout = queda de tensão na comutação da
   // válvula; task_wdt/panic = travamento de software).
