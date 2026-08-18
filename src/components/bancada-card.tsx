@@ -846,19 +846,18 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               </Button>
             </>
           )}
-          <Button
-            {temBalanca && (
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 shrink-0 text-emerald-600 dark:text-emerald-400"
-                onClick={() => window.location.href = '/balancas'}
-                title="Ajustes de Balança"
-              >
-                <Scale className="h-3.5 w-3.5" />
-              </Button>
-            )}
+          {temBalanca && (
             <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 shrink-0 text-emerald-600 dark:text-emerald-400"
+              onClick={() => window.location.href = '/balancas'}
+              title="Ajustes de Balança"
+            >
+              <Scale className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          <Button
               variant="outline"
               size="icon"
               className="h-8 w-8 shrink-0"
