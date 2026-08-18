@@ -42,7 +42,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="grid min-h-screen place-items-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+    <div className="grid min-h-screen place-items-center bg-gradient-to-br from-background via-background to-primary/5 p-4" data-tsd-source="/src/routes/login.tsx:45:5">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="rounded-xl bg-white px-6 py-4 shadow-lg ring-1 ring-border">

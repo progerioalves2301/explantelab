@@ -464,11 +464,28 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               >
                 <BatteryWarning className="h-3 w-3" />
                 {brownout ? "Reset · energia" : "Reset · travou"}
+                <span className="ml-1 opacity-70">({motivo})</span>
               </span>
             );
           })()}
 
 
+          {bancada.rssi != null && (
+            <span 
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                bancada.rssi > -65 
+                  ? "border-emerald-500/60 bg-emerald-400/15 text-emerald-700 dark:text-emerald-300"
+                  : bancada.rssi > -80
+                    ? "border-amber-500/60 bg-amber-400/15 text-amber-700 dark:text-amber-300"
+                    : "border-red-500/60 bg-red-400/15 text-red-700 dark:text-red-300"
+              )}
+              title={`Sinal Wi-Fi: ${bancada.rssi} dBm`}
+            >
+              <Wind className="h-3 w-3" />
+              {bancada.rssi} dBm
+            </span>
+          )}
           {!isModuloSensor && <StatusBadge status={bancada.status} />}
         </div>
       </CardHeader>

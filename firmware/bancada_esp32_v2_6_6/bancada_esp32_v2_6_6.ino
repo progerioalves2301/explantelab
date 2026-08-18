@@ -119,7 +119,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.6.5";
+static const char* FIRMWARE_VERSION = "2.6.6";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -1918,6 +1918,8 @@ void tickCo2(unsigned long now) {
   if (now - g_ts_ultima_co2_leitura >= 5000UL) {
     g_ts_ultima_co2_leitura = now;
     bool pronto = false;
+    // v2.6.6: alimenta watchdog antes de leitura I2C potencialmente lenta
+    if (g_wdt_armado) esp_task_wdt_reset();
     if (g_scd4x.getDataReadyStatus(pronto) == 0 && pronto) {
       uint16_t ppm; float t, rh;
       if (g_scd4x.readMeasurement(ppm, t, rh) == 0 && ppm > 0) {
@@ -1965,10 +1967,13 @@ float hxLerPesoG() {
   bool ready = g_balanca.is_ready();
   long raw = 0;
   if (ready) {
+    // v2.6.6: alimenta watchdog antes de leitura múltipla da balança
+    if (g_wdt_armado) esp_task_wdt_reset();
     raw = g_balanca.read_average(10);
   } else {
     // Se não estiver pronto, tenta um read simples com timeout curto
     // para ver se destrava o chip.
+    if (g_wdt_armado) esp_task_wdt_reset();
     raw = g_balanca.read(); 
   }
 
