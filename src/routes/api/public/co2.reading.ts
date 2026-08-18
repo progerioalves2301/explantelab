@@ -8,6 +8,12 @@ import { z } from "zod";
 
 const bodySchema = z.object({
   ppm: z.number().min(0).max(50000),
+  // Firmware dedicado do CO2 (v3.0.0-co2) manda também temperatura/umidade do
+  // SCD41. Campos opcionais para manter compatibilidade com firmwares antigos.
+  temperatura_c: z.number().min(-50).max(125).nullable().optional(),
+  umidade_pct: z.number().min(0).max(100).nullable().optional(),
+  firmware_version: z.string().max(32).optional(),
+  ip_local: z.string().max(64).optional(),
 });
 
 function json(body: unknown, status = 200) {
