@@ -1104,19 +1104,17 @@ export type Database = {
         }
         Returns: Json
       }
-      co2_push_reading:
-        | { Args: { _device_token: string; _ppm: number }; Returns: Json }
-        | {
-            Args: {
-              _device_token: string
-              _firmware_version?: string
-              _ip_local?: string
-              _ppm: number
-              _temperatura_c?: number
-              _umidade_pct?: number
-            }
-            Returns: Json
-          }
+      co2_push_reading: {
+        Args: {
+          _device_token: string
+          _firmware_version?: string
+          _ip_local?: string
+          _ppm: number
+          _temperatura_c?: number
+          _umidade_pct?: number
+        }
+        Returns: Json
+      }
       decidir_ar_condicionado: { Args: never; Returns: number }
       detectar_alertas: { Args: never; Returns: number }
       has_role: {

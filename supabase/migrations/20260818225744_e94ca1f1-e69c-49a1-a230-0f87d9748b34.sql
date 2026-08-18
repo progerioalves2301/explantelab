@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.co2_push_reading(text, numeric);
