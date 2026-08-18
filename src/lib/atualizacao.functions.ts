@@ -219,3 +219,80 @@ export const cancelaOtaTodas = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+// ===================== Sensores de CO2 (firmware dedicado) =====================
+// O módulo de CO2 não é uma prateleira: ele não usa a tabela `comandos`.
+// O OTA fica registrado no próprio sensor e é entregue quando o firmware
+// consulta GET /api/public/co2/commands.
+
+export interface SensorCo2FirmwareInfo {
+  id: string;
+  nome: string;
+  firmware_version: string | null;
+  ip_local: string | null;
+  ultima_medicao_em: string | null;
+  ativo: boolean;
+  ota_filename: string | null;
+  ota_solicitado_em: string | null;
+  ota_entregue_em: string | null;
+}
+
+/** Sensores de CO2 + firmware atual (tela de OTA). Apenas admin. */
+export const listarSensoresCo2ParaOta = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<SensorCo2FirmwareInfo[]> => {
+    await assertAdmin(context);
+    const { data, error } = await context.supabase
+      .from("sensores_co2")
+      .select(
+        "id, nome, firmware_version, ip_local, ultima_medicao_em, ativo, ota_filename, ota_solicitado_em, ota_entregue_em",
+      )
+      .order("nome", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []) as unknown as SensorCo2FirmwareInfo[];
+  });
+
+/** Agenda OTA para um sensor de CO2. Apenas admin. */
+export const disparaOtaSensorCo2 = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((d: { sensor_id: string; filename: string }) =>
+    z
+      .object({ sensor_id: z.string().uuid(), filename: z.string().min(1) })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const url = await assinarUrlOta(context.supabase, data.filename);
+    const { error } = await context.supabase
+      .from("sensores_co2")
+      .update({
+        ota_url: url,
+        ota_filename: data.filename,
+        ota_solicitado_em: new Date().toISOString(),
+        ota_entregue_em: null,
+      })
+      .eq("id", data.sensor_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Cancela o OTA pendente de um sensor de CO2. Apenas admin. */
+export const cancelaOtaSensorCo2 = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((d: { sensor_id: string }) =>
+    z.object({ sensor_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase
+      .from("sensores_co2")
+      .update({
+        ota_url: null,
+        ota_filename: null,
+        ota_solicitado_em: null,
+        ota_entregue_em: null,
+      })
+      .eq("id", data.sensor_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
