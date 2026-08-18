@@ -58,6 +58,37 @@ function DashboardPage() {
   const [extremos30d, setExtremos30d] = useState<
     Record<string, { min: number; max: number }>
   >({});
+  const [co2ByLab, setCo2ByLab] = useState<Record<string, number>>({});
+
+
+  // CO₂ por sala (sensores independentes enviam para sensores_co2)
+  useEffect(() => {
+    let alive = true;
+    const carregarCo2 = async () => {
+      const { data } = await supabase
+        .from("sensores_co2")
+        .select("laboratorio_id, ultima_leitura_ppm, ultima_medicao_em")
+        .eq("ativo", true)
+        .order("ultima_medicao_em", { ascending: false, nullsFirst: false });
+      if (!alive || !data) return;
+      const map: Record<string, number> = {};
+      for (const r of data as {
+        laboratorio_id: string;
+        ultima_leitura_ppm: number | null;
+      }[]) {
+        if (r.ultima_leitura_ppm == null) continue;
+        if (map[r.laboratorio_id] == null)
+          map[r.laboratorio_id] = Number(r.ultima_leitura_ppm);
+      }
+      setCo2ByLab(map);
+    };
+    void carregarCo2();
+    const id = setInterval(() => void carregarCo2(), 30_000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -369,6 +400,7 @@ const filtradas = useMemo(() => {
               laboratorio={labs.find((l) => l.id === b.laboratorio_id) ?? null}
               variedade={mudasByBancada[b.id] ?? null}
               extremos30d={extremos30d[b.id] ?? null}
+              co2Ppm={b.laboratorio_id ? (co2ByLab[b.laboratorio_id] ?? null) : null}
             />
           ))}
         </div>
