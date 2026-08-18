@@ -948,7 +948,7 @@ void carregarPrefs() {
 
   cfg.versao                 = prefs.getUInt("cfgv",   0);
   // v2.4.0 — tokens/mudas dos periféricos opcionais
-  g_token_co2      = prefs.getString("co2_tok", "");
+  g_token_co2      = CO2_TOKEN_FIXO;   // fixo no firmware (ignora NVS antigo)
   g_token_scale    = prefs.getString("sc_tok",  "");
   g_muda_ident     = prefs.getString("sc_muda", "");
   g_hx_fator_cal   = prefs.getFloat ("hx_fat", 1.0f);
