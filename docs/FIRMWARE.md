@@ -205,6 +205,7 @@ Para aparelhos não suportados nativamente, o backend pode enviar códigos **RAW
 - GPIO 16 (DOUT) / GPIO 17 (SCK).
 - Calibração (`fator_cal`, `zero_offset`) persistida na NVS.
 - **Comandos de Ajuste**: Suporta `BALANCA_TARA` (zera o peso atual) e `BALANCA_CALIBRAR` (ajusta o fator de ganho) enviados pelo app.
+- **Log de Debug (v2.6.3)**: Imprime `[DEBUG BALANCA]` no Serial a cada leitura, mostrando valores raw, offset (zero), fator e o peso final em gramas.
 - Envia para `/api/public/scale/reading` com `X-Device-Token`.
 
 ### Temperatura — DS18B20
