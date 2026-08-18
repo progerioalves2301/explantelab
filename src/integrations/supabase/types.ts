@@ -246,7 +246,6 @@ export type Database = {
           device_token: string
           fator_calibracao: number
           id: string
-          laboratorio_id: string
           minutos_estabilizacao: number
           nome: string
           outlier_delta_g: number
@@ -264,7 +263,6 @@ export type Database = {
           device_token?: string
           fator_calibracao?: number
           id?: string
-          laboratorio_id: string
           minutos_estabilizacao?: number
           nome: string
           outlier_delta_g?: number
@@ -282,7 +280,6 @@ export type Database = {
           device_token?: string
           fator_calibracao?: number
           id?: string
-          laboratorio_id?: string
           minutos_estabilizacao?: number
           nome?: string
           outlier_delta_g?: number
@@ -299,13 +296,6 @@ export type Database = {
             columns: ["bancada_associada_id"]
             isOneToOne: false
             referencedRelation: "bancadas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "balancas_laboratorio_id_fkey"
-            columns: ["laboratorio_id"]
-            isOneToOne: false
-            referencedRelation: "laboratorios"
             referencedColumns: ["id"]
           },
         ]
