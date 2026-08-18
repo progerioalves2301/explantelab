@@ -570,6 +570,35 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                   </div>
                 </div>
               </div>
+
+              {!isModuloSensor && (
+                <div className="col-span-2 flex flex-col gap-1.5 rounded-md border bg-muted/20 p-2.5 text-muted-foreground">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wide">
+                        Horários Programados
+                      </span>
+                    </div>
+                    <span className="text-[9px] text-muted-foreground/70 tabular-nums">
+                      {bancada.config?.horarios_disparo?.length ?? 0} ciclos/dia
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {bancada.config?.horarios_disparo?.map((h) => (
+                      <span
+                        key={h}
+                        className="rounded bg-background px-1.5 py-0.5 font-mono text-[10px] font-medium text-foreground border shadow-sm"
+                      >
+                        {h}
+                      </span>
+                    ))}
+                    {(!bancada.config?.horarios_disparo || bancada.config.horarios_disparo.length === 0) && (
+                      <span className="text-[10px] italic">Sem horários configurados</span>
+                    )}
+                  </div>
+                </div>
+              )}
               <div
                 className={cn(
                   "col-span-2 flex min-h-[58px] items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-2 text-muted-foreground",
