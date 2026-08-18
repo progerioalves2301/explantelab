@@ -2,7 +2,15 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
-## 2026-08-18 — CO₂ v3.0.1-co2: pareamento por senha de 6 dígitos
+## 2026-08-18 — Volta ao firmware unificado: v2.6.9 (CO₂ funcionando)
+
+- **O que mudou**: o firmware dedicado v3.0.x-co2 foi descartado (o SCD41 falhava no boot com `err=268` por causa do gate por número de série). Agora o módulo de CO₂ usa `firmware/bancada_esp32_v2_6_9/bancada_esp32_v2_6_9.ino`, que é o v2.6.0 comprovado + correções no SCD41.
+- **Como funciona**: init do SCD41 com `wakeUp` + `reinit` antes do `startPeriodicMeasurement`, retentativa automática a cada 60 s se não responder, log por amostra (`[CO2] 812 ppm | 24.3 C | 55 %`), watchdog alimentado nos loops de I²C e envio de temperatura/umidade/versão junto do ppm.
+- **Ação**: gravar a v2.6.9 e informar o **Token sensor CO2** no portal Wi-Fi (como antes).
+
+---
+
+## 2026-08-18 — CO₂ v3.0.1-co2: pareamento por senha de 6 dígitos (revertido)
 
 - **O que mudou**: o módulo de CO₂ não pede mais token nem URL de API. A URL já é fixa no firmware (`https://explantelab.lovable.app`) e o portal Wi-Fi agora tem só **Senha de pareamento (6 dígitos)** + fuso.
 - **Como funciona**: na aba **CO₂**, o botão **Gerar senha** no card do sensor cria um código de 6 dígitos válido por 24 h. O ESP32 envia esse código em `POST /api/public/co2/pair` e recebe o token definitivo, que fica salvo em Preferences. Se a senha estiver expirada/errada, ele avisa no serial e retenta a cada 30 s até haver senha válida.
