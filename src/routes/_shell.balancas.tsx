@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Scale, Plus, Trash2, Pencil, CheckCircle2, XCircle, Info, RefreshCw } from "lucide-react";
+import { Scale, Plus, Trash2, Pencil, CheckCircle2, XCircle, Info, RefreshCw, LayoutGrid, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,8 +26,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { listarBalancas, criarBalanca, editarBalanca, excluirBalanca, type Balanca } from "@/lib/balancas.functions";
-import { listLaboratorios } from "@/lib/laboratorios.functions";
-import type { Laboratorio } from "@/lib/types";
+import { listBancadas } from "@/lib/bancadas.functions";
+import type { Bancada } from "@/lib/types";
 
 export const Route = createFileRoute("/_shell/balancas")({
   head: () => ({
@@ -43,13 +43,13 @@ const SEM_LAB = "__sem__";
 
 function BalancasPage() {
   const getBalancas = useServerFn(listarBalancas);
-  const getLabs = useServerFn(listLaboratorios);
+  const getBancadas = useServerFn(listBancadas);
   const addBalanca = useServerFn(criarBalanca);
   const modBalanca = useServerFn(editarBalanca);
   const delBalanca = useServerFn(excluirBalanca);
 
   const [balancas, setBalancas] = useState<Balanca[]>([]);
-  const [labs, setLabs] = useState<Laboratorio[]>([]);
+  const [bancadas, setBancadas] = useState<Bancada[]>([]);
   const [loading, setLoading] = useState(true);
   const [openNova, setOpenNova] = useState(false);
   const [editing, setEditing] = useState<Balanca | null>(null);
@@ -57,9 +57,9 @@ function BalancasPage() {
   const carregar = async () => {
     setLoading(true);
     try {
-      const [b, l] = await Promise.all([getBalancas(), getLabs()]);
+      const [b, bans] = await Promise.all([getBalancas(), getBancadas()]);
       setBalancas(b);
-      setLabs(l);
+      setBancadas(bans);
     } catch (e) {
       toast.error("Erro ao carregar dados");
     } finally {
@@ -103,7 +103,7 @@ function BalancasPage() {
               </Button>
             </DialogTrigger>
             <NovaBalancaDialog
-              labs={labs}
+              bancadas={bancadas}
               onDone={() => { setOpenNova(false); carregar(); }}
               criar={addBalanca}
             />
@@ -135,7 +135,7 @@ function BalancasPage() {
                   <div className="min-w-0">
                     <CardTitle className="text-base truncate">{b.nome}</CardTitle>
                     <CardDescription className="text-xs">
-                      {labs.find(l => l.id === b.laboratorio_id)?.nome ?? "Sem sala"}
+                      {bancadas.find(banc => banc.id === b.bancada_associada_id)?.nome ?? "Sem prateleira"}
                     </CardDescription>
                   </div>
                   <Badge variant={b.ativa ? "secondary" : "outline"}>
@@ -159,9 +159,22 @@ function BalancasPage() {
                   </div>
                 </div>
 
-                <div className="space-y-1 text-[11px]">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Token:</span>
+                <div className="space-y-1.5 text-[11px]">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <LayoutGrid className="h-3 w-3" /> Sala:
+                    </span>
+                    <span className="font-medium truncate ml-2 max-w-[120px]">
+                      {(() => {
+                        const bancada = bancadas.find(bans => bans.id === b.bancada_associada_id);
+                        return bancada ? "Associada" : "Não associada";
+                      })()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <KeyRound className="h-3 w-3" /> Token:
+                    </span>
                     <span className="font-mono text-[9px] truncate ml-2 max-w-[120px]">{b.device_token}</span>
                   </div>
                   <div className="flex justify-between">
@@ -206,7 +219,7 @@ function BalancasPage() {
         {editing && (
           <EditarBalancaDialog
             balanca={editing}
-            labs={labs}
+            bancadas={bancadas}
             onDone={() => { setEditing(null); carregar(); }}
             editar={modBalanca}
           />
@@ -216,9 +229,9 @@ function BalancasPage() {
   );
 }
 
-function NovaBalancaDialog({ labs, onDone, criar }: { labs: Laboratorio[], onDone: () => void, criar: any }) {
+function NovaBalancaDialog({ bancadas, onDone, criar }: { bancadas: Bancada[], onDone: () => void, criar: any }) {
   const [nome, setNome] = useState("");
-  const [labId, setLabId] = useState(SEM_LAB);
+  const [bancadaId, setBancadaId] = useState(SEM_LAB);
   const [token, setToken] = useState("");
   const [estabilizacao, setEstabilizacao] = useState("5");
   const [outlier, setOutlier] = useState("10.0");
@@ -232,7 +245,7 @@ function NovaBalancaDialog({ labs, onDone, criar }: { labs: Laboratorio[], onDon
       await criar({
         data: {
           nome: nome.trim(),
-          laboratorio_id: labId === SEM_LAB ? null : labId,
+          bancada_associada_id: bancadaId === SEM_LAB ? null : bancadaId,
           device_token: token.trim(),
           minutos_estabilizacao: Number(estabilizacao),
           outlier_delta_g: Number(outlier),
@@ -258,12 +271,12 @@ function NovaBalancaDialog({ labs, onDone, criar }: { labs: Laboratorio[], onDon
           <Input placeholder="Ex: Balança P8S12, Prateleira 01..." value={nome} onChange={e => setNome(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label>Sala Bioreator</Label>
-          <Select value={labId} onValueChange={setLabId}>
+          <Label>Prateleira Associada (Opcional)</Label>
+          <Select value={bancadaId} onValueChange={setBancadaId}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={SEM_LAB}>Nenhuma</SelectItem>
-              {labs.map(l => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
+              {bancadas.map(b => <SelectItem key={b.id} value={b.id}>{b.nome}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -294,9 +307,9 @@ function NovaBalancaDialog({ labs, onDone, criar }: { labs: Laboratorio[], onDon
   );
 }
 
-function EditarBalancaDialog({ balanca, labs, onDone, editar }: { balanca: Balanca, labs: Laboratorio[], onDone: () => void, editar: any }) {
+function EditarBalancaDialog({ balanca, bancadas, onDone, editar }: { balanca: Balanca, bancadas: Bancada[], onDone: () => void, editar: any }) {
   const [nome, setNome] = useState(balanca.nome);
-  const [labId, setLabId] = useState(balanca.laboratorio_id ?? SEM_LAB);
+  const [bancadaId, setBancadaId] = useState(balanca.bancada_associada_id ?? SEM_LAB);
   const [ativa, setAtiva] = useState(balanca.ativa);
   const [estabilizacao, setEstabilizacao] = useState(balanca.minutos_estabilizacao.toString());
   const [outlier, setOutlier] = useState(balanca.outlier_delta_g.toString());
@@ -309,7 +322,7 @@ function EditarBalancaDialog({ balanca, labs, onDone, editar }: { balanca: Balan
         data: {
           id: balanca.id,
           nome: nome.trim(),
-          laboratorio_id: labId === SEM_LAB ? null : labId,
+          bancada_associada_id: bancadaId === SEM_LAB ? null : bancadaId,
           ativa,
           minutos_estabilizacao: Number(estabilizacao),
           outlier_delta_g: Number(outlier),
@@ -335,7 +348,7 @@ function EditarBalancaDialog({ balanca, labs, onDone, editar }: { balanca: Balan
           <Input value={nome} onChange={e => setNome(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label>Sala Bioreator</Label>
+          <Label>Prateleira Associada (Opcional)</Label>
           <Select value={labId} onValueChange={setLabId}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -343,6 +356,9 @@ function EditarBalancaDialog({ balanca, labs, onDone, editar }: { balanca: Balan
               {labs.map(l => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
             </SelectContent>
           </Select>
+          <p className="text-[10px] text-muted-foreground">
+            A balança usará os eventos de ciclo desta prateleira para calcular o resíduo.
+          </p>
         </div>
         <div className="flex items-center justify-between rounded-lg border p-3">
           <Label>Balança Ativa</Label>
