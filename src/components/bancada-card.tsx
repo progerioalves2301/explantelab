@@ -71,6 +71,7 @@ interface Props {
   variedade?: string | null;
   /** Mínima e máxima registradas nos últimos 30 dias */
   extremos30d?: { min: number; max: number } | null;
+  co2Ppm?: number | null;
 }
 
 
@@ -102,7 +103,7 @@ function eq(a: ValvulasEstado, b: ValvulasEstado) {
   );
 }
 
-export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio, variedade, extremos30d }: Props) {
+export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio, variedade, extremos30d, co2Ppm }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [sending, setSending] = useState(false);
@@ -572,11 +573,11 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                       Nível CO₂
                     </div>
                     <div className="font-mono text-2xl font-bold">
-                      {bancada.ultima_sync && bancada.status !== "Offline" 
-                        ? (bancada.valvulas as any).co2 != null 
+                      {co2Ppm != null
+                        ? `${Number(co2Ppm).toFixed(0)} ppm`
+                        : (bancada.valvulas as any).co2 != null
                           ? `${Number((bancada.valvulas as any).co2).toFixed(0)} ppm`
-                          : "—"
-                        : "—"}
+                          : "—"}
                     </div>
                   </div>
                 </div>
