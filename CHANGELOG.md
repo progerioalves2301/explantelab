@@ -4,12 +4,17 @@
 
 ---
 
+## 2026-08-18 — Firmware v2.6.4 + Log de Debug da Balança Reforçado
+
+**Firmware (v2.6.4)**
+- **Debug Balança**: Adicionado status `ready` ao log serial (`[DEBUG BALANCA]`) para confirmar se o hardware HX711 está respondendo em tempo real.
+- **Ação**: Compilar `firmware/bancada_esp32_v2_6_4/bancada_esp32_v2_6_4.ino` e atualizar via OTA.
+
 ## 2026-08-18 — Firmware v2.6.3 + Log de Debug da Balança
-10: 
-11: **Firmware (v2.6.3)**
-12: - **Debug Balança**: Adicionado log de leitura raw no Serial (`[DEBUG BALANCA]`) para facilitar o diagnóstico de hardware e calibração via IDE do Arduino.
-13: - **Ação**: Compilar `firmware/bancada_esp32_v2_6_3/bancada_esp32_v2_6_3.ino` e atualizar via OTA.
-14: 
+
+**Firmware (v2.6.3)**
+- **Debug Balança**: Adicionado log de leitura raw no Serial (`[DEBUG BALANCA]`) para facilitar o diagnóstico de hardware e calibração via IDE do Arduino.
+
 15: ## 2026-08-18 — Firmware v2.6.2 + Ajustes de Balança (Tara e Calibração)
 
 **App / Backend**

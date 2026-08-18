@@ -401,9 +401,10 @@ function AtualizacaoPage() {
             className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground hover:file:bg-primary/90"
           />
           <p className="text-xs text-muted-foreground">
-            Compile o sketch <code>bancada_esp32_v2_6_3.ino</code> em{" "}
+            Compile o sketch <code>bancada_esp32_v2_6_4.ino</code> em{" "}
             <em>Sketch → Export Compiled Binary</em> e envie o{" "}
             <code>.bin</code> gerado.
+
           </p>
           <p className="text-xs text-muted-foreground mt-2">
             {"\n"}
