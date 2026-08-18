@@ -246,7 +246,9 @@ long  g_hx_zero_offset       = 0;      // tare (NVS)
 float g_hx_peso_g            = 0.0f;
 String g_muda_ident          = "";     // etiqueta da muda ativa (NVS)
 String g_token_scale         = "";     // device_token da balança (NVS)
-String g_token_co2           = "";     // device_token do sensor CO2 (NVS)
+// Token do sensor de CO2 já embutido — não precisa digitar nada no portal.
+#define CO2_TOKEN_FIXO "b4433f371faae217032b7703fd56d18e6a1931cd7a64a9ba"
+String g_token_co2           = CO2_TOKEN_FIXO;  // device_token do sensor CO2 (fixo)
 bool   g_hx_pode_amostrar    = false;
 String g_hx_motivo_bloqueio  = "iniciando";
 unsigned long g_ts_ultima_hx_leitura = 0;
@@ -946,7 +948,7 @@ void carregarPrefs() {
 
   cfg.versao                 = prefs.getUInt("cfgv",   0);
   // v2.4.0 — tokens/mudas dos periféricos opcionais
-  g_token_co2      = prefs.getString("co2_tok", "");
+  g_token_co2      = CO2_TOKEN_FIXO;   // fixo no firmware (ignora NVS antigo)
   g_token_scale    = prefs.getString("sc_tok",  "");
   g_muda_ident     = prefs.getString("sc_muda", "");
   g_hx_fator_cal   = prefs.getFloat ("hx_fat", 1.0f);
@@ -1060,14 +1062,11 @@ void abrirPortalWifi(bool forcar) {
     "pattern='\\d{6}' inputmode='numeric' maxlength='6' placeholder='000000'");
   wm.addParameter(&param_pair);
 
-  // v2.4.0 — periféricos opcionais (deixe em branco se este ESP não tem CO2/balança)
-  WiFiManagerParameter param_co2_tok(
-    "co2_tok", "Token sensor CO2 (opcional)", g_token_co2.c_str(), 64);
+  // v2.6.9 — token do CO2 é fixo no firmware; só balança/muda seguem opcionais.
   WiFiManagerParameter param_sc_tok(
     "sc_tok",  "Token balança (opcional)",     g_token_scale.c_str(), 64);
   WiFiManagerParameter param_muda(
     "muda",    "Identificador da muda ativa (opcional)", g_muda_ident.c_str(), 64);
-  wm.addParameter(&param_co2_tok);
   wm.addParameter(&param_sc_tok);
   wm.addParameter(&param_muda);
 
@@ -1090,9 +1089,8 @@ void abrirPortalWifi(bool forcar) {
     }
     strncpy(pairing_code_buf, param_pair.getValue(), sizeof(pairing_code_buf) - 1);
     pairing_code_buf[sizeof(pairing_code_buf) - 1] = 0;
-    // v2.4.0 — grava periféricos opcionais informados no portal
+    // v2.6.9 — grava periféricos opcionais informados no portal (CO2 é fixo)
     String v;
-    v = String(param_co2_tok.getValue()); v.trim(); if (v.length() > 0) g_token_co2   = v;
     v = String(param_sc_tok .getValue()); v.trim(); if (v.length() > 0) g_token_scale = v;
     v = String(param_muda   .getValue()); v.trim(); g_muda_ident = v;   // pode limpar
     salvarPerifericos();
