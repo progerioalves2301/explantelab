@@ -1958,13 +1958,27 @@ void iniciarHx711() {
 }
 
 float hxLerPesoG() {
-  if (!g_tem_hx711 || !g_balanca.is_ready()) return g_hx_peso_g;
-  long raw = g_balanca.read_average(10);
+  if (!g_tem_hx711) return g_hx_peso_g;
+  
+  // v2.6.4 — Tenta forçar a leitura mesmo que is_ready() demore, 
+  // mas loga o status para diagnóstico na IDE.
+  bool ready = g_balanca.is_ready();
+  long raw = 0;
+  if (ready) {
+    raw = g_balanca.read_average(10);
+  } else {
+    // Se não estiver pronto, tenta um read simples com timeout curto
+    // para ver se destrava o chip.
+    raw = g_balanca.read(); 
+  }
+
   float peso = (raw - g_hx_zero_offset) / g_hx_fator_cal;
-  // v2.6.3 — Log de debug para IDE do Arduino p/ verificar sinal da balança
+  
+  // Log de debug para IDE do Arduino p/ verificar sinal da balança
   Serial.printf("[DEBUG BALANCA] raw=%ld | zero=%ld | fator=%.4f | peso=%.2fg | ready=%d\n", 
-                raw, g_hx_zero_offset, g_hx_fator_cal, peso, g_balanca.is_ready());
-  return peso;
+                raw, g_hx_zero_offset, g_hx_fator_cal, peso, (int)ready);
+                
+  return (ready || raw != 0) ? peso : g_hx_peso_g;
 }
 
 void hxConsultarStatus() {
@@ -2039,8 +2053,10 @@ void setup() {
   pinMode(PIN_IR_RX, INPUT);
 
   Serial.begin(115200);
-  delay(200);
-  Serial.printf("\n== VitroCeres Prateleira ESP32 v%s (direct-Supabase) ==\n", FIRMWARE_VERSION);
+  delay(1000); // v2.6.4: Aumentado delay para garantir que o monitor serial pegue o início
+  Serial.println("\n\n========================================================");
+  Serial.printf("\n\n== VitroCeres Prateleira ESP32 v%s ==\n", FIRMWARE_VERSION);
+  Serial.println("========================================================");
   // v2.6.0 — motivo do último boot (brownout = queda de tensão na comutação da
   // válvula; task_wdt/panic = travamento de software).
   g_reset_reason = nomeResetReason();

@@ -4,11 +4,12 @@
 
 ---
 
-## 2026-08-18 — Firmware v2.6.4 + Log de Debug da Balança Reforçado
-
+## 2026-08-18 — Firmware v2.6.4 + Debug Serial Aprimorado
 **Firmware (v2.6.4)**
-- **Debug Balança**: Adicionado status `ready` ao log serial (`[DEBUG BALANCA]`) para confirmar se o hardware HX711 está respondendo em tempo real.
-- **Ação**: Compilar `firmware/bancada_esp32_v2_6_4/bancada_esp32_v2_6_4.ino` e atualizar via OTA.
+- **Serial Debug**: Aumentado delay no boot e adicionado banner visual para garantir que a IDE capture o início dos logs.
+- **Debug Balança**: Lógica de leitura do HX711 alterada para forçar retorno de dados mesmo que o chip demore a responder, com log detalhado (`ready=0/1`).
+- **Ação**: Compilar `firmware/bancada_esp32_v2_6_4/bancada_esp32_v2_6_4.ino` e atualizar via OTA. Verifique o Monitor Serial a 115200 bps.
+
 
 ## 2026-08-18 — Firmware v2.6.3 + Log de Debug da Balança
 
