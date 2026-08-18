@@ -119,7 +119,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.6.9";
+static const char* FIRMWARE_VERSION = "2.6.10";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -1859,9 +1859,11 @@ bool getPublic(const char* path, const String& token, String& respOut) {
 }
 
 // -------- CO2 (SCD41) --------
-// v2.6.9 — init mais tolerante: acorda o sensor, reinicia o periférico e
+// v2.6.10 — init mais tolerante: acorda o sensor, reinicia o periférico e
 // retenta a cada 60 s se ele não responder no boot (o SCD41 pode levar alguns
 // segundos após energizar). Sem gate por número de série, que falhava (err=268).
+// Esta versão usa SensirionI2cScd4x: nesta API begin recebe endereço e o método
+// de prontidão chama-se getDataReadyStatus().
 unsigned long g_ts_retry_scd41 = 0;
 
 void iniciarScd41() {
@@ -1893,14 +1895,19 @@ void tickCo2(unsigned long now) {
     }
     return;
   }
-  // amostragem local a cada 5 s
-  if (now - g_ts_ultima_co2_leitura >= 5000UL) {
-    g_ts_ultima_co2_leitura = now;
+  // O SCD41 converte em aproximadamente 5 s, mas a prontidão é consultada a
+  // cada 1 s. Assim não perdemos a amostra quando ela fica pronta alguns
+  // milissegundos depois da marca exata de 5 s.
+  static unsigned long last_check = 0;
+  if (now - last_check >= 1000UL) {
+    last_check = now;
     esp_task_wdt_reset();
     bool pronto = false;
     if (g_scd4x.getDataReadyStatus(pronto) == 0 && pronto) {
       uint16_t ppm; float t, rh;
       if (g_scd4x.readMeasurement(ppm, t, rh) == 0 && ppm > 0) {
+        // Só confirma o cronômetro depois de recuperar uma leitura válida.
+        g_ts_ultima_co2_leitura = now;
         g_co2_ppm      = ppm;
         g_scd41_temp_c = t;
         g_scd41_umid   = rh;

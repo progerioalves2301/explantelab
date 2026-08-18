@@ -2,6 +2,15 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-18 — Firmware v2.6.10: polling confiável do SCD41
+
+- **Problema**: consultar o SCD41 exatamente a cada 5 s podia ocorrer instantes antes do fim da conversão; o cronômetro era reiniciado mesmo sem dado pronto e a leitura era perdida.
+- **Correção**: a prontidão agora é consultada a cada 1 s e `g_ts_ultima_co2_leitura` só é atualizado após `readMeasurement()` retornar uma amostra válida. A média e o envio a cada 60 s foram preservados.
+- **Compatibilidade da biblioteca**: o sketch usa `SensirionI2cScd4x.h`; nessa API oficial, as assinaturas corretas são `begin(Wire, SCD41_I2C_ADDR_62)` e `getDataReadyStatus(pronto)`. Não foram aplicados os nomes de outra variante da biblioteca, pois isso impediria a compilação deste firmware.
+- **Ação**: compilar e gravar `firmware/bancada_esp32_v2_6_10/bancada_esp32_v2_6_10.ino`.
+
+---
+
 ## 2026-08-18 — Volta ao firmware unificado: v2.6.9 (CO₂ funcionando)
 
 - **O que mudou**: o firmware dedicado v3.0.x-co2 foi descartado (o SCD41 falhava no boot com `err=268` por causa do gate por número de série). Agora o módulo de CO₂ usa `firmware/bancada_esp32_v2_6_9/bancada_esp32_v2_6_9.ino`, que é o v2.6.0 comprovado + correções no SCD41.
