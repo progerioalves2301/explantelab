@@ -11,6 +11,7 @@ import {
   ShieldAlert,
   FileCode2,
   AlertTriangle,
+  Wind,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +34,11 @@ import {
   cancelaOtaBancada,
   cancelaOtaTodas,
   type FirmwareItem,
+  listarSensoresCo2ParaOta,
+  disparaOtaSensorCo2,
+  cancelaOtaSensorCo2,
   type BancadaFirmwareInfo,
+  type SensorCo2FirmwareInfo,
 } from "@/lib/atualizacao.functions";
 import { meusPapeis } from "@/lib/roles.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,12 +72,16 @@ function AtualizacaoPage() {
   const otaAll = useServerFn(disparaOtaTodas);
   const cancelOtaOne = useServerFn(cancelaOtaBancada);
   const cancelOtaAll = useServerFn(cancelaOtaTodas);
+  const listarCo2 = useServerFn(listarSensoresCo2ParaOta);
+  const otaCo2 = useServerFn(disparaOtaSensorCo2);
+  const cancelCo2 = useServerFn(cancelaOtaSensorCo2);
   const meus = useServerFn(meusPapeis);
 
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [semSessao, setSemSessao] = useState(false);
   const [firmwares, setFirmwares] = useState<FirmwareItem[]>([]);
   const [bancadas, setBancadas] = useState<BancadaFirmwareInfo[]>([]);
+  const [sensoresCo2, setSensoresCo2] = useState<SensorCo2FirmwareInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selecionado, setSelecionado] = useState<string>("");
@@ -135,6 +144,11 @@ function AtualizacaoPage() {
       }
       if (mudou) setAguardando(novoPend);
       setBancadas(bs);
+      try {
+        setSensoresCo2(await listarCo2());
+      } catch {
+        /* silencioso */
+      }
     } catch {
       /* silencioso — poll de fundo */
     }
@@ -162,6 +176,11 @@ function AtualizacaoPage() {
       });
       setFirmwares(fws);
       setBancadas(bs);
+      try {
+        setSensoresCo2(await listarCo2());
+      } catch {
+        /* sensores de CO2 são opcionais */
+      }
       if (fws.length > 0) selecionarMaisNovo(fws);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao carregar");
@@ -179,6 +198,33 @@ function AtualizacaoPage() {
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
+
+  const handleOtaCo2 = async (sensorId: string) => {
+    if (!selecionado) return;
+    setDispatchingId(sensorId);
+    try {
+      await otaCo2({ data: { sensor_id: sensorId, filename: selecionado } });
+      toast.success("OTA agendado — o sensor baixa na próxima consulta.");
+      await recarregarBancadas();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao disparar OTA");
+    } finally {
+      setDispatchingId(null);
+    }
+  };
+
+  const handleCancelOtaCo2 = async (sensorId: string) => {
+    setCancellingId(sensorId);
+    try {
+      await cancelCo2({ data: { sensor_id: sensorId } });
+      toast.success("OTA cancelado.");
+      await recarregarBancadas();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao cancelar OTA");
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   const handleUpload = async (file: File) => {
     if (!file.name.toLowerCase().endsWith(".bin")) {
