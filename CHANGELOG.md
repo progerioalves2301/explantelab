@@ -4,7 +4,13 @@
 
 ---
 
-## 2026-08-18 — Firmware v2.6.2 + Ajustes de Balança (Tara e Calibração)
+## 2026-08-18 — Firmware v2.6.3 + Log de Debug da Balança
+10: 
+11: **Firmware (v2.6.3)**
+12: - **Debug Balança**: Adicionado log de leitura raw no Serial (`[DEBUG BALANCA]`) para facilitar o diagnóstico de hardware e calibração via IDE do Arduino.
+13: - **Ação**: Compilar `firmware/bancada_esp32_v2_6_3/bancada_esp32_v2_6_3.ino` e atualizar via OTA.
+14: 
+15: ## 2026-08-18 — Firmware v2.6.2 + Ajustes de Balança (Tara e Calibração)
 
 **App / Backend**
 - **Ajustes de Balança**: Implementada interface para realizar **Tara** (zerar) e **Calibração** de balanças HX711 diretamente pelo painel de gerenciamento.
