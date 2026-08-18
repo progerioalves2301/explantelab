@@ -58,6 +58,8 @@ function DashboardPage() {
   const [extremos30d, setExtremos30d] = useState<
     Record<string, { min: number; max: number }>
   >({});
+  const [co2ByLab, setCo2ByLab] = useState<Record<string, number>>({});
+
 
   // CO₂ por sala (sensores independentes enviam para sensores_co2)
   useEffect(() => {
