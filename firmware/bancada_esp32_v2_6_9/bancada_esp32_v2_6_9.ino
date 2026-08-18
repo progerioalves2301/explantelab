@@ -246,7 +246,9 @@ long  g_hx_zero_offset       = 0;      // tare (NVS)
 float g_hx_peso_g            = 0.0f;
 String g_muda_ident          = "";     // etiqueta da muda ativa (NVS)
 String g_token_scale         = "";     // device_token da balança (NVS)
-String g_token_co2           = "";     // device_token do sensor CO2 (NVS)
+// Token do sensor de CO2 já embutido — não precisa digitar nada no portal.
+#define CO2_TOKEN_FIXO "b4433f371faae217032b7703fd56d18e6a1931cd7a64a9ba"
+String g_token_co2           = CO2_TOKEN_FIXO;  // device_token do sensor CO2 (fixo)
 bool   g_hx_pode_amostrar    = false;
 String g_hx_motivo_bloqueio  = "iniciando";
 unsigned long g_ts_ultima_hx_leitura = 0;
