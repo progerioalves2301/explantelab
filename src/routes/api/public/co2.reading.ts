@@ -43,6 +43,16 @@ export const Route = createFileRoute("/api/public/co2/reading")({
         const { data, error } = await supabaseAdmin.rpc("co2_push_reading", {
           _device_token: token,
           _ppm: payload.ppm,
+          ...(payload.temperatura_c != null
+            ? { _temperatura_c: payload.temperatura_c }
+            : {}),
+          ...(payload.umidade_pct != null
+            ? { _umidade_pct: payload.umidade_pct }
+            : {}),
+          ...(payload.firmware_version
+            ? { _firmware_version: payload.firmware_version }
+            : {}),
+          ...(payload.ip_local ? { _ip_local: payload.ip_local } : {}),
         });
         if (error) {
           const msg = error.message.toLowerCase();
