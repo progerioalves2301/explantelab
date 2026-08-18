@@ -2303,12 +2303,14 @@ void lerTemperatura() {
   }
 
   bool valida = t != DEVICE_DISCONNECTED_C && t > -50.0 && t < 125.0;
+  bool viaScd41 = false;
 
-  // v2.4.5 — fallback para o SCD41 sempre que o DS18B20 não entregar leitura
-  // válida (antes só valia quando o DS18B20 nunca havia sido detectado).
+  // v2.6.8 — quando não há DS18B20, o SCD41 é a fonte PRIMÁRIA de temperatura
+  // (não um simples fallback). Continua servindo de reserva se o DS18B20 falhar.
   if (!valida && g_tem_scd41 && !isnan(g_scd41_temp_c)) {
     t = g_scd41_temp_c;
     valida = t > -50.0 && t < 125.0;
+    viaScd41 = valida;
   }
 
   if (valida) {
@@ -2318,12 +2320,15 @@ void lerTemperatura() {
     g_temperatura_valida = true;
     g_temp_falhas_seguidas = 0;
     g_temp_invalidas_consecutivas = 0;
+    g_temp_sem_leitura_seguidas = 0;
+    g_sem_sensor_temp = false;
     if (g_sensor_travado) {
       Serial.println("[TEMP] sensor voltou a responder");
       g_sensor_travado = false;
     }
     if (estavaInvalida) lastTelem = 0;
-    Serial.printf("[TEMP] %.4f C\n", g_temperatura_planta);
+    Serial.printf("[TEMP] %.4f C (%s)\n", g_temperatura_planta,
+                  viaScd41 ? "SCD41" : "DS18B20");
   } else {
     bool estavaValida = g_temperatura_valida;
     g_temp_falhas_seguidas++;
@@ -2339,9 +2344,20 @@ void lerTemperatura() {
     }
 
     if (!g_sem_sensor_temp) {
-      Serial.printf("[TEMP] leitura invalida (t=%.4f, falhas=%u, ultima=%.4f)\n",
-                    t, (unsigned)g_temp_falhas_seguidas,
-                    g_ultima_temperatura_valida);
+      if (!g_tem_ds18b20 && g_tem_scd41) {
+        // v2.6.8 — sem DS18B20 instalado, "leitura inválida" do 1-Wire é
+        // esperada: apenas aguardamos a 1ª amostra do SCD41 (~5-10 s).
+        // Log no máximo a cada 30 s pra não poluir o monitor serial.
+        static uint32_t ultimoAviso = 0;
+        if (millis() - ultimoAviso > 30000UL || ultimoAviso == 0) {
+          ultimoAviso = millis();
+          Serial.println("[TEMP] aguardando temperatura do SCD41 (sem DS18B20 instalado)");
+        }
+      } else {
+        Serial.printf("[TEMP] leitura invalida (t=%.4f, falhas=%u, ultima=%.4f)\n",
+                      t, (unsigned)g_temp_falhas_seguidas,
+                      g_ultima_temperatura_valida);
+      }
     }
     g_temperatura_planta = NAN;
     g_temperatura_valida = false;
