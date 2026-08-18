@@ -135,7 +135,7 @@ function BalancasPage() {
                   <div className="min-w-0">
                     <CardTitle className="text-base truncate">{b.nome}</CardTitle>
                     <CardDescription className="text-xs">
-                      {bancadas.find(banc => banc.id === b.bancada_associada_id)?.nome ?? "Sem prateleira"}
+                      {bancadas.find(banc => banc.id === (b as any).bancada_associada_id)?.nome ?? "Sem prateleira"}
                     </CardDescription>
                   </div>
                   <Badge variant={b.ativa ? "secondary" : "outline"}>
@@ -166,7 +166,7 @@ function BalancasPage() {
                     </span>
                     <span className="font-medium truncate ml-2 max-w-[120px]">
                       {(() => {
-                        const bancada = bancadas.find(bans => bans.id === b.bancada_associada_id);
+                        const bancada = bancadas.find(bans => bans.id === (b as any).bancada_associada_id);
                         return bancada ? "Associada" : "Não associada";
                       })()}
                     </span>
@@ -309,7 +309,7 @@ function NovaBalancaDialog({ bancadas, onDone, criar }: { bancadas: Bancada[], o
 
 function EditarBalancaDialog({ balanca, bancadas, onDone, editar }: { balanca: Balanca, bancadas: Bancada[], onDone: () => void, editar: any }) {
   const [nome, setNome] = useState(balanca.nome);
-  const [bancadaId, setBancadaId] = useState(balanca.bancada_associada_id ?? SEM_LAB);
+  const [bancadaId, setBancadaId] = useState((balanca as any).bancada_associada_id ?? SEM_LAB);
   const [ativa, setAtiva] = useState(balanca.ativa);
   const [estabilizacao, setEstabilizacao] = useState(balanca.minutos_estabilizacao.toString());
   const [outlier, setOutlier] = useState(balanca.outlier_delta_g.toString());
@@ -349,11 +349,11 @@ function EditarBalancaDialog({ balanca, bancadas, onDone, editar }: { balanca: B
         </div>
         <div className="space-y-2">
           <Label>Prateleira Associada (Opcional)</Label>
-          <Select value={labId} onValueChange={setLabId}>
+          <Select value={bancadaId} onValueChange={setBancadaId}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={SEM_LAB}>Nenhuma</SelectItem>
-              {labs.map(l => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
+              {bancadas.map(b => <SelectItem key={b.id} value={b.id}>{b.nome}</SelectItem>)}
             </SelectContent>
           </Select>
           <p className="text-[10px] text-muted-foreground">

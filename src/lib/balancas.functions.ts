@@ -6,7 +6,7 @@ import { requireTecnico } from "@/lib/role-middleware";
 export type Balanca = {
   id: string;
   nome: string;
-  laboratorio_id: string | null;
+  bancada_associada_id: string | null;
   device_token: string;
   ativa: boolean;
   ultima_leitura_g: number | null;
