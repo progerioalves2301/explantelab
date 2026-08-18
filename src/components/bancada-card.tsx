@@ -378,6 +378,30 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               {bancada.luz_ligada ? "ON" : "OFF"}
             </span>
           )}
+          {temCo2 && (
+             <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                "border-blue-500/60 bg-blue-400/15 text-blue-700 dark:text-blue-300"
+              )}
+              title="Sensor CO2 ativo"
+            >
+              <Wind className="h-3 w-3" />
+              CO2
+            </span>
+          )}
+          {temBalanca && (
+             <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                "border-purple-500/60 bg-purple-400/15 text-purple-700 dark:text-purple-300"
+              )}
+              title="Balança ativa"
+            >
+              <Scale className="h-3 w-3" />
+              Balança
+            </span>
+          )}
           {(temLuz || temBalanca || temCo2 || bancada.tem_rtc != null) && (() => {
             const desvio = bancada.rtc_desvio_segundos ?? 0;
             const desvioAlto = Math.abs(desvio) > 120;
