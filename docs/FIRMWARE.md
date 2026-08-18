@@ -323,7 +323,7 @@ Proteções acrescentadas na v2.6.0:
 
 ## 14. Arquivos relacionados
 
-- `firmware/bancada_esp32_v2_5_7/bancada_esp32_v2_5_7.ino` — código fonte.
+- `firmware/bancada_esp32_v2_6_3/bancada_esp32_v2_6_3.ino` — código fonte.
 - `firmware/FIACAO_VALVULAS.md` — diagrama de fiação e endereçamento.
 - `CHANGELOG.md` — histórico de alterações.
 - `mem://index.md` — memória consolidada do projeto.
