@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Scale, Plus, Trash2, Pencil, CheckCircle2, XCircle, Info, RefreshCw, LayoutGrid, KeyRound } from "lucide-react";
+import { Scale, Plus, Trash2, Pencil, CheckCircle2, XCircle, Info, RefreshCw, LayoutGrid, KeyRound, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { listarBalancas, criarBalanca, editarBalanca, excluirBalanca, type Balanca } from "@/lib/balancas.functions";
+import { listarBalancas, criarBalanca, editarBalanca, excluirBalanca, enviarComandoBalanca, type Balanca } from "@/lib/balancas.functions";
 import { listBancadas } from "@/lib/bancadas.functions";
 import type { Bancada } from "@/lib/types";
 
@@ -53,6 +53,7 @@ function BalancasPage() {
   const [loading, setLoading] = useState(true);
   const [openNova, setOpenNova] = useState(false);
   const [editing, setEditing] = useState<Balanca | null>(null);
+  const [adjusting, setAdjusting] = useState<Balanca | null>(null);
 
   const carregar = async () => {
     setLoading(true);
@@ -187,6 +188,9 @@ function BalancasPage() {
                   <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditing(b)}>
                     <Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar
                   </Button>
+                  <Button size="sm" variant="outline" className="flex-1" onClick={() => setAdjusting(b)}>
+                    <Settings2 className="mr-1.5 h-3.5 w-3.5" /> Ajustes
+                  </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10">
@@ -225,7 +229,155 @@ function BalancasPage() {
           />
         )}
       </Dialog>
+      <Dialog open={!!adjusting} onOpenChange={v => !v && setAdjusting(null)}>
+        {adjusting && (
+          <AjustesBalancaDialog
+            balanca={adjusting}
+            onDone={() => setAdjusting(null)}
+          />
+        )}
+      </Dialog>
     </div>
+  );
+}
+
+function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: () => void }) {
+  const comandar = useServerFn(enviarComandoBalanca);
+  const modBalanca = useServerFn(editarBalanca);
+  
+  const [loading, setLoading] = useState(false);
+  const [reading, setReading] = useState(false);
+  const [leitura, setLeitura] = useState<number | null>(balanca.ultima_leitura_g);
+  const [fator, setFator] = useState(balanca.fator_calibracao.toString());
+
+  const handleTara = async () => {
+    setLoading(true);
+    try {
+      await comandar({
+        data: {
+          balanca_id: balanca.id,
+          tipo: "BALANCA_TARA"
+        }
+      });
+      toast.success("Comando de TARA enviado");
+    } catch (e) {
+      toast.error("Erro ao enviar comando");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCalibrar = async () => {
+    if (!fator || isNaN(Number(fator))) return toast.error("Fator inválido");
+    setLoading(true);
+    try {
+      // 1. Salva no banco
+      await modBalanca({
+        data: {
+          id: balanca.id,
+          fator_calibracao: Number(fator)
+        } as any
+      });
+      // 2. Envia para o dispositivo
+      await comandar({
+        data: {
+          balanca_id: balanca.id,
+          tipo: "BALANCA_CALIBRAR",
+          payload: { fator: Number(fator) }
+        }
+      });
+      toast.success("Fator de calibração atualizado e enviado");
+    } catch (e) {
+      toast.error("Erro ao atualizar calibração");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const atualizarLeitura = async () => {
+    setReading(true);
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data } = await supabase
+        .from("balancas")
+        .select("ultima_leitura_g")
+        .eq("id", balanca.id)
+        .single();
+      if (data) setLeitura(data.ultima_leitura_g);
+    } finally {
+      setReading(false);
+    }
+  };
+
+  return (
+    <DialogContent className="sm:max-w-[425px]">
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          <Settings2 className="h-5 w-5 text-primary" />
+          Ajustes da Balança
+        </DialogTitle>
+      </DialogHeader>
+      
+      <div className="space-y-6 pt-4">
+        {/* Teste de Peso */}
+        <div className="rounded-lg border bg-muted/40 p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Peso em tempo real
+            </Label>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={atualizarLeitura} disabled={reading}>
+              <RefreshCw className={cn("h-3 w-3", reading && "animate-spin")} />
+            </Button>
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="font-mono text-3xl font-bold">
+              {leitura != null ? leitura.toFixed(2) : "—"}
+            </span>
+            <span className="text-sm font-medium text-muted-foreground">g</span>
+          </div>
+        </div>
+
+        {/* Comandos Rápidos */}
+        <div className="space-y-2">
+          <Label>Manutenção</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" className="h-20 flex-col gap-2" onClick={handleTara} disabled={loading}>
+              <Scale className="h-5 w-5" />
+              <span>Tara (Zerar)</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col gap-2" onClick={atualizarLeitura} disabled={loading || reading}>
+              <RefreshCw className="h-5 w-5" />
+              <span>Testar</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Calibração */}
+        <div className="space-y-3 rounded-lg border p-4">
+          <div className="space-y-1">
+            <Label>Fator de Calibração</Label>
+            <p className="text-[10px] text-muted-foreground">
+              Ajuste o ganho do sensor. Valores comuns entre 100 e 5000.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Input 
+              type="number" 
+              value={fator} 
+              onChange={e => setFator(e.target.value)}
+              className="font-mono"
+            />
+            <Button onClick={handleCalibrar} disabled={loading}>
+              Salvar
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <DialogFooter className="pt-4 border-t">
+        <Button variant="ghost" onClick={onDone}>Fechar</Button>
+      </AlertDialogFooter>
+    </DialogContent>
   );
 }
 
