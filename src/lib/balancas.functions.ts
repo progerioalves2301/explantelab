@@ -6,7 +6,7 @@ import { requireTecnico } from "@/lib/role-middleware";
 export type Balanca = {
   id: string;
   nome: string;
-  laboratorio_id: string | null;
+  bancada_associada_id: string | null;
   device_token: string;
   ativa: boolean;
   ultima_leitura_g: number | null;
@@ -31,7 +31,7 @@ export const listarBalancas = createServerFn({ method: "GET" })
 
 const criarBalancaSchema = z.object({
   nome: z.string().min(2).max(60),
-  laboratorio_id: z.string().uuid().nullable().optional(),
+  bancada_associada_id: z.string().uuid().nullable().optional(),
   device_token: z.string().min(10),
   minutos_estabilizacao: z.number().int().min(0).max(60).optional(),
   outlier_delta_g: z.number().min(0.1).max(1000).optional(),
@@ -45,7 +45,7 @@ export const criarBalanca = createServerFn({ method: "POST" })
       .from("balancas")
       .insert({
         nome: data.nome,
-        laboratorio_id: data.laboratorio_id || null,
+        bancada_associada_id: data.bancada_associada_id || null,
         device_token: data.device_token,
         minutos_estabilizacao: data.minutos_estabilizacao ?? 5,
         outlier_delta_g: data.outlier_delta_g ?? 10.0,
@@ -61,7 +61,7 @@ export const editarBalanca = createServerFn({ method: "POST" })
   .inputValidator(z.object({
     id: z.string().uuid(),
     nome: z.string().min(2).max(60).optional(),
-    laboratorio_id: z.string().uuid().nullable().optional(),
+    bancada_associada_id: z.string().uuid().nullable().optional(),
     ativa: z.boolean().optional(),
     minutos_estabilizacao: z.number().int().min(0).max(60).optional(),
     outlier_delta_g: z.number().min(0.1).max(1000).optional(),
