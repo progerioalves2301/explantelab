@@ -598,6 +598,99 @@ function AtualizacaoPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wind className="h-5 w-5" /> Sensores de CO₂ (firmware dedicado)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Módulos de CO₂ usam o sketch{" "}
+            <code>vitroceres_co2_v3_0_0.ino</code> (só Wi-Fi + SCD41 + OTA).
+            Selecione acima o <code>.bin</code> correspondente antes de disparar.
+          </p>
+          <div className="rounded-md border">
+            <div className="grid grid-cols-[1fr_120px_120px_140px] gap-2 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground">
+              <span>Sensor</span>
+              <span>Firmware</span>
+              <span>Status</span>
+              <span className="text-right">Ação</span>
+            </div>
+            {sensoresCo2.length === 0 ? (
+              <div className="p-4 text-sm text-muted-foreground">
+                Nenhum sensor de CO₂ cadastrado.
+              </div>
+            ) : (
+              sensoresCo2.map((s) => {
+                const idade = s.ultima_medicao_em
+                  ? (Date.now() - new Date(s.ultima_medicao_em).getTime()) / 1000
+                  : Infinity;
+                const online = idade < 180;
+                const pendente = !!s.ota_solicitado_em && !s.ota_entregue_em;
+                return (
+                  <div
+                    key={s.id}
+                    className="grid grid-cols-[1fr_120px_120px_140px] items-center gap-2 border-b px-3 py-2 text-sm last:border-b-0"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Wind className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{s.nome}</span>
+                    </div>
+                    <span className="font-mono text-xs flex items-center gap-1">
+                      {s.firmware_version ?? "—"}
+                      {pendente && (
+                        <span className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                          OTA
+                        </span>
+                      )}
+                    </span>
+                    <Badge
+                      variant={online ? "default" : "secondary"}
+                      className="w-fit"
+                    >
+                      {online ? "Online" : "Offline"}
+                    </Badge>
+                    <div className="flex justify-end gap-2">
+                      {pendente ? (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={cancellingId === s.id}
+                          onClick={() => handleCancelOtaCo2(s.id)}
+                        >
+                          {cancellingId === s.id ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="mr-1 h-3 w-3" />
+                          )}
+                          Parar
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!selecionado || dispatchingId === s.id}
+                          onClick={() => handleOtaCo2(s.id)}
+                        >
+                          {dispatchingId === s.id ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Rocket className="mr-1 h-3 w-3" />
+                          )}
+                          Atualizar
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
