@@ -1861,26 +1861,44 @@ bool getPublic(const char* path, const String& token, String& respOut) {
 }
 
 // -------- CO2 (SCD41) --------
+// v2.6.9 — init mais tolerante: acorda o sensor, reinicia o periférico e
+// retenta a cada 60 s se ele não responder no boot (o SCD41 pode levar alguns
+// segundos após energizar). Sem gate por número de série, que falhava (err=268).
+unsigned long g_ts_retry_scd41 = 0;
+
 void iniciarScd41() {
   // Wire.begin() já foi chamado pelo bloco do DS3231; reaproveitamos o bus.
   g_scd4x.begin(Wire, SCD41_I2C_ADDR_62);
+  g_scd4x.wakeUp();
+  delay(30);
   g_scd4x.stopPeriodicMeasurement();
   delay(500);
+  g_scd4x.reinit();
+  delay(30);
   uint16_t err = g_scd4x.startPeriodicMeasurement();
   if (err) {
-    Serial.printf("[SCD41] não iniciou (err=%u) — CO2 desabilitado\n", err);
+    Serial.printf("[SCD41] nao iniciou (err=%u) — retentando em 60 s\n", err);
     g_tem_scd41 = false;
   } else {
-    Serial.println("[SCD41] modo periódico OK (1 amostra a cada 5 s)");
+    Serial.println("[SCD41] modo periodico OK (1 amostra a cada 5 s)");
     g_tem_scd41 = true;
   }
 }
 
 void tickCo2(unsigned long now) {
-  if (!g_tem_scd41) return;
+  if (!g_tem_scd41) {
+    if (now - g_ts_retry_scd41 >= 60000UL) {
+      g_ts_retry_scd41 = now;
+      esp_task_wdt_reset();
+      Serial.println("[SCD41] tentando reinicializar...");
+      iniciarScd41();
+    }
+    return;
+  }
   // amostragem local a cada 5 s
   if (now - g_ts_ultima_co2_leitura >= 5000UL) {
     g_ts_ultima_co2_leitura = now;
+    esp_task_wdt_reset();
     bool pronto = false;
     if (g_scd4x.getDataReadyStatus(pronto) == 0 && pronto) {
       uint16_t ppm; float t, rh;
@@ -1890,6 +1908,7 @@ void tickCo2(unsigned long now) {
         g_scd41_umid   = rh;
         g_co2_soma    += ppm;
         g_co2_amostras++;
+        Serial.printf("[CO2] %u ppm | %.1f C | %.0f %%\n", (unsigned)ppm, t, rh);
       }
     }
   }
@@ -1899,11 +1918,19 @@ void tickCo2(unsigned long now) {
     g_ts_ultimo_co2_envio = now;
     uint16_t media = (uint16_t)(g_co2_soma / g_co2_amostras);
     g_co2_soma = 0; g_co2_amostras = 0;
-    String body = String("{\"ppm\":") + media + "}";
+    String body = String("{\"ppm\":") + media;
+    if (!isnan(g_scd41_temp_c)) body += String(",\"temperatura_c\":") + String(g_scd41_temp_c, 1);
+    if (!isnan(g_scd41_umid))   body += String(",\"umidade_pct\":")   + String(g_scd41_umid, 0);
+    body += String(",\"firmware_version\":\"") + FIRMWARE_VERSION + "\"}";
     String resp;
     if (postPublic("/api/public/co2/reading", body, g_token_co2, resp)) {
       Serial.printf("[CO2] enviado %u ppm\n", (unsigned)media);
+    } else {
+      Serial.println("[CO2] falha ao enviar (token/rede)");
     }
+  } else if (now - g_ts_ultimo_co2_envio >= 60000UL && g_token_co2.length() < 8) {
+    g_ts_ultimo_co2_envio = now;
+    Serial.println("[CO2] token do sensor nao configurado (portal Wi-Fi)");
   }
 }
 
