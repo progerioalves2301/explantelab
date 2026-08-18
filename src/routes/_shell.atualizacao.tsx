@@ -654,7 +654,7 @@ function AtualizacaoPage() {
         <CardContent className="space-y-3">
           <p className="text-xs text-muted-foreground">
             Módulos de CO₂ usam o sketch{" "}
-            <code>vitroceres_co2_v3_0_0.ino</code> (só Wi-Fi + SCD41 + OTA).
+            <code>vitroceres_co2_v3_0_1.ino</code> (só Wi-Fi + SCD41 + OTA).
             Selecione acima o <code>.bin</code> correspondente antes de disparar.
           </p>
           <div className="rounded-md border">

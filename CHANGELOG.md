@@ -2,9 +2,17 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-18 — CO₂ v3.0.1-co2: pareamento por senha de 6 dígitos
+
+- **O que mudou**: o módulo de CO₂ não pede mais token nem URL de API. A URL já é fixa no firmware (`https://explantelab.lovable.app`) e o portal Wi-Fi agora tem só **Senha de pareamento (6 dígitos)** + fuso.
+- **Como funciona**: na aba **CO₂**, o botão **Gerar senha** no card do sensor cria um código de 6 dígitos válido por 24 h. O ESP32 envia esse código em `POST /api/public/co2/pair` e recebe o token definitivo, que fica salvo em Preferences. Se a senha estiver expirada/errada, ele avisa no serial e retenta a cada 30 s até haver senha válida.
+- **Ação**: gravar `firmware/vitroceres_co2_v3_0_1/vitroceres_co2_v3_0_1.ino`, gerar a senha no app e digitá-la no portal.
+
+---
+
 ## 2026-08-18 — Firmware dedicado do CO₂: VitroCeres CO2 OS v3.0.0-co2
 
-- **O que mudou**: módulos de CO₂ passam a ter sketch próprio em `firmware/vitroceres_co2_v3_0_0/vitroceres_co2_v3_0_0.ino` — só Wi-Fi (portal `VitroCeres-XXXXXX`), SCD41 (I²C 21/22), LED de status (GPIO 19), watchdog e OTA. Sem válvulas, ciclos, luz, IR/ar-condicionado ou HX711.
+- **O que mudou**: módulos de CO₂ passam a ter sketch próprio em `firmware/vitroceres_co2_v3_0_1/vitroceres_co2_v3_0_1.ino` — só Wi-Fi (portal `VitroCeres-XXXXXX`), SCD41 (I²C 21/22), LED de status (GPIO 19), watchdog e OTA. Sem válvulas, ciclos, luz, IR/ar-condicionado ou HX711.
 - **Backend**:
   - `POST /api/public/co2/reading` aceita agora `temperatura_c`, `umidade_pct`, `firmware_version` e `ip_local` (todos opcionais — firmwares antigos continuam funcionando).
   - Novo `GET /api/public/co2/commands` (header `X-Device-Token`) devolve o OTA pendente do sensor.
