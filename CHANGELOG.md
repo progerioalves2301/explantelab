@@ -4,7 +4,13 @@
 
 ---
 
-## 2026-08-18 — Firmware v2.6.4 + Debug Serial Aprimorado
+## 2026-08-18 — Firmware v2.6.5 + Correções de Conectividade
+2: 
+3: **Firmware (v2.6.5)**
+4: - **Melhoria na Reconexão Wi-Fi**: Ajustada a lógica de watchdog e persistência para mitigar quedas de conexão em massa durante a noite.
+5: - **Ação**: Compilar `firmware/bancada_esp32_v2_6_5/bancada_esp32_v2_6_5.ino` e atualizar via OTA.
+6: 
+7: ## 2026-08-18 — Firmware v2.6.4 + Debug Serial Aprimorado
 **Firmware (v2.6.4)**
 - **Serial Debug**: Aumentado delay no boot e adicionado banner visual para garantir que a IDE capture o início dos logs.
 - **Debug Balança**: Lógica de leitura do HX711 alterada para forçar retorno de dados mesmo que o chip demore a responder, com log detalhado (`ready=0/1`).
