@@ -948,18 +948,10 @@ void carregarPrefs() {
   // v2.4.0 — tokens/mudas dos periféricos opcionais
   g_token_co2      = prefs.getString("co2_tok", "");
   g_token_scale    = prefs.getString("sc_tok",  "");
-  g_muda_ident     = prefs.getString("muda",    "");
-  
-  // v2.6.2 — Balança: fator de calibração e offset (zero)
-  prefs.end();
-  prefs.begin("balanca", true);
-  g_hx_fator_cal   = prefs.getFloat("fator", 1.0f);
-  g_hx_zero_offset = prefs.getLong("zero", 0);
-  prefs.end();
-}
   g_muda_ident     = prefs.getString("sc_muda", "");
   g_hx_fator_cal   = prefs.getFloat ("hx_fat", 1.0f);
   g_hx_zero_offset = prefs.getLong  ("hx_zer", 0);
+  
   prefs.end();
 }
 
