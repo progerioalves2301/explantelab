@@ -378,6 +378,30 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               {bancada.luz_ligada ? "ON" : "OFF"}
             </span>
           )}
+          {temCo2 && (
+             <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                "border-blue-500/60 bg-blue-400/15 text-blue-700 dark:text-blue-300"
+              )}
+              title="Sensor CO2 ativo"
+            >
+              <Wind className="h-3 w-3" />
+              CO2
+            </span>
+          )}
+          {temBalanca && (
+             <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                "border-purple-500/60 bg-purple-400/15 text-purple-700 dark:text-purple-300"
+              )}
+              title="Balança ativa"
+            >
+              <Scale className="h-3 w-3" />
+              Balança
+            </span>
+          )}
           {(temLuz || temBalanca || temCo2 || bancada.tem_rtc != null) && (() => {
             const desvio = bancada.rtc_desvio_segundos ?? 0;
             const desvioAlto = Math.abs(desvio) > 120;
@@ -464,11 +488,28 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               >
                 <BatteryWarning className="h-3 w-3" />
                 {brownout ? "Reset · energia" : "Reset · travou"}
+                <span className="ml-1 opacity-70">({motivo})</span>
               </span>
             );
           })()}
 
 
+          {bancada.rssi != null && (
+            <span 
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                bancada.rssi > -65 
+                  ? "border-emerald-500/60 bg-emerald-400/15 text-emerald-700 dark:text-emerald-300"
+                  : bancada.rssi > -80
+                    ? "border-amber-500/60 bg-amber-400/15 text-amber-700 dark:text-amber-300"
+                    : "border-red-500/60 bg-red-400/15 text-red-700 dark:text-red-300"
+              )}
+              title={`Sinal Wi-Fi: ${bancada.rssi} dBm`}
+            >
+              <Wind className="h-3 w-3" />
+              {bancada.rssi} dBm
+            </span>
+          )}
           {!isModuloSensor && <StatusBadge status={bancada.status} />}
         </div>
       </CardHeader>

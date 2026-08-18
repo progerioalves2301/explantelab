@@ -32,7 +32,7 @@ function upsertLaboratorio(items: Laboratorio[], row: Laboratorio) {
 export const Route = createFileRoute("/_shell/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — GeneLab IoT" },
+      { title: "Dashboard — VitroCeres OS" },
       {
         name: "description",
         content:
