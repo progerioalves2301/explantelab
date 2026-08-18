@@ -2,6 +2,18 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-18 — Firmware dedicado do CO₂: VitroCeres CO2 OS v3.0.0-co2
+
+- **O que mudou**: módulos de CO₂ passam a ter sketch próprio em `firmware/vitroceres_co2_v3_0_0/vitroceres_co2_v3_0_0.ino` — só Wi-Fi (portal `VitroCeres-XXXXXX`), SCD41 (I²C 21/22), LED de status (GPIO 19), watchdog e OTA. Sem válvulas, ciclos, luz, IR/ar-condicionado ou HX711.
+- **Backend**:
+  - `POST /api/public/co2/reading` aceita agora `temperatura_c`, `umidade_pct`, `firmware_version` e `ip_local` (todos opcionais — firmwares antigos continuam funcionando).
+  - Novo `GET /api/public/co2/commands` (header `X-Device-Token`) devolve o OTA pendente do sensor.
+  - `sensores_co2` guarda última temperatura/umidade, versão de firmware, IP e o OTA agendado; `medicoes_co2` guarda temperatura e umidade por leitura.
+- **App**: a aba **Atualização** ganhou a seção “Sensores de CO₂ (firmware dedicado)”, com status online/offline, versão instalada e botões Atualizar/Parar por sensor.
+- **Ação**: gravar a v3.0.0-co2 por USB no módulo de CO₂ (a partir daí o OTA funciona pelo app) e informar o token do sensor no portal Wi-Fi.
+
+---
+
 ## 2026-08-18 — Firmware v2.6.8: temperatura vem do SCD41 quando não há DS18B20
 
 - **Problema**: em módulos só com SCD41 (CO₂), o loop imprimia `[TEMP] leitura invalida (t=-127...)` indefinidamente e o 1-Wire era varrido a cada 30 s.
