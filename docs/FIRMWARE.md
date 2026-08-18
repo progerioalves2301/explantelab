@@ -1,7 +1,7 @@
 # Documentação Técnica do Firmware — VitroCeres Prateleira ESP32
 
-> Versão atual: **v2.6.3**  
-> Arquivo: `firmware/bancada_esp32_v2_6_3/bancada_esp32_v2_6_3.ino`
+> Versão atual: **v2.6.4**  
+> Arquivo: `firmware/bancada_esp32_v2.6.4/bancada_esp32_v2.6.4.ino`
 
 Este documento explica como o firmware funciona, pinagem, lógica de ciclos, luzes, ar-condicionado, sensores e atualização OTA. Use-o para entender o comportamento esperado, diagnosticar problemas e saber quando é necessário atualizar os equipamentos.
 
@@ -205,7 +205,7 @@ Para aparelhos não suportados nativamente, o backend pode enviar códigos **RAW
 - GPIO 16 (DOUT) / GPIO 17 (SCK).
 - Calibração (`fator_cal`, `zero_offset`) persistida na NVS.
 - **Comandos de Ajuste**: Suporta `BALANCA_TARA` (zera o peso atual) e `BALANCA_CALIBRAR` (ajusta o fator de ganho) enviados pelo app.
-- **Log de Debug (v2.6.3)**: Imprime `[DEBUG BALANCA]` no Serial a cada leitura, mostrando valores raw, offset (zero), fator e o peso final em gramas.
+- **Log de Debug (v2.6.4)**: Imprime `[DEBUG BALANCA]` no Serial a cada leitura, mostrando valores raw, offset (zero), fator e o peso final em gramas.
 - Envia para `/api/public/scale/reading` com `X-Device-Token`.
 
 ### Temperatura — DS18B20
@@ -323,7 +323,7 @@ Proteções acrescentadas na v2.6.0:
 
 ## 14. Arquivos relacionados
 
-- `firmware/bancada_esp32_v2_6_3/bancada_esp32_v2_6_3.ino` — código fonte.
+- `firmware/bancada_esp32_v2.6.4/bancada_esp32_v2.6.4.ino` — código fonte.
 - `firmware/FIACAO_VALVULAS.md` — diagrama de fiação e endereçamento.
 - `CHANGELOG.md` — histórico de alterações.
 - `mem://index.md` — memória consolidada do projeto.
