@@ -1,7 +1,7 @@
 # Documentação Técnica do Firmware — VitroCeres Prateleira ESP32
 
-> Versão atual: **v2.6.0**  
-> Arquivo: `firmware/bancada_esp32_v2_6_0/bancada_esp32_v2_6_0.ino`
+> Versão atual: **v2.6.2**  
+> Arquivo: `firmware/bancada_esp32_v2_6_2/bancada_esp32_v2_6_2.ino`
 
 Este documento explica como o firmware funciona, pinagem, lógica de ciclos, luzes, ar-condicionado, sensores e atualização OTA. Use-o para entender o comportamento esperado, diagnosticar problemas e saber quando é necessário atualizar os equipamentos.
 
@@ -204,6 +204,7 @@ Para aparelhos não suportados nativamente, o backend pode enviar códigos **RAW
 
 - GPIO 16 (DOUT) / GPIO 17 (SCK).
 - Calibração (`fator_cal`, `zero_offset`) persistida na NVS.
+- **Comandos de Ajuste**: Suporta `BALANCA_TARA` (zera o peso atual) e `BALANCA_CALIBRAR` (ajusta o fator de ganho) enviados pelo app.
 - Envia para `/api/public/scale/reading` com `X-Device-Token`.
 
 ### Temperatura — DS18B20
