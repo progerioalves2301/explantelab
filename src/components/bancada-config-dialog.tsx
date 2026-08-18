@@ -310,7 +310,7 @@ export function BancadaConfigDialog({
             </div>
           </div>
 
-          {acess.tem_luz && (
+          {!acess.tem_balanca && !acess.tem_co2 && (
             <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-1.5">
@@ -385,7 +385,7 @@ export function BancadaConfigDialog({
             </div>
           )}
 
-          {acess.tem_luz && (
+          {!acess.tem_balanca && !acess.tem_co2 && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div className="grid gap-2">
               <Label htmlFor="inj" className="text-xs">Injeção (s)</Label>
