@@ -310,7 +310,7 @@ export function BancadaConfigDialog({
             </div>
           </div>
 
-          {acess.tem_luz && (
+          {!acess.tem_balanca && !acess.tem_co2 && (
             <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-1.5">
