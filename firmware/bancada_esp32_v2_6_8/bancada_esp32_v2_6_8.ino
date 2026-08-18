@@ -2274,7 +2274,10 @@ void lerTemperatura() {
   // 5 min e paramos de tratar a ausência de sensor como falha (sem log a cada
   // leitura, sem "sensor travado", sem telemetria forçada).
   static uint32_t ultimoRescan = 0;
-  const uint32_t intervaloRescan = g_sem_sensor_temp ? 300000UL : 30000UL;
+  // v2.6.8 — se o SCD41 está presente, ele é a fonte oficial de temperatura;
+  // não há motivo pra varrer o 1-Wire a cada 30 s.
+  const uint32_t intervaloRescan =
+      (g_sem_sensor_temp || g_tem_scd41) ? 300000UL : 30000UL;
   if (!g_tem_ds18b20 && millis() - ultimoRescan > intervaloRescan) {
     ultimoRescan = millis();
     dsSensor.begin();
