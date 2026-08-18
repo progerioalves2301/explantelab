@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Wind, Plus, Trash2, RefreshCw, Copy } from "lucide-react";
+import { Wind, Plus, Trash2, RefreshCw, Copy, KeyRound } from "lucide-react";
 import { format } from "date-fns";
 import {
   CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import {
   listarSensoresCo2, criarSensorCo2, removerSensorCo2, listarHistoricoCo2,
+  gerarCodigoPareamentoCo2,
   type SensorCo2, type PontoCo2, type PeriodoCo2,
 } from "@/lib/co2.functions";
 import { listLaboratorios } from "@/lib/laboratorios.functions";
@@ -38,6 +39,23 @@ export const Route = createFileRoute("/_shell/co2")({
 function Co2Page() {
   const listSensores = useServerFn(listarSensoresCo2);
   const criar = useServerFn(criarSensorCo2);
+  const gerarSenha = useServerFn(gerarCodigoPareamentoCo2);
+  // Senha de pareamento exibida por sensor (6 dígitos, válida 24 h).
+  const [senhas, setSenhas] = useState<Record<string, string>>({});
+  const [gerandoId, setGerandoId] = useState<string | null>(null);
+
+  const handleGerarSenha = async (id: string) => {
+    setGerandoId(id);
+    try {
+      const r = await gerarSenha({ data: { id } });
+      setSenhas((prev) => ({ ...prev, [id]: r.pairing_code }));
+      toast.success(`Senha ${r.pairing_code} — válida por 24 h`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao gerar senha");
+    } finally {
+      setGerandoId(null);
+    }
+  };
   const remover = useServerFn(removerSensorCo2);
   const listLabs = useServerFn(listLaboratorios);
   const histFn = useServerFn(listarHistoricoCo2);
@@ -212,7 +230,16 @@ function Co2Page() {
                       <div className="min-w-0">
                         <div className="font-medium">{s.nome}</div>
                         <div className="text-xs text-muted-foreground truncate">
-                          Token: <code className="font-mono">{s.device_token.slice(0, 8)}…</code>
+                          {senhas[s.id] ? (
+                            <>
+                              Senha de pareamento:{" "}
+                              <code className="font-mono text-base tracking-[0.2em] text-foreground">
+                                {senhas[s.id]}
+                              </code>
+                            </>
+                          ) : (
+                            <>Token: <code className="font-mono">{s.device_token.slice(0, 8)}…</code></>
+                          )}
                           {s.ultima_medicao_em ? ` · última: ${format(new Date(s.ultima_medicao_em), "dd/MM HH:mm")}` : " · sem leituras"}
                         </div>
                       </div>
@@ -221,10 +248,18 @@ function Co2Page() {
                           <Badge variant="secondary" className="tabular-nums">{Number(s.ultima_leitura_ppm).toFixed(0)} ppm</Badge>
                         )}
                         <Button
+                          size="sm" variant="outline"
+                          disabled={gerandoId === s.id}
+                          onClick={() => void handleGerarSenha(s.id)}
+                        >
+                          <KeyRound className="mr-1 h-3.5 w-3.5" />
+                          {senhas[s.id] ? "Nova senha" : "Gerar senha"}
+                        </Button>
+                        <Button
                           size="sm" variant="ghost"
                           onClick={async () => {
-                            await navigator.clipboard.writeText(s.device_token);
-                            toast.success("Token copiado");
+                            await navigator.clipboard.writeText(senhas[s.id] ?? s.device_token);
+                            toast.success(senhas[s.id] ? "Senha copiada" : "Token copiado");
                           }}
                         >
                           <Copy className="h-3.5 w-3.5" />
