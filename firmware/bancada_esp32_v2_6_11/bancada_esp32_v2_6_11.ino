@@ -1206,6 +1206,13 @@ bool enviarTelemetria() {
   v["v5"] = false;   // V5 removida do projeto (v1.9.2+)
   doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
   doc["_firmware_version"]       = FIRMWARE_VERSION;
+  
+  // Se o SCD41 estiver presente, envia CO2 e umidade na telemetria da prateleira também
+  if (g_tem_scd41) {
+    v["co2"] = g_co2_ppm;
+    v["umidade"] = isnan(g_scd41_umid) ? 0.0f : g_scd41_umid;
+  }
+
 
 
   doc["_tem_rtc"]                = g_tem_rtc;
