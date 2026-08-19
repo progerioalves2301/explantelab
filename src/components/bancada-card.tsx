@@ -72,7 +72,9 @@ interface Props {
   /** Mínima e máxima registradas nos últimos 30 dias */
   extremos30d?: { min: number; max: number } | null;
   co2Ppm?: number | null;
+  umidadePct?: number | null;
 }
+
 
 
 // Presets dos botões Bio Reator (V1..V4 — V5 removida do projeto, sempre false)
@@ -103,7 +105,7 @@ function eq(a: ValvulasEstado, b: ValvulasEstado) {
   );
 }
 
-export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio, variedade, extremos30d, co2Ppm }: Props) {
+export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio, variedade, extremos30d, co2Ppm, umidadePct }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [sending, setSending] = useState(false);
@@ -566,22 +568,39 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
               )}
 
               {temCo2 && (
-                <div className="col-span-2 flex items-center gap-3 rounded-md border border-sky-500/30 bg-sky-500/5 px-2.5 py-3 text-sky-700 dark:text-sky-300">
-                  <Wind className="h-5 w-5 shrink-0" />
-                  <div className="flex-1">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-sky-600/80 dark:text-sky-400/80">
-                      Nível CO₂
-                    </div>
-                    <div className="font-mono text-2xl font-bold">
-                      {co2Ppm != null
-                        ? `${Number(co2Ppm).toFixed(0)} ppm`
-                        : (bancada.valvulas as any).co2 != null
-                          ? `${Number((bancada.valvulas as any).co2).toFixed(0)} ppm`
-                          : "—"}
+                <div className="col-span-2 space-y-3">
+                  <div className="flex items-center gap-3 rounded-md border border-sky-500/30 bg-sky-500/5 px-2.5 py-3 text-sky-700 dark:text-sky-300">
+                    <Wind className="h-5 w-5 shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-sky-600/80 dark:text-sky-400/80">
+                        Nível CO₂
+                      </div>
+                      <div className="font-mono text-2xl font-bold">
+                        {co2Ppm != null
+                          ? `${Number(co2Ppm).toFixed(0)} ppm`
+                          : (bancada.valvulas as any).co2 != null
+                            ? `${Number((bancada.valvulas as any).co2).toFixed(0)} ppm`
+                            : "—"}
+                      </div>
                     </div>
                   </div>
+
+                  {umidadePct != null && (
+                    <div className="flex items-center gap-3 rounded-md border border-blue-500/30 bg-blue-500/5 px-2.5 py-3 text-blue-700 dark:text-blue-300">
+                      <Droplets className="h-5 w-5 shrink-0" />
+                      <div className="flex-1">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600/80 dark:text-blue-400/80">
+                          Umidade Sala
+                        </div>
+                        <div className="font-mono text-2xl font-bold">
+                          {umidadePct.toFixed(1)} %
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
+
 
               {!isModuloSensor && (
                 <div className="flex items-center gap-2 text-muted-foreground">
