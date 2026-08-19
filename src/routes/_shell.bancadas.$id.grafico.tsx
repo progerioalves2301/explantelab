@@ -295,6 +295,7 @@ function GraficoTemperaturaPage() {
               <LineChart
                 data={dadosGrafico}
                 margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                hoverLayer={true}
               >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis
@@ -323,6 +324,8 @@ function GraficoTemperaturaPage() {
                   />
                 )}
                 <Tooltip
+                  trigger="hover"
+                  shared={true}
                   formatter={((v: number, name: string) => {
                     if (name === "CO₂") return [`${Number(v).toFixed(0)} ppm`, "CO₂"];
                     if (name === "Umidade") return [`${Number(v).toFixed(1)}%`, "Umidade do Galão"];
