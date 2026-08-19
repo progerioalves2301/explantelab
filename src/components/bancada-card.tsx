@@ -4,6 +4,8 @@ import {
   Clock,
   Cog,
   Copy,
+  Droplets,
+
   FlaskConical,
   KeyRound,
   Leaf,
