@@ -295,7 +295,6 @@ function GraficoTemperaturaPage() {
               <LineChart
                 data={dadosGrafico}
                 margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-                hoverLayer
               >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis
