@@ -295,7 +295,6 @@ function GraficoTemperaturaPage() {
               <LineChart
                 data={dadosGrafico}
                 margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-                hoverLayer={true}
               >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis
@@ -474,11 +473,11 @@ function GraficoTemperaturaPage() {
                 )}
                 {mostrarUmidade && temCo2 && (
                   <Line
-                    yAxisId="temp" // Mapeia para o eixo da esquerda (0-100% encaixa bem com 20-30°C visualmente)
+                    yAxisId="temp"
                     type="monotone"
                     dataKey="umidade"
                     name="Umidade"
-                    stroke="#0ea5e9" // Sky-500
+                    stroke="#0ea5e9"
                     strokeWidth={2}
                     strokeDasharray="4 2"
                     dot={false}
