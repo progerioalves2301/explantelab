@@ -267,6 +267,26 @@ function GraficoTemperaturaPage() {
             label="CO₂ máximo"
             value={co2Max != null ? `${co2Max.toFixed(0)} ppm` : "—"}
           />
+          
+          {/* Dados de Umidade do Galão */}
+          <StatCard 
+            label="Umidade mín." 
+            value={pontosCo2.some(p => p.umidade_pct != null) 
+              ? `${Math.min(...pontosCo2.map(p => p.umidade_pct ?? 100).filter(v => v != null)).toFixed(1)}%` 
+              : "—"} 
+          />
+          <StatCard 
+            label="Umidade méd." 
+            value={pontosCo2.some(p => p.umidade_pct != null) 
+              ? `${(pontosCo2.reduce((acc, p) => acc + (p.umidade_pct ?? 0), 0) / pontosCo2.filter(p => p.umidade_pct != null).length).toFixed(1)}%` 
+              : "—"} 
+          />
+          <StatCard 
+            label="Umidade máx." 
+            value={pontosCo2.some(p => p.umidade_pct != null) 
+              ? `${Math.max(...pontosCo2.map(p => p.umidade_pct ?? 0).filter(v => v != null)).toFixed(1)}%` 
+              : "—"} 
+          />
         </div>
       )}
 
