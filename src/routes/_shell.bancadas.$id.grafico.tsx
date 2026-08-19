@@ -75,8 +75,8 @@ function GraficoTemperaturaPage() {
       setBancada(currentBancada);
       setPontos(dados);
 
-      // CO₂ é medido por sala (sensor independente)
-      if (currentBancada?.laboratorio_id) {
+      // CO₂ é medido por sala (sensor independente), mas só exibimos no gráfico da prateleira do CO₂
+      if (currentBancada?.laboratorio_id && currentBancada.tem_co2) {
         try {
           const co2 = await listarCo2({
             data: {
