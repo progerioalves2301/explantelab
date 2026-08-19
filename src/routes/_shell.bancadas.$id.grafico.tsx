@@ -144,13 +144,15 @@ function GraficoTemperaturaPage() {
     const ts = new Date(p.minuto).getTime();
     porTs.set(ts, { ...(porTs.get(ts) ?? { ts }), ts, valor: Number(p.valor) });
   }
-  if (mostrarCo2 || mostrarUmidade) {
+  if (temCo2 && (mostrarCo2 || mostrarUmidade)) {
     for (const p of pontosCo2) {
       const ts = new Date(p.medido_em).getTime();
-      const exist = porTs.get(ts) ?? { ts };
+      // Arredonda para o minuto mais próximo para facilitar o alinhamento no gráfico
+      const tsMinute = Math.round(ts / 60000) * 60000;
+      const exist = porTs.get(tsMinute) ?? { ts: tsMinute };
       if (mostrarCo2) exist.ppm = Number(p.ppm);
       if (mostrarUmidade && p.umidade_pct != null) exist.umidade = Number(p.umidade_pct);
-      porTs.set(ts, exist);
+      porTs.set(tsMinute, exist);
     }
   }
   const dadosGrafico = Array.from(porTs.values())
@@ -323,9 +325,12 @@ function GraficoTemperaturaPage() {
                   />
                 )}
                 <Tooltip
-                  trigger="hover"
                   shared={true}
-                  formatter={((v: number, name: string) => {
+                  trigger="hover"
+                  isAnimationActive={false}
+                  filterNull={false}
+                  cursor={{ stroke: 'var(--primary)', strokeWidth: 1 }}
+                  formatter={((v: any, name: string) => {
                     if (name === "CO₂") return [`${Number(v).toFixed(0)} ppm`, "CO₂"];
                     if (name === "Umidade") return [`${Number(v).toFixed(1)}%`, "Umidade do Galão"];
                     return [`${Number(v).toFixed(2)}°C`, "Temperatura"];
