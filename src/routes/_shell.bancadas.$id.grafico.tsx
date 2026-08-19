@@ -308,11 +308,11 @@ function GraficoTemperaturaPage() {
                   />
                 )}
                 <Tooltip
-                  formatter={(v: number, name) =>
-                    name === "CO₂"
+                  formatter={((v: number, name: unknown) =>
+                    String(name) === "CO₂"
                       ? [`${Number(v).toFixed(0)} ppm`, "CO₂"]
-                      : [`${Number(v).toFixed(2)}°C`, "Temperatura"]
-                  }
+                      : [`${Number(v).toFixed(2)}°C`, "Temperatura"]) as never}
+
 
                   contentStyle={{
                     background: "var(--popover)",
