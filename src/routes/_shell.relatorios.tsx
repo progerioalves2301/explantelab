@@ -132,7 +132,7 @@ function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
 
         `Duração total: ${fmtSegundos(totalCiclo(b))}`,
         b.tem_co2 && cValvulas.co2 != null ? `Nível CO2: ${Number(cValvulas.co2).toFixed(0)} ppm` : null,
-        b.tem_co2 && cValvulas.umidade != null ? `Umidade: ${Number(cValvulas.umidade).toFixed(0)}%` : null,
+        b.tem_co2 && cValvulas.umidade != null ? `Umidade Galão: ${Number(cValvulas.umidade).toFixed(0)}%` : null,
         `Horários de disparo: ${horarioLinhas[0] ?? ""}`,
         ...horarioLinhas.slice(1).map((linha) => `  ${linha}`),
         b.temp_min !== null || b.temp_max !== null
@@ -399,7 +399,7 @@ function SalaRelatorio({
                       </div>
                     </div>
                     <div className="rounded-md border border-blue-500/20 bg-blue-500/5 p-2 text-blue-700 dark:text-blue-300">
-                      <div className="text-[9px] font-bold uppercase tracking-wider opacity-70">Umidade</div>
+                      <div className="text-[9px] font-bold uppercase tracking-wider opacity-70">Umidade Galão</div>
                       <div className="font-mono text-sm font-bold">
                         {(b.valvulas as any).umidade != null ? `${Number((b.valvulas as any).umidade).toFixed(0)}%` : "—"}
                       </div>

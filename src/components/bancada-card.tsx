@@ -592,8 +592,9 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                       <Droplets className="h-5 w-5 shrink-0" />
                       <div className="flex-1">
                         <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600/80 dark:text-blue-400/80">
-                          Umidade Sala
+                          Umidade do Galão
                         </div>
+
                         <div className="font-mono text-2xl font-bold">
                           {umidadePct.toFixed(1)} %
                         </div>
