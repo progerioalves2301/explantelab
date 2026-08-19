@@ -291,13 +291,29 @@ function GraficoTemperaturaPage() {
                   tick={{ fontSize: 11 }}
                 />
                 <YAxis
+                  yAxisId="temp"
                   tick={{ fontSize: 11 }}
                   domain={["dataMin - 1", "dataMax + 1"]}
                   tickFormatter={(v) => `${v}°`}
                   width={45}
                 />
+                {mostrarCo2 && temCo2 && (
+                  <YAxis
+                    yAxisId="co2"
+                    orientation="right"
+                    tick={{ fontSize: 11 }}
+                    domain={["dataMin - 50", "dataMax + 50"]}
+                    tickFormatter={(v) => `${Math.round(Number(v))}`}
+                    width={55}
+                  />
+                )}
                 <Tooltip
-                  formatter={(v: number) => [`${v.toFixed(2)}°C`, "Temperatura"]}
+                  formatter={(v: number, name) =>
+                    name === "CO₂"
+                      ? [`${Number(v).toFixed(0)} ppm`, "CO₂"]
+                      : [`${Number(v).toFixed(2)}°C`, "Temperatura"]
+                  }
+
                   contentStyle={{
                     background: "var(--popover)",
                     border: "1px solid var(--border)",
