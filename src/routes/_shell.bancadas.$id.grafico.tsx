@@ -48,8 +48,11 @@ function GraficoTemperaturaPage() {
   const listar = useServerFn(listarHistoricoTemperatura);
   const listB = useServerFn(listBancadas);
   const listarLuz = useServerFn(listarHistoricoLuz);
+  const listarCo2 = useServerFn(listarHistoricoCo2);
 
   const [pontos, setPontos] = useState<PontoTemperatura[]>([]);
+  const [pontosCo2, setPontosCo2] = useState<{ medido_em: string; ppm: number }[]>([]);
+  const [mostrarCo2, setMostrarCo2] = useState(true);
   const [intervalosLuz, setIntervalosLuz] = useState<IntervaloLuz[]>([]);
   const [periodo, setPeriodo] = useState<PeriodoGrafico>("24h");
   const [loading, setLoading] = useState(true);
@@ -71,6 +74,23 @@ function GraficoTemperaturaPage() {
       const currentBancada = bs.find((b) => b.id === id) ?? null;
       setBancada(currentBancada);
       setPontos(dados);
+
+      // CO₂ é medido por sala (sensor independente)
+      if (currentBancada?.laboratorio_id) {
+        try {
+          const co2 = await listarCo2({
+            data: {
+              laboratorio_id: currentBancada.laboratorio_id,
+              periodo: periodo as PeriodoCo2,
+            },
+          });
+          setPontosCo2(co2);
+        } catch {
+          setPontosCo2([]);
+        }
+      } else {
+        setPontosCo2([]);
+      }
       
       // Encontra a prateleira controladora de luz na mesma sala/laboratório
       // FORÇAR: Sempre usar a configuração da P8S12 como fonte global de iluminação para a sala
@@ -109,11 +129,36 @@ function GraficoTemperaturaPage() {
   const media =
     valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : null;
 
-  const dadosGrafico = pontos.map((p) => ({
-    ts: new Date(p.minuto).getTime(),
-    label: format(new Date(p.minuto), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm"),
-    valor: Number(p.valor),
-  }));
+  const ppms = pontosCo2.map((p) => p.ppm);
+  const co2Min = ppms.length ? Math.min(...ppms) : null;
+  const co2Max = ppms.length ? Math.max(...ppms) : null;
+  const co2Media = ppms.length
+    ? ppms.reduce((a, b) => a + b, 0) / ppms.length
+    : null;
+  const temCo2 = ppms.length > 0;
+
+  // Une as duas séries pelo instante da leitura (sem inventar pontos)
+  const porTs = new Map<number, { ts: number; valor?: number; ppm?: number }>();
+  for (const p of pontos) {
+    const ts = new Date(p.minuto).getTime();
+    porTs.set(ts, { ...(porTs.get(ts) ?? { ts }), ts, valor: Number(p.valor) });
+  }
+  if (mostrarCo2) {
+    for (const p of pontosCo2) {
+      const ts = new Date(p.medido_em).getTime();
+      porTs.set(ts, { ...(porTs.get(ts) ?? { ts }), ts, ppm: Number(p.ppm) });
+    }
+  }
+  const dadosGrafico = Array.from(porTs.values())
+    .sort((a, b) => a.ts - b.ts)
+    .map((p) => ({
+      ...p,
+      label: format(
+        new Date(p.ts),
+        periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm",
+      ),
+    }));
+
 
   // Log para debug no console do navegador (auxilia o suporte)
   console.log("Grafico:", { 
