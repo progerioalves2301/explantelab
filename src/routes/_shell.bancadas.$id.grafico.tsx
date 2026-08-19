@@ -185,16 +185,27 @@ function GraficoTemperaturaPage() {
           </div>
           <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
             <LineChartIcon className="h-6 w-6 text-primary" />
-            Temperatura — {bancada?.nome ?? "…"}
+            Temperatura e CO₂ — {bancada?.nome ?? "…"}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Histórico do sensor DS18B20 (1 ponto por minuto, retenção 90 dias).
+            Temperatura da prateleira (1 ponto por minuto) e CO₂ da sala.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={carregar} disabled={loading}>
-          <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Atualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          {temCo2 && (
+            <Button
+              variant={mostrarCo2 ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMostrarCo2((v) => !v)}
+            >
+              CO₂ {mostrarCo2 ? "ativo" : "oculto"}
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={carregar} disabled={loading}>
+            <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       <Tabs value={periodo} onValueChange={(v) => setPeriodo(v as PeriodoGrafico)}>
@@ -224,12 +235,31 @@ function GraficoTemperaturaPage() {
         />
       </div>
 
+      {temCo2 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label="Pontos CO₂" value={pontosCo2.length.toString()} />
+          <StatCard
+            label="CO₂ mínimo"
+            value={co2Min != null ? `${co2Min.toFixed(0)} ppm` : "—"}
+          />
+          <StatCard
+            label="CO₂ médio"
+            value={co2Media != null ? `${co2Media.toFixed(0)} ppm` : "—"}
+          />
+          <StatCard
+            label="CO₂ máximo"
+            value={co2Max != null ? `${co2Max.toFixed(0)} ppm` : "—"}
+          />
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Curva de temperatura ({periodo})
+            Curva de temperatura{mostrarCo2 && temCo2 ? " e CO₂" : ""} ({periodo})
           </CardTitle>
         </CardHeader>
+
         <CardContent>
           {loading ? (
             <div className="grid h-[360px] place-items-center text-sm text-muted-foreground">
