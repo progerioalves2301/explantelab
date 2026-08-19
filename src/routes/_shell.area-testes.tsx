@@ -32,7 +32,7 @@ function AreaTestesPage() {
   const [open, setOpen] = useState(false);
   const [clock, setClock] = useState(() => Date.now());
   const [logs, setLogs] = useState<{ bancada_id: string; status: string; changed_at: string }[]>([]);
-  const [co2ByLab, setCo2ByLab] = useState<Record<string, number>>({});
+  const [co2ByLab, setCo2ByLab] = useState<Record<string, { ppm: number; umid: number | null }>>({});
 
   // CO₂ por sala (sensores independentes enviam para sensores_co2)
   useEffect(() => {
@@ -40,19 +40,24 @@ function AreaTestesPage() {
     const carregarCo2 = async () => {
       const { data } = await supabase
         .from("sensores_co2")
-        .select("laboratorio_id, ultima_leitura_ppm, ultima_medicao_em")
+        .select("laboratorio_id, ultima_leitura_ppm, ultima_umidade_pct, ultima_medicao_em")
         .eq("ativo", true)
         .order("ultima_medicao_em", { ascending: false, nullsFirst: false });
       if (!alive || !data) return;
-      const map: Record<string, number> = {};
+      const map: Record<string, { ppm: number; umid: number | null }> = {};
       for (const r of data as {
         laboratorio_id: string;
         ultima_leitura_ppm: number | null;
+        ultima_umidade_pct: number | null;
       }[]) {
         if (r.ultima_leitura_ppm == null) continue;
         if (map[r.laboratorio_id] == null)
-          map[r.laboratorio_id] = Number(r.ultima_leitura_ppm);
+          map[r.laboratorio_id] = {
+            ppm: Number(r.ultima_leitura_ppm),
+            umid: r.ultima_umidade_pct != null ? Number(r.ultima_umidade_pct) : null
+          };
       }
+
       setCo2ByLab(map);
     };
     void carregarCo2();
@@ -199,7 +204,9 @@ function AreaTestesPage() {
                 segments={segmentsByBancada.get(b.id)}
                 clock={clock}
                 laboratorio={labs.find((l) => l.id === b.laboratorio_id) ?? null}
-                co2Ppm={b.tem_co2 && b.laboratorio_id ? (co2ByLab[b.laboratorio_id] ?? null) : null}
+                co2Ppm={b.tem_co2 && b.laboratorio_id ? (co2ByLab[b.laboratorio_id]?.ppm ?? null) : null}
+                umidadePct={b.tem_co2 && b.laboratorio_id ? (co2ByLab[b.laboratorio_id]?.umid ?? null) : null}
+
               />
 
             </div>

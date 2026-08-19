@@ -121,6 +121,7 @@ function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
         horarios_disparo: [] as string[],
       };
       const horarios = Array.isArray(c.horarios_disparo) ? c.horarios_disparo : [];
+      const cValvulas = (b.valvulas as any) || {};
       const horarioTexto = horarios.length > 0 ? horarios.join(", ") : "Nenhum horário programado";
       const horarioLinhas = doc.splitTextToSize(horarioTexto, contentWidth - 10) as string[];
       const infoLinhas = [
@@ -130,12 +131,15 @@ function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
         `Retorno: ${fmtSegundos(c.tempo_retorno_segundos)}`,
 
         `Duração total: ${fmtSegundos(totalCiclo(b))}`,
+        b.tem_co2 && cValvulas.co2 != null ? `Nível CO2: ${Number(cValvulas.co2).toFixed(0)} ppm` : null,
+        b.tem_co2 && cValvulas.umidade != null ? `Umidade: ${Number(cValvulas.umidade).toFixed(0)}%` : null,
         `Horários de disparo: ${horarioLinhas[0] ?? ""}`,
         ...horarioLinhas.slice(1).map((linha) => `  ${linha}`),
         b.temp_min !== null || b.temp_max !== null
           ? `Faixa de temperatura: ${b.temp_min ?? "-"}°C … ${b.temp_max ?? "-"}°C`
           : null,
       ].filter(Boolean) as string[];
+
       const cardHeight = 13 + infoLinhas.length * 4.4;
 
       addPageIfNeeded(cardHeight + 4);
@@ -386,6 +390,23 @@ function SalaRelatorio({
                 )}
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
+                {b.tem_co2 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-md border border-sky-500/20 bg-sky-500/5 p-2 text-sky-700 dark:text-sky-300">
+                      <div className="text-[9px] font-bold uppercase tracking-wider opacity-70">CO2</div>
+                      <div className="font-mono text-sm font-bold">
+                        {(b.valvulas as any).co2 != null ? `${Number((b.valvulas as any).co2).toFixed(0)} ppm` : "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-blue-500/20 bg-blue-500/5 p-2 text-blue-700 dark:text-blue-300">
+                      <div className="text-[9px] font-bold uppercase tracking-wider opacity-70">Umidade</div>
+                      <div className="font-mono text-sm font-bold">
+                        {(b.valvulas as any).umidade != null ? `${Number((b.valvulas as any).umidade).toFixed(0)}%` : "—"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                     Programação do ciclo
@@ -410,6 +431,7 @@ function SalaRelatorio({
                     </dd>
                   </dl>
                 </div>
+
 
                 <div>
                   <div className="mb-1 flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
