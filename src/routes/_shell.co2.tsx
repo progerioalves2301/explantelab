@@ -218,7 +218,7 @@ function Co2Page() {
                       formatter={(v: number) => [`${v.toFixed(0)} ppm`, "CO₂"]}
                       contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 6, fontSize: 12 }}
                     />
-                    <Line type="monotone" dataKey="ppm" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={false} isAnimationActive={false} />
+                    <Line type="monotone" dataKey="ppm" stroke="var(--primary)" strokeWidth={2.5} dot={false} isAnimationActive={false} />
                   </LineChart>
                 </ResponsiveContainer>
               )}
