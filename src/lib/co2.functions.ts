@@ -85,7 +85,14 @@ export const alternarSensorCo2 = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-const PERIODOS = { "6h": 6, "24h": 24, "7d": 24 * 7, "30d": 24 * 30 } as const;
+const PERIODOS = {
+  "6h": 6,
+  "24h": 24,
+  "7d": 24 * 7,
+  "30d": 24 * 30,
+  "60d": 24 * 60,
+  "120d": 24 * 120,
+} as const;
 export type PeriodoCo2 = keyof typeof PERIODOS;
 
 export const listarHistoricoCo2 = createServerFn({ method: "GET" })
