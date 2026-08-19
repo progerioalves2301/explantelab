@@ -75,8 +75,8 @@ function GraficoTemperaturaPage() {
       setBancada(currentBancada);
       setPontos(dados);
 
-      // CO₂ é medido por sala (sensor independente)
-      if (currentBancada?.laboratorio_id) {
+      // CO₂ é medido por sala (sensor independente), mas só exibimos no gráfico da prateleira do CO₂
+      if (currentBancada?.laboratorio_id && currentBancada.tem_co2) {
         try {
           const co2 = await listarCo2({
             data: {
@@ -185,10 +185,12 @@ function GraficoTemperaturaPage() {
           </div>
           <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
             <LineChartIcon className="h-6 w-6 text-primary" />
-            Temperatura e CO₂ — {bancada?.nome ?? "…"}
+            {bancada?.tem_co2 ? "Temperatura e CO₂" : "Temperatura"} — {bancada?.nome ?? "…"}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Temperatura da prateleira (1 ponto por minuto) e CO₂ da sala.
+            {bancada?.tem_co2 
+              ? "Temperatura da prateleira e CO₂ da sala." 
+              : "Temperatura da prateleira (1 ponto por minuto)."}
           </p>
         </div>
         <div className="flex items-center gap-2">

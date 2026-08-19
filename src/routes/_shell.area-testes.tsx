@@ -199,7 +199,7 @@ function AreaTestesPage() {
                 segments={segmentsByBancada.get(b.id)}
                 clock={clock}
                 laboratorio={labs.find((l) => l.id === b.laboratorio_id) ?? null}
-                co2Ppm={b.laboratorio_id ? (co2ByLab[b.laboratorio_id] ?? null) : null}
+                co2Ppm={b.tem_co2 && b.laboratorio_id ? (co2ByLab[b.laboratorio_id] ?? null) : null}
               />
 
             </div>
