@@ -144,13 +144,15 @@ function GraficoTemperaturaPage() {
     const ts = new Date(p.minuto).getTime();
     porTs.set(ts, { ...(porTs.get(ts) ?? { ts }), ts, valor: Number(p.valor) });
   }
-  if (mostrarCo2 || mostrarUmidade) {
+  if (temCo2 && (mostrarCo2 || mostrarUmidade)) {
     for (const p of pontosCo2) {
       const ts = new Date(p.medido_em).getTime();
-      const exist = porTs.get(ts) ?? { ts };
+      // Arredonda para o minuto mais próximo para facilitar o alinhamento no gráfico
+      const tsMinute = Math.round(ts / 60000) * 60000;
+      const exist = porTs.get(tsMinute) ?? { ts: tsMinute };
       if (mostrarCo2) exist.ppm = Number(p.ppm);
       if (mostrarUmidade && p.umidade_pct != null) exist.umidade = Number(p.umidade_pct);
-      porTs.set(ts, exist);
+      porTs.set(tsMinute, exist);
     }
   }
   const dadosGrafico = Array.from(porTs.values())
