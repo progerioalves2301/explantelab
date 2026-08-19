@@ -32,6 +32,38 @@ function AreaTestesPage() {
   const [open, setOpen] = useState(false);
   const [clock, setClock] = useState(() => Date.now());
   const [logs, setLogs] = useState<{ bancada_id: string; status: string; changed_at: string }[]>([]);
+  const [co2ByLab, setCo2ByLab] = useState<Record<string, number>>({});
+
+  // CO₂ por sala (sensores independentes enviam para sensores_co2)
+  useEffect(() => {
+    let alive = true;
+    const carregarCo2 = async () => {
+      const { data } = await supabase
+        .from("sensores_co2")
+        .select("laboratorio_id, ultima_leitura_ppm, ultima_medicao_em")
+        .eq("ativo", true)
+        .order("ultima_medicao_em", { ascending: false, nullsFirst: false });
+      if (!alive || !data) return;
+      const map: Record<string, number> = {};
+      for (const r of data as {
+        laboratorio_id: string;
+        ultima_leitura_ppm: number | null;
+      }[]) {
+        if (r.ultima_leitura_ppm == null) continue;
+        if (map[r.laboratorio_id] == null)
+          map[r.laboratorio_id] = Number(r.ultima_leitura_ppm);
+      }
+      setCo2ByLab(map);
+    };
+    void carregarCo2();
+    const id = setInterval(() => void carregarCo2(), 30_000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
+
+
 
   useEffect(() => {
     let alive = true;
