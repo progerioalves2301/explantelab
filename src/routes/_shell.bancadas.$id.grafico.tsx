@@ -24,6 +24,7 @@ import {
   type PeriodoGrafico,
   type PontoTemperatura,
 } from "@/lib/medicoes.functions";
+import { listarHistoricoCo2, type PeriodoCo2 } from "@/lib/co2.functions";
 import { listBancadas } from "@/lib/bancadas.functions";
 import { listarHistoricoLuz, type IntervaloLuz } from "@/lib/luz.functions";
 import type { Bancada } from "@/lib/types";
@@ -47,8 +48,11 @@ function GraficoTemperaturaPage() {
   const listar = useServerFn(listarHistoricoTemperatura);
   const listB = useServerFn(listBancadas);
   const listarLuz = useServerFn(listarHistoricoLuz);
+  const listarCo2 = useServerFn(listarHistoricoCo2);
 
   const [pontos, setPontos] = useState<PontoTemperatura[]>([]);
+  const [pontosCo2, setPontosCo2] = useState<{ medido_em: string; ppm: number }[]>([]);
+  const [mostrarCo2, setMostrarCo2] = useState(true);
   const [intervalosLuz, setIntervalosLuz] = useState<IntervaloLuz[]>([]);
   const [periodo, setPeriodo] = useState<PeriodoGrafico>("24h");
   const [loading, setLoading] = useState(true);
@@ -70,6 +74,23 @@ function GraficoTemperaturaPage() {
       const currentBancada = bs.find((b) => b.id === id) ?? null;
       setBancada(currentBancada);
       setPontos(dados);
+
+      // CO₂ é medido por sala (sensor independente)
+      if (currentBancada?.laboratorio_id) {
+        try {
+          const co2 = await listarCo2({
+            data: {
+              laboratorio_id: currentBancada.laboratorio_id,
+              periodo: periodo as PeriodoCo2,
+            },
+          });
+          setPontosCo2(co2);
+        } catch {
+          setPontosCo2([]);
+        }
+      } else {
+        setPontosCo2([]);
+      }
       
       // Encontra a prateleira controladora de luz na mesma sala/laboratório
       // FORÇAR: Sempre usar a configuração da P8S12 como fonte global de iluminação para a sala
@@ -108,11 +129,36 @@ function GraficoTemperaturaPage() {
   const media =
     valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : null;
 
-  const dadosGrafico = pontos.map((p) => ({
-    ts: new Date(p.minuto).getTime(),
-    label: format(new Date(p.minuto), periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm"),
-    valor: Number(p.valor),
-  }));
+  const ppms = pontosCo2.map((p) => p.ppm);
+  const co2Min = ppms.length ? Math.min(...ppms) : null;
+  const co2Max = ppms.length ? Math.max(...ppms) : null;
+  const co2Media = ppms.length
+    ? ppms.reduce((a, b) => a + b, 0) / ppms.length
+    : null;
+  const temCo2 = ppms.length > 0;
+
+  // Une as duas séries pelo instante da leitura (sem inventar pontos)
+  const porTs = new Map<number, { ts: number; valor?: number; ppm?: number }>();
+  for (const p of pontos) {
+    const ts = new Date(p.minuto).getTime();
+    porTs.set(ts, { ...(porTs.get(ts) ?? { ts }), ts, valor: Number(p.valor) });
+  }
+  if (mostrarCo2) {
+    for (const p of pontosCo2) {
+      const ts = new Date(p.medido_em).getTime();
+      porTs.set(ts, { ...(porTs.get(ts) ?? { ts }), ts, ppm: Number(p.ppm) });
+    }
+  }
+  const dadosGrafico = Array.from(porTs.values())
+    .sort((a, b) => a.ts - b.ts)
+    .map((p) => ({
+      ...p,
+      label: format(
+        new Date(p.ts),
+        periodo === "6h" || periodo === "24h" ? "HH:mm" : "dd/MM HH:mm",
+      ),
+    }));
+
 
   // Log para debug no console do navegador (auxilia o suporte)
   console.log("Grafico:", { 
@@ -139,16 +185,27 @@ function GraficoTemperaturaPage() {
           </div>
           <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
             <LineChartIcon className="h-6 w-6 text-primary" />
-            Temperatura — {bancada?.nome ?? "…"}
+            Temperatura e CO₂ — {bancada?.nome ?? "…"}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Histórico do sensor DS18B20 (1 ponto por minuto, retenção 90 dias).
+            Temperatura da prateleira (1 ponto por minuto) e CO₂ da sala.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={carregar} disabled={loading}>
-          <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Atualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          {temCo2 && (
+            <Button
+              variant={mostrarCo2 ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMostrarCo2((v) => !v)}
+            >
+              CO₂ {mostrarCo2 ? "ativo" : "oculto"}
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={carregar} disabled={loading}>
+            <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       <Tabs value={periodo} onValueChange={(v) => setPeriodo(v as PeriodoGrafico)}>
@@ -178,12 +235,31 @@ function GraficoTemperaturaPage() {
         />
       </div>
 
+      {temCo2 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label="Pontos CO₂" value={pontosCo2.length.toString()} />
+          <StatCard
+            label="CO₂ mínimo"
+            value={co2Min != null ? `${co2Min.toFixed(0)} ppm` : "—"}
+          />
+          <StatCard
+            label="CO₂ médio"
+            value={co2Media != null ? `${co2Media.toFixed(0)} ppm` : "—"}
+          />
+          <StatCard
+            label="CO₂ máximo"
+            value={co2Max != null ? `${co2Max.toFixed(0)} ppm` : "—"}
+          />
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Curva de temperatura ({periodo})
+            Curva de temperatura{mostrarCo2 && temCo2 ? " e CO₂" : ""} ({periodo})
           </CardTitle>
         </CardHeader>
+
         <CardContent>
           {loading ? (
             <div className="grid h-[360px] place-items-center text-sm text-muted-foreground">
@@ -215,13 +291,29 @@ function GraficoTemperaturaPage() {
                   tick={{ fontSize: 11 }}
                 />
                 <YAxis
+                  yAxisId="temp"
                   tick={{ fontSize: 11 }}
                   domain={["dataMin - 1", "dataMax + 1"]}
                   tickFormatter={(v) => `${v}°`}
                   width={45}
                 />
+                {mostrarCo2 && temCo2 && (
+                  <YAxis
+                    yAxisId="co2"
+                    orientation="right"
+                    tick={{ fontSize: 11 }}
+                    domain={["dataMin - 50", "dataMax + 50"]}
+                    tickFormatter={(v) => `${Math.round(Number(v))}`}
+                    width={55}
+                  />
+                )}
                 <Tooltip
-                  formatter={(v: number) => [`${v.toFixed(2)}°C`, "Temperatura"]}
+                  formatter={((v: number, name: unknown) =>
+                    String(name) === "CO₂"
+                      ? [`${Number(v).toFixed(0)} ppm`, "CO₂"]
+                      : [`${Number(v).toFixed(2)}°C`, "Temperatura"]) as never}
+
+
                   contentStyle={{
                     background: "var(--popover)",
                     border: "1px solid var(--border)",
@@ -283,6 +375,7 @@ function GraficoTemperaturaPage() {
 
                     return (
                       <ReferenceArea
+                        yAxisId="temp"
                         key={`prog-${idx}-${offset}`}
                         x1={x1}
                         x2={x2}
@@ -305,6 +398,7 @@ function GraficoTemperaturaPage() {
                 })}
                 {tempMin != null && (
                   <ReferenceLine
+                    yAxisId="temp"
                     y={Number(tempMin)}
                     stroke="hsl(217 91% 60%)"
                     strokeDasharray="4 4"
@@ -318,6 +412,7 @@ function GraficoTemperaturaPage() {
                 )}
                 {tempMax != null && (
                   <ReferenceLine
+                    yAxisId="temp"
                     y={Number(tempMax)}
                     stroke="hsl(0 84% 60%)"
                     strokeDasharray="4 4"
@@ -330,6 +425,7 @@ function GraficoTemperaturaPage() {
                   />
                 )}
                 <Line
+                  yAxisId="temp"
                   type="linear"
                   dataKey="valor"
                   name="Temperatura"
@@ -342,6 +438,22 @@ function GraficoTemperaturaPage() {
                   isAnimationActive={false}
                   connectNulls
                 />
+                {mostrarCo2 && temCo2 && (
+                  <Line
+                    yAxisId="co2"
+                    type="monotone"
+                    dataKey="ppm"
+                    name="CO₂"
+                    stroke="var(--leaf)"
+                    strokeWidth={2.5}
+                    strokeDasharray="6 3"
+                    dot={false}
+                    activeDot={{ r: 5, fill: "var(--leaf)", stroke: "var(--card)", strokeWidth: 2 }}
+                    isAnimationActive={false}
+                    connectNulls
+                  />
+                )}
+
               </LineChart>
             </ResponsiveContainer>
           )}
