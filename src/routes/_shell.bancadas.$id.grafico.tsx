@@ -323,6 +323,8 @@ function GraficoTemperaturaPage() {
                   />
                 )}
                 <Tooltip
+                  trigger="hover"
+                  shared={true}
                   formatter={((v: number, name: string) => {
                     if (name === "CO₂") return [`${Number(v).toFixed(0)} ppm`, "CO₂"];
                     if (name === "Umidade") return [`${Number(v).toFixed(1)}%`, "Umidade do Galão"];
@@ -471,11 +473,11 @@ function GraficoTemperaturaPage() {
                 )}
                 {mostrarUmidade && temCo2 && (
                   <Line
-                    yAxisId="temp" // Mapeia para o eixo da esquerda (0-100% encaixa bem com 20-30°C visualmente)
+                    yAxisId="temp"
                     type="monotone"
                     dataKey="umidade"
                     name="Umidade"
-                    stroke="#0ea5e9" // Sky-500
+                    stroke="#0ea5e9"
                     strokeWidth={2}
                     strokeDasharray="4 2"
                     dot={false}
