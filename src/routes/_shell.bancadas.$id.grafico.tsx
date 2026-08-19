@@ -24,7 +24,7 @@ import {
   type PeriodoGrafico,
   type PontoTemperatura,
 } from "@/lib/medicoes.functions";
-import { listarHistoricoCo2, type PeriodoCo2 } from "@/lib/co2.functions";
+import { listarHistoricoCo2, type PeriodoCo2, type PontoCo2 } from "@/lib/co2.functions";
 import { listBancadas } from "@/lib/bancadas.functions";
 import { listarHistoricoLuz, type IntervaloLuz } from "@/lib/luz.functions";
 import type { Bancada } from "@/lib/types";
@@ -51,8 +51,9 @@ function GraficoTemperaturaPage() {
   const listarCo2 = useServerFn(listarHistoricoCo2);
 
   const [pontos, setPontos] = useState<PontoTemperatura[]>([]);
-  const [pontosCo2, setPontosCo2] = useState<{ medido_em: string; ppm: number }[]>([]);
+  const [pontosCo2, setPontosCo2] = useState<PontoCo2[]>([]);
   const [mostrarCo2, setMostrarCo2] = useState(true);
+  const [mostrarUmidade, setMostrarUmidade] = useState(true);
   const [intervalosLuz, setIntervalosLuz] = useState<IntervaloLuz[]>([]);
   const [periodo, setPeriodo] = useState<PeriodoGrafico>("24h");
   const [loading, setLoading] = useState(true);
@@ -138,15 +139,18 @@ function GraficoTemperaturaPage() {
   const temCo2 = ppms.length > 0;
 
   // Une as duas séries pelo instante da leitura (sem inventar pontos)
-  const porTs = new Map<number, { ts: number; valor?: number; ppm?: number }>();
+  const porTs = new Map<number, { ts: number; valor?: number; ppm?: number; umidade?: number }>();
   for (const p of pontos) {
     const ts = new Date(p.minuto).getTime();
     porTs.set(ts, { ...(porTs.get(ts) ?? { ts }), ts, valor: Number(p.valor) });
   }
-  if (mostrarCo2) {
+  if (mostrarCo2 || mostrarUmidade) {
     for (const p of pontosCo2) {
       const ts = new Date(p.medido_em).getTime();
-      porTs.set(ts, { ...(porTs.get(ts) ?? { ts }), ts, ppm: Number(p.ppm) });
+      const exist = porTs.get(ts) ?? { ts };
+      if (mostrarCo2) exist.ppm = Number(p.ppm);
+      if (mostrarUmidade && p.umidade_pct != null) exist.umidade = Number(p.umidade_pct);
+      porTs.set(ts, exist);
     }
   }
   const dadosGrafico = Array.from(porTs.values())
@@ -185,23 +189,32 @@ function GraficoTemperaturaPage() {
           </div>
           <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
             <LineChartIcon className="h-6 w-6 text-primary" />
-            {bancada?.tem_co2 ? "Temperatura e CO₂" : "Temperatura"} — {bancada?.nome ?? "…"}
+            {bancada?.tem_co2 ? "Temperatura, CO₂ e Umidade" : "Temperatura"} — {bancada?.nome ?? "…"}
           </h1>
           <p className="text-sm text-muted-foreground">
             {bancada?.tem_co2 
-              ? "Temperatura da prateleira e CO₂ da sala." 
+              ? "Temperatura da prateleira, CO₂ e Umidade do galão." 
               : "Temperatura da prateleira (1 ponto por minuto)."}
           </p>
         </div>
         <div className="flex items-center gap-2">
           {temCo2 && (
-            <Button
-              variant={mostrarCo2 ? "default" : "outline"}
-              size="sm"
-              onClick={() => setMostrarCo2((v) => !v)}
-            >
-              CO₂ {mostrarCo2 ? "ativo" : "oculto"}
-            </Button>
+            <>
+              <Button
+                variant={mostrarCo2 ? "default" : "outline"}
+                size="sm"
+                onClick={() => setMostrarCo2((v) => !v)}
+              >
+                CO₂ {mostrarCo2 ? "ativo" : "oculto"}
+              </Button>
+              <Button
+                variant={mostrarUmidade ? "default" : "outline"}
+                size="sm"
+                onClick={() => setMostrarUmidade((v) => !v)}
+              >
+                Umidade {mostrarUmidade ? "ativa" : "oculta"}
+              </Button>
+            </>
           )}
           <Button variant="outline" size="sm" onClick={carregar} disabled={loading}>
             <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -258,7 +271,7 @@ function GraficoTemperaturaPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Curva de temperatura{mostrarCo2 && temCo2 ? " e CO₂" : ""} ({periodo})
+            Curva de temperatura{temCo2 && (mostrarCo2 || mostrarUmidade) ? ` e ${[mostrarCo2 && "CO₂", mostrarUmidade && "Umidade"].filter(Boolean).join(" / ")}` : ""} ({periodo})
           </CardTitle>
         </CardHeader>
 
@@ -310,10 +323,11 @@ function GraficoTemperaturaPage() {
                   />
                 )}
                 <Tooltip
-                  formatter={((v: number, name: unknown) =>
-                    String(name) === "CO₂"
-                      ? [`${Number(v).toFixed(0)} ppm`, "CO₂"]
-                      : [`${Number(v).toFixed(2)}°C`, "Temperatura"]) as never}
+                  formatter={((v: number, name: string) => {
+                    if (name === "CO₂") return [`${Number(v).toFixed(0)} ppm`, "CO₂"];
+                    if (name === "Umidade") return [`${Number(v).toFixed(1)}%`, "Umidade do Galão"];
+                    return [`${Number(v).toFixed(2)}°C`, "Temperatura"];
+                  }) as never}
 
 
                   contentStyle={{
@@ -451,6 +465,21 @@ function GraficoTemperaturaPage() {
                     strokeDasharray="6 3"
                     dot={false}
                     activeDot={{ r: 5, fill: "var(--leaf)", stroke: "var(--card)", strokeWidth: 2 }}
+                    isAnimationActive={false}
+                    connectNulls
+                  />
+                )}
+                {mostrarUmidade && temCo2 && (
+                  <Line
+                    yAxisId="temp" // Mapeia para o eixo da esquerda (0-100% encaixa bem com 20-30°C visualmente)
+                    type="monotone"
+                    dataKey="umidade"
+                    name="Umidade"
+                    stroke="#0ea5e9" // Sky-500
+                    strokeWidth={2}
+                    strokeDasharray="4 2"
+                    dot={false}
+                    activeDot={{ r: 4, fill: "#0ea5e9", stroke: "var(--card)", strokeWidth: 2 }}
                     isAnimationActive={false}
                     connectNulls
                   />

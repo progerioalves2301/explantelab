@@ -14,7 +14,11 @@ export type SensorCo2 = {
   created_at: string;
 };
 
-export type PontoCo2 = { medido_em: string; ppm: number };
+export type PontoCo2 = { 
+  medido_em: string; 
+  ppm: number;
+  umidade_pct?: number | null;
+};
 
 export const listarSensoresCo2 = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -105,7 +109,7 @@ export const listarHistoricoCo2 = createServerFn({ method: "GET" })
     const desde = new Date(Date.now() - horas * 3600 * 1000).toISOString();
     const { data: rows, error } = await context.supabase
       .from("medicoes_co2")
-      .select("medido_em, ppm")
+      .select("medido_em, ppm, umidade_pct")
       .eq("laboratorio_id", data.laboratorio_id)
       .gte("medido_em", desde)
       .order("medido_em", { ascending: true })
@@ -114,6 +118,7 @@ export const listarHistoricoCo2 = createServerFn({ method: "GET" })
     return (rows ?? []).map((r) => ({
       medido_em: r.medido_em as string,
       ppm: Number(r.ppm),
+      umidade_pct: r.umidade_pct != null ? Number(r.umidade_pct) : null,
     })) as PontoCo2[];
   });
 
