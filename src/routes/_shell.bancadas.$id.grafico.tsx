@@ -375,6 +375,7 @@ function GraficoTemperaturaPage() {
 
                     return (
                       <ReferenceArea
+                        yAxisId="temp"
                         key={`prog-${idx}-${offset}`}
                         x1={x1}
                         x2={x2}
