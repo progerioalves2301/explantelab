@@ -323,9 +323,12 @@ function GraficoTemperaturaPage() {
                   />
                 )}
                 <Tooltip
-                  trigger="hover"
                   shared={true}
-                  formatter={((v: number, name: string) => {
+                  trigger="hover"
+                  isAnimationActive={false}
+                  filterNull={false}
+                  cursor={{ stroke: 'var(--primary)', strokeWidth: 1 }}
+                  formatter={((v: any, name: string) => {
                     if (name === "CO₂") return [`${Number(v).toFixed(0)} ppm`, "CO₂"];
                     if (name === "Umidade") return [`${Number(v).toFixed(1)}%`, "Umidade do Galão"];
                     return [`${Number(v).toFixed(2)}°C`, "Temperatura"];
