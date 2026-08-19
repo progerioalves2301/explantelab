@@ -445,12 +445,12 @@ function GraficoTemperaturaPage() {
                   type="linear"
                   dataKey="valor"
                   name="Temperatura"
-                  stroke="var(--fluid)"
+                  stroke="#ef4444" // red-500
                   strokeWidth={3}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   dot={false}
-                  activeDot={{ r: 6, fill: "var(--fluid)", stroke: "var(--card)", strokeWidth: 2 }}
+                  activeDot={{ r: 6, fill: "#ef4444", stroke: "var(--card)", strokeWidth: 2 }}
                   isAnimationActive={false}
                   connectNulls
                 />
