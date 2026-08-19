@@ -397,6 +397,7 @@ function GraficoTemperaturaPage() {
                 })}
                 {tempMin != null && (
                   <ReferenceLine
+                    yAxisId="temp"
                     y={Number(tempMin)}
                     stroke="hsl(217 91% 60%)"
                     strokeDasharray="4 4"
@@ -410,6 +411,7 @@ function GraficoTemperaturaPage() {
                 )}
                 {tempMax != null && (
                   <ReferenceLine
+                    yAxisId="temp"
                     y={Number(tempMax)}
                     stroke="hsl(0 84% 60%)"
                     strokeDasharray="4 4"
@@ -422,6 +424,7 @@ function GraficoTemperaturaPage() {
                   />
                 )}
                 <Line
+                  yAxisId="temp"
                   type="linear"
                   dataKey="valor"
                   name="Temperatura"
@@ -434,6 +437,22 @@ function GraficoTemperaturaPage() {
                   isAnimationActive={false}
                   connectNulls
                 />
+                {mostrarCo2 && temCo2 && (
+                  <Line
+                    yAxisId="co2"
+                    type="monotone"
+                    dataKey="ppm"
+                    name="CO₂"
+                    stroke="var(--leaf)"
+                    strokeWidth={2.5}
+                    strokeDasharray="6 3"
+                    dot={false}
+                    activeDot={{ r: 5, fill: "var(--leaf)", stroke: "var(--card)", strokeWidth: 2 }}
+                    isAnimationActive={false}
+                    connectNulls
+                  />
+                )}
+
               </LineChart>
             </ResponsiveContainer>
           )}
