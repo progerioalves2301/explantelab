@@ -390,6 +390,23 @@ function SalaRelatorio({
                 )}
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
+                {b.tem_co2 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-md border border-sky-500/20 bg-sky-500/5 p-2 text-sky-700 dark:text-sky-300">
+                      <div className="text-[9px] font-bold uppercase tracking-wider opacity-70">CO2</div>
+                      <div className="font-mono text-sm font-bold">
+                        {(b.valvulas as any).co2 != null ? `${Number((b.valvulas as any).co2).toFixed(0)} ppm` : "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-blue-500/20 bg-blue-500/5 p-2 text-blue-700 dark:text-blue-300">
+                      <div className="text-[9px] font-bold uppercase tracking-wider opacity-70">Umidade</div>
+                      <div className="font-mono text-sm font-bold">
+                        {(b.valvulas as any).umidade != null ? `${Number((b.valvulas as any).umidade).toFixed(0)}%` : "—"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                     Programação do ciclo
@@ -414,6 +431,7 @@ function SalaRelatorio({
                     </dd>
                   </dl>
                 </div>
+
 
                 <div>
                   <div className="mb-1 flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
