@@ -121,6 +121,7 @@ function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
         horarios_disparo: [] as string[],
       };
       const horarios = Array.isArray(c.horarios_disparo) ? c.horarios_disparo : [];
+      const cValvulas = (b.valvulas as any) || {};
       const horarioTexto = horarios.length > 0 ? horarios.join(", ") : "Nenhum horário programado";
       const horarioLinhas = doc.splitTextToSize(horarioTexto, contentWidth - 10) as string[];
       const infoLinhas = [
@@ -130,12 +131,15 @@ function gerarRelatorioPdf(salasComBancadas: SalaComBancadas[]) {
         `Retorno: ${fmtSegundos(c.tempo_retorno_segundos)}`,
 
         `Duração total: ${fmtSegundos(totalCiclo(b))}`,
+        b.tem_co2 && cValvulas.co2 != null ? `Nível CO2: ${Number(cValvulas.co2).toFixed(0)} ppm` : null,
+        b.tem_co2 && cValvulas.umidade != null ? `Umidade: ${Number(cValvulas.umidade).toFixed(0)}%` : null,
         `Horários de disparo: ${horarioLinhas[0] ?? ""}`,
         ...horarioLinhas.slice(1).map((linha) => `  ${linha}`),
         b.temp_min !== null || b.temp_max !== null
           ? `Faixa de temperatura: ${b.temp_min ?? "-"}°C … ${b.temp_max ?? "-"}°C`
           : null,
       ].filter(Boolean) as string[];
+
       const cardHeight = 13 + infoLinhas.length * 4.4;
 
       addPageIfNeeded(cardHeight + 4);
