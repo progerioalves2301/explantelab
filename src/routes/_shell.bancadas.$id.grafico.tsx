@@ -469,7 +469,6 @@ function GraficoTemperaturaPage() {
                     name="CO₂"
                     stroke="var(--leaf)"
                     strokeWidth={2.5}
-                    strokeDasharray="6 3"
                     dot={false}
                     activeDot={{ r: 5, fill: "var(--leaf)", stroke: "var(--card)", strokeWidth: 2 }}
                     isAnimationActive={false}
@@ -484,7 +483,6 @@ function GraficoTemperaturaPage() {
                     name="Umidade"
                     stroke="#0ea5e9"
                     strokeWidth={2}
-                    strokeDasharray="4 2"
                     dot={false}
                     activeDot={{ r: 4, fill: "#0ea5e9", stroke: "var(--card)", strokeWidth: 2 }}
                     isAnimationActive={false}
