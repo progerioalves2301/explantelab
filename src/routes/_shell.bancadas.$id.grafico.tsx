@@ -24,7 +24,7 @@ import {
   type PeriodoGrafico,
   type PontoTemperatura,
 } from "@/lib/medicoes.functions";
-import { listarHistoricoCo2, type PeriodoCo2 } from "@/lib/co2.functions";
+import { listarHistoricoCo2, type PeriodoCo2, type PontoCo2 } from "@/lib/co2.functions";
 import { listBancadas } from "@/lib/bancadas.functions";
 import { listarHistoricoLuz, type IntervaloLuz } from "@/lib/luz.functions";
 import type { Bancada } from "@/lib/types";
