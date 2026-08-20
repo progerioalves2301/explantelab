@@ -58,7 +58,7 @@ function GraficoPesoPage() {
   const listarHistorico = useServerFn(listarHistoricoPeso);
   const listar = useServerFn(listarBalancas);
 
-  const [periodo, setPeriodo] = useState<Periodo>("24h");
+  const [periodo, setPeriodo] = useState<Periodo>("6h");
   const [dados, setDados] = useState<HistoricoPeso | null>(null);
   const [balanca, setBalanca] = useState<Balanca | null>(null);
   const [mostrarTemp, setMostrarTemp] = useState(true);
@@ -281,7 +281,7 @@ function GraficoPesoPage() {
                     name="Peso (g)"
                     stroke="hsl(var(--primary))"
                     strokeWidth={2}
-                    dot={false}
+                    dot={(dados?.pontos.length ?? 0) <= 80 ? { r: 2 } : false}
                     connectNulls
                   />
                   {mostrarTemp && dados?.temperaturas.length ? (
