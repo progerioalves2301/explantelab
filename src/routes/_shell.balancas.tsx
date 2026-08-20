@@ -343,6 +343,31 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
       setLoading(false);
     }
   };
+  // Calibração de dois pontos (v2.6.17): corrige célula com zona morta/pré-carga,
+  // em que um ponto único acerta o peso calibrado mas erra os intermediários.
+  const handlePonto = async (ponto: 1 | 2, valor: string) => {
+    const alvo = Number(valor);
+    if (!alvo || !isFinite(alvo) || alvo <= 0) return toast.error("Informe o peso em gramas");
+    setLoading(true);
+    try {
+      await comandar({
+        data: {
+          balanca_id: balanca.id,
+          tipo: "BALANCA_CALIBRAR",
+          payload: { peso_conhecido_g: alvo, ponto },
+        },
+      });
+      toast.success(
+        ponto === 1
+          ? `Ponto 1 (${alvo} g) enviado. Agora troque para o peso maior.`
+          : `Ponto 2 (${alvo} g) enviado; a reta será calculada no ESP32.`,
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao enviar ponto");
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
 
