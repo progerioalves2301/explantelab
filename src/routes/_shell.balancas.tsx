@@ -434,13 +434,6 @@ function NovaBalancaDialog({ bancadas, onDone, criar }: { bancadas: Bancada[], o
             </SelectContent>
           </Select>
         </div>
-        {pairingCode && (
-          <div className="space-y-3 rounded-md border p-4 text-center">
-            <Label>Código de pareamento</Label>
-            <div className="font-mono text-4xl font-bold tracking-widest">{pairingCode}</div>
-            <p className="text-xs text-muted-foreground">Digite no portal VitroCeres do ESP32. Não é necessário copiar token.</p>
-          </div>
-        )}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Estabilização (min)</Label>
@@ -453,13 +446,17 @@ function NovaBalancaDialog({ bancadas, onDone, criar }: { bancadas: Bancada[], o
             <p className="text-[10px] text-muted-foreground">Delta máximo entre leituras.</p>
           </div>
         </div>
+        <p className="text-[11px] text-muted-foreground">
+          Não há código separado: ao associar a balança a uma prateleira já pareada, o ESP32 dela passa a enviar o peso automaticamente.
+        </p>
       </div>
       <DialogFooter className="mt-6">
-        <Button variant="outline" onClick={onDone} disabled={saving}>{pairingCode ? "Concluir" : "Cancelar"}</Button>
-        {!pairingCode && <Button onClick={handleSalvar} disabled={saving}>
-          {saving ? "Salvando..." : "Cadastrar e gerar código"}
-        </Button>}
+        <Button variant="outline" onClick={onDone} disabled={saving}>Cancelar</Button>
+        <Button onClick={handleSalvar} disabled={saving}>
+          {saving ? "Salvando..." : "Cadastrar"}
+        </Button>
       </DialogFooter>
+
     </DialogContent>
   );
 }
