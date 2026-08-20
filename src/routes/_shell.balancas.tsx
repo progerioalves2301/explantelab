@@ -460,6 +460,46 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
           </div>
         </div>
 
+        {/* Calibração de dois pontos — firmware 2.6.17+ */}
+        <div className="space-y-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
+          <div className="space-y-1">
+            <Label>Calibração de 2 pontos (recomendada)</Label>
+            <p className="text-[10px] text-muted-foreground">
+              Corrige célula com zona morta (acerta 1 kg mas erra pesos menores).
+              Requer firmware <strong>2.6.17</strong>. Faça a <strong>Tara</strong> vazia,
+              coloque o peso menor e grave o Ponto 1; troque pelo peso maior e grave o Ponto 2.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              step="1"
+              value={ponto1}
+              onChange={e => setPonto1(e.target.value)}
+              placeholder="218"
+              className="font-mono"
+            />
+            <Button variant="outline" onClick={() => handlePonto(1, ponto1)} disabled={loading}>
+              Ponto 1
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              step="1"
+              value={ponto2}
+              onChange={e => setPonto2(e.target.value)}
+              placeholder="1000"
+              className="font-mono"
+            />
+            <Button onClick={() => handlePonto(2, ponto2)} disabled={loading}>
+              Ponto 2 e calcular
+            </Button>
+          </div>
+        </div>
+
+
+
       </div>
 
       <DialogFooter className="pt-4 border-t">
