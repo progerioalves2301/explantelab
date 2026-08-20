@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Scale, Plus, Trash2, Pencil, CheckCircle2, XCircle, Info, RefreshCw, LayoutGrid, KeyRound, Settings2 } from "lucide-react";
+import { Scale, Plus, Trash2, Pencil, RefreshCw, LayoutGrid, KeyRound, Settings2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { listarBalancas, criarBalanca, editarBalanca, excluirBalanca, enviarComandoBalanca, type Balanca } from "@/lib/balancas.functions";
+import { listarBalancas, criarBalanca, editarBalanca, excluirBalanca, enviarComandoBalanca, regenerarPairingCodeBalanca, type Balanca } from "@/lib/balancas.functions";
 import { listBancadas } from "@/lib/bancadas.functions";
 import type { Bancada } from "@/lib/types";
 
@@ -47,6 +47,7 @@ function BalancasPage() {
   const addBalanca = useServerFn(criarBalanca);
   const modBalanca = useServerFn(editarBalanca);
   const delBalanca = useServerFn(excluirBalanca);
+  const gerarPareamento = useServerFn(regenerarPairingCodeBalanca);
 
   const [balancas, setBalancas] = useState<Balanca[]>([]);
   const [bancadas, setBancadas] = useState<Bancada[]>([]);
@@ -54,6 +55,7 @@ function BalancasPage() {
   const [openNova, setOpenNova] = useState(false);
   const [editing, setEditing] = useState<Balanca | null>(null);
   const [adjusting, setAdjusting] = useState<Balanca | null>(null);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
 
   const carregar = async () => {
     setLoading(true);
@@ -77,6 +79,15 @@ function BalancasPage() {
       setBalancas(prev => prev.filter(b => b.id !== id));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao excluir");
+    }
+  };
+
+  const handleParear = async (balancaId: string) => {
+    try {
+      const result = await gerarPareamento({ data: { balanca_id: balancaId } });
+      setPairingCode(result.pairing_code);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao gerar código");
     }
   };
 
@@ -174,9 +185,9 @@ function BalancasPage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground flex items-center gap-1">
-                      <KeyRound className="h-3 w-3" /> Token:
+                      <KeyRound className="h-3 w-3" /> Pareamento:
                     </span>
-                    <span className="font-mono text-[9px] truncate ml-2 max-w-[120px]">{b.device_token}</span>
+                    <span className="font-medium">{b.paired_at ? "Concluído" : "Pendente"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Estabilização:</span>
@@ -185,6 +196,9 @@ function BalancasPage() {
                 </div>
 
                 <div className="flex gap-2 pt-2">
+                  <Button size="sm" variant="outline" onClick={() => handleParear(b.id)} title="Gerar código de pareamento">
+                    <KeyRound className="h-3.5 w-3.5" />
+                  </Button>
                   <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditing(b)}>
                     <Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar
                   </Button>
@@ -236,6 +250,22 @@ function BalancasPage() {
             onDone={() => setAdjusting(null)}
           />
         )}
+      </Dialog>
+      <Dialog open={!!pairingCode} onOpenChange={open => !open && setPairingCode(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Código de pareamento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-center">
+            <div className="font-mono text-4xl font-bold tracking-widest">{pairingCode}</div>
+            <p className="text-sm text-muted-foreground">Digite este código no portal VitroCeres do ESP32. Ele é válido por 24 horas e usado uma única vez.</p>
+            <Button className="w-full" onClick={async () => {
+              if (!pairingCode) return;
+              await navigator.clipboard.writeText(pairingCode);
+              toast.success("Código copiado");
+            }}><Copy className="mr-2 h-4 w-4" />Copiar código</Button>
+          </div>
+        </DialogContent>
       </Dialog>
     </div>
   );
@@ -384,27 +414,25 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
 function NovaBalancaDialog({ bancadas, onDone, criar }: { bancadas: Bancada[], onDone: () => void, criar: any }) {
   const [nome, setNome] = useState("");
   const [bancadaId, setBancadaId] = useState(SEM_LAB);
-  const [token, setToken] = useState("");
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [estabilizacao, setEstabilizacao] = useState("5");
   const [outlier, setOutlier] = useState("10.0");
   const [saving, setSaving] = useState(false);
 
   const handleSalvar = async () => {
     if (!nome.trim()) return toast.error("Informe o nome");
-    if (!token.trim()) return toast.error("Informe o token do dispositivo");
     setSaving(true);
     try {
-      await criar({
+      const result = await criar({
         data: {
           nome: nome.trim(),
           bancada_associada_id: bancadaId === SEM_LAB ? null : bancadaId,
-          device_token: token.trim(),
           minutos_estabilizacao: Number(estabilizacao),
           outlier_delta_g: Number(outlier),
         }
       });
-      toast.success("Balança cadastrada");
-      onDone();
+      setPairingCode(result.pairing_code);
+      toast.success("Balança cadastrada; use o código para parear");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao cadastrar");
     } finally {
@@ -432,10 +460,13 @@ function NovaBalancaDialog({ bancadas, onDone, criar }: { bancadas: Bancada[], o
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label>Token do Dispositivo (colado no portal Wi-Fi) *</Label>
-          <Input placeholder="Token alfanumérico longo" value={token} onChange={e => setToken(e.target.value)} />
-        </div>
+        {pairingCode && (
+          <div className="space-y-3 rounded-md border p-4 text-center">
+            <Label>Código de pareamento</Label>
+            <div className="font-mono text-4xl font-bold tracking-widest">{pairingCode}</div>
+            <p className="text-xs text-muted-foreground">Digite no portal VitroCeres do ESP32. Não é necessário copiar token.</p>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Estabilização (min)</Label>
@@ -450,10 +481,10 @@ function NovaBalancaDialog({ bancadas, onDone, criar }: { bancadas: Bancada[], o
         </div>
       </div>
       <DialogFooter className="mt-6">
-        <Button variant="outline" onClick={onDone} disabled={saving}>Cancelar</Button>
-        <Button onClick={handleSalvar} disabled={saving}>
-          {saving ? "Salvando..." : "Cadastrar"}
-        </Button>
+        <Button variant="outline" onClick={onDone} disabled={saving}>{pairingCode ? "Concluir" : "Cancelar"}</Button>
+        {!pairingCode && <Button onClick={handleSalvar} disabled={saving}>
+          {saving ? "Salvando..." : "Cadastrar e gerar código"}
+        </Button>}
       </DialogFooter>
     </DialogContent>
   );

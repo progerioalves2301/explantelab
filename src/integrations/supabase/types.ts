@@ -249,6 +249,9 @@ export type Database = {
           minutos_estabilizacao: number
           nome: string
           outlier_delta_g: number
+          paired_at: string | null
+          pairing_code: string | null
+          pairing_expires_at: string | null
           residuo_ultimo_ciclo_g: number | null
           tara_g: number
           ultima_leitura_g: number | null
@@ -266,6 +269,9 @@ export type Database = {
           minutos_estabilizacao?: number
           nome: string
           outlier_delta_g?: number
+          paired_at?: string | null
+          pairing_code?: string | null
+          pairing_expires_at?: string | null
           residuo_ultimo_ciclo_g?: number | null
           tara_g?: number
           ultima_leitura_g?: number | null
@@ -283,6 +289,9 @@ export type Database = {
           minutos_estabilizacao?: number
           nome?: string
           outlier_delta_g?: number
+          paired_at?: string | null
+          pairing_code?: string | null
+          pairing_expires_at?: string | null
           residuo_ultimo_ciclo_g?: number | null
           tara_g?: number
           ultima_leitura_g?: number | null

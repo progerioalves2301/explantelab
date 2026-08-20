@@ -7,7 +7,7 @@ export type Balanca = {
   id: string;
   nome: string;
   bancada_associada_id: string | null;
-  device_token: string;
+  paired_at: string | null;
   ativa: boolean;
   fator_calibracao: number;
   tara_g: number;
@@ -25,7 +25,7 @@ export const listarBalancas = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("balancas")
-      .select("*")
+      .select("id, nome, bancada_associada_id, ativa, fator_calibracao, tara_g, ultima_leitura_g, ultima_sync, ultimo_ciclo_fim, minutos_estabilizacao, outlier_delta_g, residuo_ultimo_ciclo_g, paired_at, created_at")
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []) as Balanca[];
@@ -34,7 +34,6 @@ export const listarBalancas = createServerFn({ method: "GET" })
 const criarBalancaSchema = z.object({
   nome: z.string().min(2).max(60),
   bancada_associada_id: z.string().uuid().nullable().optional(),
-  device_token: z.string().min(10),
   minutos_estabilizacao: z.number().int().min(0).max(60).optional(),
   outlier_delta_g: z.number().min(0.1).max(1000).optional(),
 });
@@ -43,19 +42,69 @@ export const criarBalanca = createServerFn({ method: "POST" })
   .middleware([requireTecnico])
   .inputValidator((data: z.infer<typeof criarBalancaSchema>) => criarBalancaSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase
+    const raw = new Uint8Array(32);
+    crypto.getRandomValues(raw);
+    const deviceToken = btoa(String.fromCharCode(...raw))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+
+    let pairingCode = "";
+    let row: Record<string, unknown> | null = null;
+    let lastError = "";
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const random = new Uint32Array(1);
+      crypto.getRandomValues(random);
+      pairingCode = String(random[0] % 1_000_000).padStart(6, "0");
+      const result = await context.supabase
       .from("balancas")
       .insert({
         nome: data.nome,
         bancada_associada_id: data.bancada_associada_id || null,
-        device_token: data.device_token,
+        device_token: deviceToken,
+        pairing_code: pairingCode,
+        pairing_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         minutos_estabilizacao: data.minutos_estabilizacao ?? 5,
         outlier_delta_g: data.outlier_delta_g ?? 10.0,
       } as any)
       .select("*")
       .single();
-    if (error) throw new Error(error.message);
-    return row as Balanca;
+      if (!result.error) {
+        row = result.data as Record<string, unknown>;
+        lastError = "";
+        break;
+      }
+      lastError = result.error.message;
+      if (!/pairing_code/i.test(lastError)) break;
+    }
+    if (!row) throw new Error(lastError || "Falha ao cadastrar balança");
+    return { balanca: row as unknown as Balanca, pairing_code: pairingCode };
+  });
+
+export const regenerarPairingCodeBalanca = createServerFn({ method: "POST" })
+  .middleware([requireTecnico])
+  .inputValidator(z.object({ balanca_id: z.string().uuid() }))
+  .handler(async ({ data, context }) => {
+    let pairingCode = "";
+    let lastError = "";
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const random = new Uint32Array(1);
+      crypto.getRandomValues(random);
+      pairingCode = String(random[0] % 1_000_000).padStart(6, "0");
+      const { error } = await context.supabase
+        .from("balancas")
+        .update({ pairing_code: pairingCode, pairing_expires_at: expiresAt })
+        .eq("id", data.balanca_id);
+      if (!error) {
+        lastError = "";
+        break;
+      }
+      lastError = error.message;
+      if (!/pairing_code/i.test(lastError)) break;
+    }
+    if (lastError) throw new Error(lastError);
+    return { pairing_code: pairingCode, expires_at: expiresAt };
   });
 
 export const editarBalanca = createServerFn({ method: "POST" })
