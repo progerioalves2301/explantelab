@@ -319,6 +319,48 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
     }
   };
 
+  const handleCalibrarComPeso = async () => {
+    const alvo = Number(pesoConhecido);
+    if (!alvo || !isFinite(alvo) || alvo <= 0) return toast.error("Informe o peso conhecido em gramas");
+    setLoading(true);
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data } = await supabase
+        .from("balancas")
+        .select("ultima_leitura_g")
+        .eq("id", balanca.id)
+        .maybeSingle();
+      const lido = data?.ultima_leitura_g;
+      if (lido == null || !isFinite(Number(lido)) || Number(lido) === 0) {
+        toast.error("Sem leitura válida da balança. Aguarde o envio do ESP32 e tente de novo.");
+        return;
+      }
+      setLeitura(Number(lido));
+      const fatorAtual = Number(fator) || 1;
+      const novoFator = Number(((fatorAtual * Number(lido)) / alvo).toFixed(4));
+      if (!isFinite(novoFator) || novoFator === 0) {
+        toast.error("Não foi possível calcular o fator");
+        return;
+      }
+      await modBalanca({ data: { id: balanca.id, fator_calibracao: novoFator } as any });
+      await comandar({
+        data: {
+          balanca_id: balanca.id,
+          tipo: "BALANCA_CALIBRAR",
+          payload: { fator: novoFator },
+        },
+      });
+      setFator(String(novoFator));
+      toast.success(`Novo fator calculado: ${novoFator}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao calibrar");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
   return (
     <DialogContent className="sm:max-w-[425px]">
       <DialogHeader>
