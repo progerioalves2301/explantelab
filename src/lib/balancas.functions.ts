@@ -74,18 +74,35 @@ export const editarBalanca = createServerFn({ method: "POST" })
     ativa: z.boolean().optional(),
     minutos_estabilizacao: z.number().int().min(0).max(60).optional(),
     outlier_delta_g: z.number().min(0.1).max(1000).optional(),
+    fator_calibracao: z.number().positive().max(1000000).optional(),
+    tara_g: z.number().optional(),
   }))
   .handler(async ({ data, context }) => {
-    const { id, ...patch } = data;
+    const { id, ...rest } = data;
+    const patch = Object.fromEntries(
+      Object.entries(rest).filter(([, v]) => v !== undefined)
+    );
+    if (Object.keys(patch).length === 0) {
+      const { data: atual, error: errAtual } = await context.supabase
+        .from("balancas")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (errAtual) throw new Error(errAtual.message);
+      if (!atual) throw new Error("Balança não encontrada");
+      return atual as unknown as Balanca;
+    }
     const { data: row, error } = await context.supabase
       .from("balancas")
       .update(patch as any)
       .eq("id", id)
       .select("*")
-      .single();
+      .maybeSingle();
     if (error) throw new Error(error.message);
-    return row as Balanca;
+    if (!row) throw new Error("Balança não encontrada ou sem permissão para editar");
+    return row as unknown as Balanca;
   });
+
 
 export const excluirBalanca = createServerFn({ method: "POST" })
   .middleware([requireTecnico])
