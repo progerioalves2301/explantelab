@@ -2,10 +2,20 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-20 — Firmware v2.6.14: diagnóstico e envio rápido da balança
+
+- **Causa do 0,00 g**: o ESP32 estava conectado e consultando o servidor, mas a balança sem tara/calibração produzia um valor bruto fora do intervalo aceito; a leitura era rejeitada antes de chegar ao painel.
+- **Correção**: o endpoint aceita temporariamente a faixa bruta do HX711, inclusive valores negativos, permitindo visualizar, tarar e calibrar o sensor.
+- **Atualização**: o peso ao vivo passa a ser enviado a cada 10 segundos, inclusive durante o ciclo hidráulico; o histórico estável continua protegido.
+- **Ação**: publicar o app e gravar `firmware/bancada_esp32_v2_6_14/bancada_esp32_v2_6_14.ino` para obter atualização a cada 10 segundos. Depois, executar Tara e Calibração em Balanças → Ajustes.
+
+---
+
 ## 2026-08-20 — Firmware v2.6.13: balança sem código próprio
 
 - **Um único pareamento**: existe apenas o código de 6 dígitos da prateleira. O campo "Código da balança" foi removido do portal Wi-Fi.
 - **Como funciona**: após parear a prateleira, o ESP32 chama `GET /api/public/scale/claim` com o token da prateleira e recebe automaticamente a credencial da balança ativa associada. Se a balança for cadastrada depois, a tentativa é repetida a cada 5 minutos.
+- **Correção do envio de peso**: as rotinas de status e leitura agora localizam a sala pela prateleira associada. Antes, o erro nessa consulta mantinha a amostragem bloqueada e nenhum peso era enviado.
 - **Painel**: a tela Balanças não gera mais códigos; basta cadastrar a balança e associá-la a uma prateleira.
 - **Ação**: gravar `firmware/bancada_esp32_v2_6_13/bancada_esp32_v2_6_13.ino` e garantir que a balança esteja associada à prateleira correta.
 

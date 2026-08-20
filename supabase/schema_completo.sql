@@ -2948,9 +2948,9 @@ SET search_path = public
 AS $$
 DECLARE
   b RECORD;
+  v_laboratorio_id uuid;
   v_qtd_ativas int;
   v_espera_ate timestamptz;
-  v_amostrar boolean;
   v_motivo text;
 BEGIN
   SELECT * INTO b
@@ -2961,33 +2961,34 @@ BEGIN
     RAISE EXCEPTION 'invalid_token';
   END IF;
 
+  SELECT laboratorio_id INTO v_laboratorio_id
+    FROM public.bancadas
+   WHERE id = b.bancada_associada_id;
+
   SELECT COUNT(*) INTO v_qtd_ativas
     FROM public.bancadas
-   WHERE laboratorio_id = b.laboratorio_id
+   WHERE laboratorio_id = v_laboratorio_id
      AND status IN ('Injetando','Retornando','Pausado','Alivio');
 
   v_espera_ate := b.ultimo_ciclo_fim + make_interval(mins => b.minutos_estabilizacao);
 
   IF v_qtd_ativas > 0 THEN
-    v_amostrar := false;
-    v_motivo := 'ciclo_hidraulico_ativo';
+    v_motivo := 'peso_ao_vivo_ciclo_ativo';
   ELSIF b.ultimo_ciclo_fim IS NOT NULL AND now() < v_espera_ate THEN
-    v_amostrar := false;
-    v_motivo := 'aguardando_estabilizacao';
+    v_motivo := 'peso_ao_vivo_estabilizando';
   ELSE
-    v_amostrar := true;
     v_motivo := 'ok';
   END IF;
 
   RETURN jsonb_build_object(
-    'amostrar', v_amostrar,
+    'amostrar', true,
     'motivo', v_motivo,
     'espera_ate', v_espera_ate,
     'minutos_estabilizacao', b.minutos_estabilizacao,
     'outlier_delta_g', b.outlier_delta_g,
     'residuo_ultimo_ciclo_g', b.residuo_ultimo_ciclo_g,
     'balanca_id', b.id,
-    'laboratorio_id', b.laboratorio_id
+    'laboratorio_id', v_laboratorio_id
   );
 END;
 $$;
@@ -3008,6 +3009,7 @@ AS $$
 DECLARE
   b RECORD;
   v_muda RECORD;
+  v_laboratorio_id uuid;
   v_qtd_ativas int;
   v_fase text;
   v_ultima numeric;
@@ -3018,13 +3020,17 @@ BEGIN
    WHERE device_token = _device_token AND ativa = true LIMIT 1;
   IF NOT FOUND THEN RAISE EXCEPTION 'invalid_token'; END IF;
 
+  SELECT laboratorio_id INTO v_laboratorio_id
+    FROM public.bancadas
+   WHERE id = b.bancada_associada_id;
+
   UPDATE public.balancas
      SET ultima_leitura_g = _valor_g, ultima_sync = now()
    WHERE id = b.id;
 
   SELECT COUNT(*) INTO v_qtd_ativas
     FROM public.bancadas
-   WHERE laboratorio_id = b.laboratorio_id
+   WHERE laboratorio_id = v_laboratorio_id
      AND status IN ('Injetando','Retornando','Pausado','Alivio');
   IF v_qtd_ativas > 0 THEN
     RETURN jsonb_build_object('ok', false, 'motivo', 'ciclo_hidraulico_ativo');
@@ -3041,7 +3047,7 @@ BEGIN
 
   SELECT * INTO v_muda FROM public.mudas
    WHERE identificador = _muda_identificador
-     AND laboratorio_id = b.laboratorio_id
+     AND laboratorio_id = v_laboratorio_id
      AND ativa = true
    ORDER BY data_inicio DESC LIMIT 1;
   IF NOT FOUND THEN
@@ -3065,7 +3071,7 @@ BEGIN
   INSERT INTO public.medicoes_peso
     (muda_id, laboratorio_id, balanca_id, valor_g, origem, fase_bancada, residuo_estimado_g)
   VALUES
-    (v_muda.id, b.laboratorio_id, b.id, _valor_g, 'hx711', v_fase, b.residuo_ultimo_ciclo_g);
+    (v_muda.id, v_laboratorio_id, b.id, _valor_g, 'hx711', v_fase, b.residuo_ultimo_ciclo_g);
 
   -- Se é a primeira leitura pós-ciclo (dentro de +5 min da janela), registra
   -- como resíduo estimado do ciclo: média das próximas leituras estáveis não
