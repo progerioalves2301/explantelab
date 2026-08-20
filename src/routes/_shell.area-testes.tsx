@@ -45,26 +45,33 @@ function AreaTestesPage() {
         .order("ultima_medicao_em", { ascending: false, nullsFirst: false });
       if (!alive || !data) return;
       const map: Record<string, { ppm: number; umid: number | null }> = {};
-      for (const r of data as {
-        laboratorio_id: string;
-        ultima_leitura_ppm: number | null;
-        ultima_umidade_pct: number | null;
-      }[]) {
-        if (r.ultima_leitura_ppm == null) continue;
-        if (map[r.laboratorio_id] == null)
+      for (const r of data as any[]) {
+        if (map[r.laboratorio_id] == null) {
           map[r.laboratorio_id] = {
-            ppm: Number(r.ultima_leitura_ppm),
+            ppm: r.ultima_leitura_ppm != null ? Number(r.ultima_leitura_ppm) : 0,
             umid: r.ultima_umidade_pct != null ? Number(r.ultima_umidade_pct) : null
           };
+        }
       }
-
       setCo2ByLab(map);
     };
+
     void carregarCo2();
-    const id = setInterval(() => void carregarCo2(), 30_000);
+    
+    const channel = supabase
+      .channel("co2-test-updates")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "sensores_co2" },
+        () => void carregarCo2()
+      )
+      .subscribe();
+
+    const id = setInterval(() => void carregarCo2(), 60_000);
     return () => {
       alive = false;
       clearInterval(id);
+      supabase.removeChannel(channel);
     };
   }, []);
 
