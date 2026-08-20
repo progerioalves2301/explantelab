@@ -2,6 +2,15 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-20 — Firmware v2.6.13: balança sem código próprio
+
+- **Um único pareamento**: existe apenas o código de 6 dígitos da prateleira. O campo "Código da balança" foi removido do portal Wi-Fi.
+- **Como funciona**: após parear a prateleira, o ESP32 chama `GET /api/public/scale/claim` com o token da prateleira e recebe automaticamente a credencial da balança ativa associada. Se a balança for cadastrada depois, a tentativa é repetida a cada 5 minutos.
+- **Painel**: a tela Balanças não gera mais códigos; basta cadastrar a balança e associá-la a uma prateleira.
+- **Ação**: gravar `firmware/bancada_esp32_v2_6_13/bancada_esp32_v2_6_13.ino` e garantir que a balança esteja associada à prateleira correta.
+
+---
+
 ## 2026-08-20 — Firmware v2.6.12: balança por código de pareamento
 
 - **Sem token manual**: o cadastro da balança gera um código de 6 dígitos válido por 24 horas. O ESP32 troca esse código por uma credencial interna e a salva automaticamente.
