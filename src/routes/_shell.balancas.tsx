@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Scale, Plus, Trash2, Pencil, RefreshCw, LayoutGrid, KeyRound, Settings2, Copy } from "lucide-react";
+import { Scale, Plus, Trash2, Pencil, RefreshCw, LayoutGrid, KeyRound, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

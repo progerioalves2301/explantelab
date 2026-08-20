@@ -35,7 +35,6 @@ import { Route as ShellBancadasNovaRouteImport } from './routes/_shell.bancadas.
 import { Route as ShellAlertasDestinosRouteImport } from './routes/_shell.alertas.destinos'
 import { Route as ApiPublicScaleStatusRouteImport } from './routes/api/public/scale.status'
 import { Route as ApiPublicScaleReadingRouteImport } from './routes/api/public/scale.reading'
-import { Route as ApiPublicScalePairRouteImport } from './routes/api/public/scale.pair'
 import { Route as ApiPublicScaleClaimRouteImport } from './routes/api/public/scale.claim'
 import { Route as ApiPublicHooksCheckAlertsRouteImport } from './routes/api/public/hooks/check-alerts'
 import { Route as ApiPublicCo2ReadingRouteImport } from './routes/api/public/co2.reading'
@@ -176,11 +175,6 @@ const ApiPublicScaleReadingRoute = ApiPublicScaleReadingRouteImport.update({
   path: '/api/public/scale/reading',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicScalePairRoute = ApiPublicScalePairRouteImport.update({
-  id: '/api/public/scale/pair',
-  path: '/api/public/scale/pair',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicScaleClaimRoute = ApiPublicScaleClaimRouteImport.update({
   id: '/api/public/scale/claim',
   path: '/api/public/scale/claim',
@@ -261,7 +255,6 @@ export interface FileRoutesByFullPath {
   '/api/public/co2/reading': typeof ApiPublicCo2ReadingRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
   '/api/public/scale/claim': typeof ApiPublicScaleClaimRoute
-  '/api/public/scale/pair': typeof ApiPublicScalePairRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
   '/api/public/scale/status': typeof ApiPublicScaleStatusRoute
 }
@@ -298,7 +291,6 @@ export interface FileRoutesByTo {
   '/api/public/co2/reading': typeof ApiPublicCo2ReadingRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
   '/api/public/scale/claim': typeof ApiPublicScaleClaimRoute
-  '/api/public/scale/pair': typeof ApiPublicScalePairRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
   '/api/public/scale/status': typeof ApiPublicScaleStatusRoute
 }
@@ -337,7 +329,6 @@ export interface FileRoutesById {
   '/api/public/co2/reading': typeof ApiPublicCo2ReadingRoute
   '/api/public/hooks/check-alerts': typeof ApiPublicHooksCheckAlertsRoute
   '/api/public/scale/claim': typeof ApiPublicScaleClaimRoute
-  '/api/public/scale/pair': typeof ApiPublicScalePairRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
   '/api/public/scale/status': typeof ApiPublicScaleStatusRoute
 }
@@ -376,7 +367,6 @@ export interface FileRouteTypes {
     | '/api/public/co2/reading'
     | '/api/public/hooks/check-alerts'
     | '/api/public/scale/claim'
-    | '/api/public/scale/pair'
     | '/api/public/scale/reading'
     | '/api/public/scale/status'
   fileRoutesByTo: FileRoutesByTo
@@ -413,7 +403,6 @@ export interface FileRouteTypes {
     | '/api/public/co2/reading'
     | '/api/public/hooks/check-alerts'
     | '/api/public/scale/claim'
-    | '/api/public/scale/pair'
     | '/api/public/scale/reading'
     | '/api/public/scale/status'
   id:
@@ -451,7 +440,6 @@ export interface FileRouteTypes {
     | '/api/public/co2/reading'
     | '/api/public/hooks/check-alerts'
     | '/api/public/scale/claim'
-    | '/api/public/scale/pair'
     | '/api/public/scale/reading'
     | '/api/public/scale/status'
   fileRoutesById: FileRoutesById
@@ -469,7 +457,6 @@ export interface RootRouteChildren {
   ApiPublicCo2ReadingRoute: typeof ApiPublicCo2ReadingRoute
   ApiPublicHooksCheckAlertsRoute: typeof ApiPublicHooksCheckAlertsRoute
   ApiPublicScaleClaimRoute: typeof ApiPublicScaleClaimRoute
-  ApiPublicScalePairRoute: typeof ApiPublicScalePairRoute
   ApiPublicScaleReadingRoute: typeof ApiPublicScaleReadingRoute
   ApiPublicScaleStatusRoute: typeof ApiPublicScaleStatusRoute
 }
@@ -658,13 +645,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicScaleReadingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/scale/pair': {
-      id: '/api/public/scale/pair'
-      path: '/api/public/scale/pair'
-      fullPath: '/api/public/scale/pair'
-      preLoaderRoute: typeof ApiPublicScalePairRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/scale/claim': {
       id: '/api/public/scale/claim'
       path: '/api/public/scale/claim'
@@ -804,7 +784,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCo2ReadingRoute: ApiPublicCo2ReadingRoute,
   ApiPublicHooksCheckAlertsRoute: ApiPublicHooksCheckAlertsRoute,
   ApiPublicScaleClaimRoute: ApiPublicScaleClaimRoute,
-  ApiPublicScalePairRoute: ApiPublicScalePairRoute,
   ApiPublicScaleReadingRoute: ApiPublicScaleReadingRoute,
   ApiPublicScaleStatusRoute: ApiPublicScaleStatusRoute,
 }
