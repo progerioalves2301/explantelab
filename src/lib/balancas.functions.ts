@@ -151,3 +151,157 @@ export const enviarComandoBalanca = createServerFn({ method: "POST" })
     if (cErr) throw new Error(cErr.message);
     return { ok: true };
   });
+
+export type PontoPeso = { minuto: string; valor_g: number };
+export type PontoTemp = { minuto: string; valor: number };
+export type FaseCiclo = { status: string; inicio: string; fim: string };
+
+export type HistoricoPeso = {
+  pontos: PontoPeso[];
+  temperaturas: PontoTemp[];
+  fases: FaseCiclo[];
+  bancada_nome: string | null;
+};
+
+export const listarHistoricoPeso = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      balanca_id: z.string().uuid(),
+      periodo: z.enum(["6h", "24h", "7d", "30d"]),
+    }),
+  )
+  .handler(async ({ data, context }): Promise<HistoricoPeso> => {
+    const horasPorPeriodo: Record<string, number> = {
+      "6h": 6,
+      "24h": 24,
+      "7d": 24 * 7,
+      "30d": 24 * 30,
+    };
+    const bucketPorPeriodo: Record<string, number> = {
+      "6h": 1,
+      "24h": 2,
+      "7d": 15,
+      "30d": 60,
+    };
+    const horas = horasPorPeriodo[data.periodo] ?? 24;
+    const bucketMin = bucketPorPeriodo[data.periodo] ?? 1;
+    const desde = new Date(Date.now() - horas * 3600 * 1000).toISOString();
+
+    // 1. Histórico de peso (paginado para vencer o teto de 1000 linhas)
+    const brutos: PontoPeso[] = [];
+    const pageSize = 1000;
+    for (let i = 0; i < 60; i++) {
+      const { data: rows, error } = await context.supabase
+        .from("medicoes_balanca")
+        .select("minuto, valor_g")
+        .eq("balanca_id", data.balanca_id)
+        .gte("minuto", desde)
+        .order("minuto", { ascending: true })
+        .range(i * pageSize, (i + 1) * pageSize - 1);
+      if (error) throw new Error(error.message);
+      const batch = rows ?? [];
+      for (const r of batch) {
+        brutos.push({ minuto: r.minuto as string, valor_g: Number(r.valor_g) });
+      }
+      if (batch.length < pageSize) break;
+    }
+
+    const agregar = <T extends { minuto: string }>(
+      lista: T[],
+      pegar: (t: T) => number,
+    ) => {
+      if (bucketMin <= 1) {
+        return lista.map((p) => ({ minuto: p.minuto, valor: pegar(p) }));
+      }
+      const bucketMs = bucketMin * 60_000;
+      const buckets = new Map<number, { soma: number; n: number }>();
+      for (const p of lista) {
+        const key =
+          Math.floor(new Date(p.minuto).getTime() / bucketMs) * bucketMs;
+        const cur = buckets.get(key) ?? { soma: 0, n: 0 };
+        cur.soma += pegar(p);
+        cur.n += 1;
+        buckets.set(key, cur);
+      }
+      return Array.from(buckets.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([k, v]) => ({
+          minuto: new Date(k).toISOString(),
+          valor: v.soma / v.n,
+        }));
+    };
+
+    const pontos: PontoPeso[] = agregar(brutos, (p) => p.valor_g).map((p) => ({
+      minuto: p.minuto,
+      valor_g: p.valor,
+    }));
+
+    // 2. Prateleira associada — temperatura e fases do ciclo
+    const { data: balanca, error: errB } = await context.supabase
+      .from("balancas")
+      .select("bancada_associada_id")
+      .eq("id", data.balanca_id)
+      .maybeSingle();
+    if (errB) throw new Error(errB.message);
+
+    const bancadaId = balanca?.bancada_associada_id ?? null;
+    if (!bancadaId) {
+      return { pontos, temperaturas: [], fases: [], bancada_nome: null };
+    }
+
+    const { data: bancada } = await context.supabase
+      .from("bancadas")
+      .select("nome")
+      .eq("id", bancadaId)
+      .maybeSingle();
+
+    const tempBrutas: { minuto: string; valor: number }[] = [];
+    for (let i = 0; i < 60; i++) {
+      const { data: rows, error } = await context.supabase
+        .from("medicoes_temperatura")
+        .select("minuto, valor")
+        .eq("bancada_id", bancadaId)
+        .gte("minuto", desde)
+        .gt("valor", -10)
+        .lt("valor", 85)
+        .order("minuto", { ascending: true })
+        .range(i * pageSize, (i + 1) * pageSize - 1);
+      if (error) break;
+      const batch = rows ?? [];
+      for (const r of batch) {
+        tempBrutas.push({ minuto: r.minuto as string, valor: Number(r.valor) });
+      }
+      if (batch.length < pageSize) break;
+    }
+    const temperaturas: PontoTemp[] = agregar(tempBrutas, (p) => p.valor);
+
+    // 3. Fases do ciclo hidráulico a partir do log de status
+    const { data: logs } = await context.supabase
+      .from("bancada_status_log")
+      .select("status, changed_at")
+      .eq("bancada_id", bancadaId)
+      .gte("changed_at", desde)
+      .order("changed_at", { ascending: true });
+
+    const fases: FaseCiclo[] = [];
+    const ativos = new Set(["Injetando", "Pausado", "Retornando", "Alivio"]);
+    const lista = logs ?? [];
+    for (let i = 0; i < lista.length; i++) {
+      const atual = lista[i]!;
+      if (!ativos.has(atual.status as string)) continue;
+      const fim = lista[i + 1]?.changed_at ?? new Date().toISOString();
+      fases.push({
+        status: atual.status as string,
+        inicio: atual.changed_at as string,
+        fim: fim as string,
+      });
+    }
+
+    return {
+      pontos,
+      temperaturas,
+      fases,
+      bancada_nome: (bancada?.nome as string | undefined) ?? null,
+    };
+  });
