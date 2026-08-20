@@ -666,6 +666,41 @@ export type Database = {
           },
         ]
       }
+      medicoes_balanca: {
+        Row: {
+          amostras: number
+          balanca_id: string
+          created_at: string
+          id: number
+          minuto: string
+          valor_g: number
+        }
+        Insert: {
+          amostras?: number
+          balanca_id: string
+          created_at?: string
+          id?: number
+          minuto: string
+          valor_g: number
+        }
+        Update: {
+          amostras?: number
+          balanca_id?: string
+          created_at?: string
+          id?: number
+          minuto?: string
+          valor_g?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicoes_balanca_balanca_id_fkey"
+            columns: ["balanca_id"]
+            isOneToOne: false
+            referencedRelation: "balancas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medicoes_co2: {
         Row: {
           created_at: string

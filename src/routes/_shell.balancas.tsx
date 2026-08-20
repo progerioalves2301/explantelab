@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Scale, Plus, Trash2, Pencil, RefreshCw, LayoutGrid, KeyRound, Settings2 } from "lucide-react";
+import { Scale, Plus, Trash2, Pencil, RefreshCw, LayoutGrid, KeyRound, Settings2, LineChart as LineChartIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -186,14 +186,19 @@ function BalancasPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 pt-2">
-
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Button asChild size="sm" variant="outline" className="flex-1">
+                    <Link to="/balancas/$id/grafico" params={{ id: b.id }}>
+                      <LineChartIcon className="mr-1.5 h-3.5 w-3.5" /> Gráfico
+                    </Link>
+                  </Button>
                   <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditing(b)}>
                     <Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar
                   </Button>
                   <Button size="sm" variant="outline" className="flex-1" onClick={() => setAdjusting(b)}>
                     <Settings2 className="mr-1.5 h-3.5 w-3.5" /> Ajustes
                   </Button>
+
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10">

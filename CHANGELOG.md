@@ -2,6 +2,16 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-20 — Gráfico de peso por balança
+
+- **Histórico de peso**: nova tabela `medicoes_balanca` guarda um ponto por minuto por balança (média das leituras do minuto, com contagem de amostras). Retenção de 90 dias, igual à temperatura.
+- **Gravação**: `scale_push_reading` passa a registrar sempre esse ponto, mesmo sem muda ativa e mesmo durante o ciclo hidráulico. As regras de `medicoes_peso` (muda, outlier, estabilização) continuam iguais.
+- **Nova tela**: `/balancas/{id}/grafico` mostra a curva de peso com seletor de período (6 h / 24 h / 7 d / 30 d), temperatura da prateleira associada em eixo secundário (ligável) e faixas sombreadas das fases do ciclo (injeção, pausa, retorno), além de cartões de peso atual, mínimo, máximo e variação.
+- **Acesso**: botão **Gráfico** no card de cada balança na tela Balanças.
+- **Ação**: nenhuma no firmware. O histórico começa a partir das próximas leituras enviadas.
+
+---
+
 ## 2026-08-20 — Firmware v2.6.15: tara e calibração da balança
 
 - **Causa do valor bruto persistente**: a v2.6.14 recebia os comandos do painel, porém `tratarComando()` não implementava `BALANCA_TARA` nem `BALANCA_CALIBRAR`; portanto o offset permanecia em zero e o fator permanecia em 1.
