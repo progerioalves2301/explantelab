@@ -55,7 +55,6 @@ function BalancasPage() {
   const [openNova, setOpenNova] = useState(false);
   const [editing, setEditing] = useState<Balanca | null>(null);
   const [adjusting, setAdjusting] = useState<Balanca | null>(null);
-  const [pairingCode, setPairingCode] = useState<string | null>(null);
 
   const carregar = async () => {
     setLoading(true);
@@ -388,7 +387,6 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
 function NovaBalancaDialog({ bancadas, onDone, criar }: { bancadas: Bancada[], onDone: () => void, criar: any }) {
   const [nome, setNome] = useState("");
   const [bancadaId, setBancadaId] = useState(SEM_LAB);
-  const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [estabilizacao, setEstabilizacao] = useState("5");
   const [outlier, setOutlier] = useState("10.0");
   const [saving, setSaving] = useState(false);
@@ -397,7 +395,7 @@ function NovaBalancaDialog({ bancadas, onDone, criar }: { bancadas: Bancada[], o
     if (!nome.trim()) return toast.error("Informe o nome");
     setSaving(true);
     try {
-      const result = await criar({
+      await criar({
         data: {
           nome: nome.trim(),
           bancada_associada_id: bancadaId === SEM_LAB ? null : bancadaId,
@@ -405,8 +403,8 @@ function NovaBalancaDialog({ bancadas, onDone, criar }: { bancadas: Bancada[], o
           outlier_delta_g: Number(outlier),
         }
       });
-      setPairingCode(result.pairing_code);
-      toast.success("Balança cadastrada; use o código para parear");
+      toast.success("Balança cadastrada");
+      onDone();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao cadastrar");
     } finally {
