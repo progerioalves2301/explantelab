@@ -6,6 +6,7 @@
 
 - **Um único pareamento**: existe apenas o código de 6 dígitos da prateleira. O campo "Código da balança" foi removido do portal Wi-Fi.
 - **Como funciona**: após parear a prateleira, o ESP32 chama `GET /api/public/scale/claim` com o token da prateleira e recebe automaticamente a credencial da balança ativa associada. Se a balança for cadastrada depois, a tentativa é repetida a cada 5 minutos.
+- **Correção do envio de peso**: as rotinas de status e leitura agora localizam a sala pela prateleira associada. Antes, o erro nessa consulta mantinha a amostragem bloqueada e nenhum peso era enviado.
 - **Painel**: a tela Balanças não gera mais códigos; basta cadastrar a balança e associá-la a uma prateleira.
 - **Ação**: gravar `firmware/bancada_esp32_v2_6_13/bancada_esp32_v2_6_13.ino` e garantir que a balança esteja associada à prateleira correta.
 
