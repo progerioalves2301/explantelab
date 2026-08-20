@@ -2,6 +2,16 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-20 — Firmware v2.6.17: calibração de 2 pontos (célula 5 kg)
+
+- **Problema**: com um único ponto de calibração, a célula de 5 kg acertava 1 kg mas mostrava ~18–31 g para 218–258 g. A reta ficava com deslocamento de ~200 g (zona morta/pré-carga da célula), o que nenhum ajuste de fator sozinho corrige.
+- **Correção**: o comando `BALANCA_CALIBRAR` aceita `ponto: 1 | 2`. O ESP32 grava as contagens brutas de dois pesos conhecidos em NVS e resolve a reta completa: `fator = (raw2 - raw1) / (peso2 - peso1)` e `zero = raw1 - peso1 × fator`. Assim ganho **e** deslocamento são corrigidos.
+- **Tara**: continua funcionando e agora invalida pontos antigos, evitando misturar calibrações.
+- **Painel**: em Balanças → Ajustes há o bloco "Calibração de 2 pontos": informar o peso menor → **Ponto 1**, trocar pelo peso maior → **Ponto 2 e calcular**.
+- **Ação**: gravar `firmware/bancada_esp32_v2_6_17/bancada_esp32_v2_6_17.ino`, fazer Tara vazia e usar os dois pontos (ex.: 218 g e 1000 g).
+
+---
+
 ## 2026-08-20 — Firmware v2.6.16: calibração direta no HX711
 
 - **Causa da escala incorreta**: a calibração automática era calculada no navegador com a última leitura enviada ao banco. Essa leitura podia pertencer a outro instante e produzir um fator incorreto; por isso uma massa de calibração parecia correta, mas outros pesos ficavam multiplicados.

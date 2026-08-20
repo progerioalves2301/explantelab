@@ -258,6 +258,9 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
   const [leitura, setLeitura] = useState<number | null>(balanca.ultima_leitura_g);
   const [fator, setFator] = useState(balanca.fator_calibracao.toString());
   const [pesoConhecido, setPesoConhecido] = useState("1000");
+  const [ponto1, setPonto1] = useState("218");
+  const [ponto2, setPonto2] = useState("1000");
+
 
 
   const handleTara = async () => {
@@ -336,6 +339,31 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
       toast.success(`Calibração de ${alvo} g enviada; aguarde a próxima leitura do ESP32.`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao calibrar");
+    } finally {
+      setLoading(false);
+    }
+  };
+  // Calibração de dois pontos (v2.6.17): corrige célula com zona morta/pré-carga,
+  // em que um ponto único acerta o peso calibrado mas erra os intermediários.
+  const handlePonto = async (ponto: 1 | 2, valor: string) => {
+    const alvo = Number(valor);
+    if (!alvo || !isFinite(alvo) || alvo <= 0) return toast.error("Informe o peso em gramas");
+    setLoading(true);
+    try {
+      await comandar({
+        data: {
+          balanca_id: balanca.id,
+          tipo: "BALANCA_CALIBRAR",
+          payload: { peso_conhecido_g: alvo, ponto },
+        },
+      });
+      toast.success(
+        ponto === 1
+          ? `Ponto 1 (${alvo} g) enviado. Agora troque para o peso maior.`
+          : `Ponto 2 (${alvo} g) enviado; a reta será calculada no ESP32.`,
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao enviar ponto");
     } finally {
       setLoading(false);
     }
@@ -431,6 +459,46 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
             </Button>
           </div>
         </div>
+
+        {/* Calibração de dois pontos — firmware 2.6.17+ */}
+        <div className="space-y-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
+          <div className="space-y-1">
+            <Label>Calibração de 2 pontos (recomendada)</Label>
+            <p className="text-[10px] text-muted-foreground">
+              Corrige célula com zona morta (acerta 1 kg mas erra pesos menores).
+              Requer firmware <strong>2.6.17</strong>. Faça a <strong>Tara</strong> vazia,
+              coloque o peso menor e grave o Ponto 1; troque pelo peso maior e grave o Ponto 2.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              step="1"
+              value={ponto1}
+              onChange={e => setPonto1(e.target.value)}
+              placeholder="218"
+              className="font-mono"
+            />
+            <Button variant="outline" onClick={() => handlePonto(1, ponto1)} disabled={loading}>
+              Ponto 1
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              step="1"
+              value={ponto2}
+              onChange={e => setPonto2(e.target.value)}
+              placeholder="1000"
+              className="font-mono"
+            />
+            <Button onClick={() => handlePonto(2, ponto2)} disabled={loading}>
+              Ponto 2 e calcular
+            </Button>
+          </div>
+        </div>
+
+
 
       </div>
 
