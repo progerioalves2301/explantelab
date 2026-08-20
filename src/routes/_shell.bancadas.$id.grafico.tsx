@@ -151,13 +151,13 @@ function GraficoTemperaturaPage() {
   }
 
   // 2. Mapeia CO2 e Umidade (SCD41) - arredondando para o mesmo minuto
-  if (temCo2 && (mostrarCo2 || mostrarUmidade)) {
+  if (temCo2) {
     for (const p of pontosCo2) {
       const ts = new Date(p.medido_em).getTime();
       const tsMinute = Math.round(ts / 60000) * 60000;
       const exist = porTs.get(tsMinute) ?? { ts: tsMinute };
-      if (mostrarCo2) exist.ppm = Number(p.ppm);
-      if (mostrarUmidade && p.umidade_pct != null) exist.umidade = Number(p.umidade_pct);
+      if (p.ppm != null) exist.ppm = Number(p.ppm);
+      if (p.umidade_pct != null) exist.umidade = Number(p.umidade_pct);
       porTs.set(tsMinute, exist);
     }
   }
@@ -355,9 +355,9 @@ function GraficoTemperaturaPage() {
                   shared={true}
                   trigger="hover"
                   isAnimationActive={false}
-                  filterNull={false}
                   cursor={{ stroke: 'var(--primary)', strokeWidth: 1 }}
                   formatter={((v: any, name: string) => {
+                    if (v == null || isNaN(v)) return ["--", name];
                     if (name === "CO₂") return [`${Number(v).toFixed(0)} ppm`, "CO₂"];
                     if (name === "Umidade") return [`${Number(v).toFixed(1)}%`, "Umidade do Galão"];
                     return [`${Number(v).toFixed(2)}°C`, "Temperatura"];
