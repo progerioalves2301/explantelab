@@ -49,63 +49,21 @@ export const criarBalanca = createServerFn({ method: "POST" })
       .replace(/\//g, "_")
       .replace(/=+$/, "");
 
-    let pairingCode = "";
-    let row: Record<string, unknown> | null = null;
-    let lastError = "";
-    for (let attempt = 0; attempt < 6; attempt++) {
-      const random = new Uint32Array(1);
-      crypto.getRandomValues(random);
-      pairingCode = String(random[0] % 1_000_000).padStart(6, "0");
-      const result = await context.supabase
+    const { data: row, error } = await context.supabase
       .from("balancas")
       .insert({
         nome: data.nome,
         bancada_associada_id: data.bancada_associada_id || null,
         device_token: deviceToken,
-        pairing_code: pairingCode,
-        pairing_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         minutos_estabilizacao: data.minutos_estabilizacao ?? 5,
         outlier_delta_g: data.outlier_delta_g ?? 10.0,
       } as any)
       .select("*")
       .single();
-      if (!result.error) {
-        row = result.data as Record<string, unknown>;
-        lastError = "";
-        break;
-      }
-      lastError = result.error.message;
-      if (!/pairing_code/i.test(lastError)) break;
-    }
-    if (!row) throw new Error(lastError || "Falha ao cadastrar balança");
-    return { balanca: row as unknown as Balanca, pairing_code: pairingCode };
+    if (error) throw new Error(error.message);
+    return { balanca: row as unknown as Balanca };
   });
 
-export const regenerarPairingCodeBalanca = createServerFn({ method: "POST" })
-  .middleware([requireTecnico])
-  .inputValidator(z.object({ balanca_id: z.string().uuid() }))
-  .handler(async ({ data, context }) => {
-    let pairingCode = "";
-    let lastError = "";
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    for (let attempt = 0; attempt < 6; attempt++) {
-      const random = new Uint32Array(1);
-      crypto.getRandomValues(random);
-      pairingCode = String(random[0] % 1_000_000).padStart(6, "0");
-      const { error } = await context.supabase
-        .from("balancas")
-        .update({ pairing_code: pairingCode, pairing_expires_at: expiresAt })
-        .eq("id", data.balanca_id);
-      if (!error) {
-        lastError = "";
-        break;
-      }
-      lastError = error.message;
-      if (!/pairing_code/i.test(lastError)) break;
-    }
-    if (lastError) throw new Error(lastError);
-    return { pairing_code: pairingCode, expires_at: expiresAt };
-  });
 
 export const editarBalanca = createServerFn({ method: "POST" })
   .middleware([requireTecnico])
