@@ -119,7 +119,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.6.16";
+static const char* FIRMWARE_VERSION = "2.6.17";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -243,6 +243,14 @@ HX711 g_balanca;
 bool  g_tem_hx711            = false;
 float g_hx_fator_cal         = 1.0f;   // calibração da célula (NVS)
 long  g_hx_zero_offset       = 0;      // tare (NVS)
+// v2.6.17 — calibração de dois pontos. Guarda as contagens brutas de dois
+// pesos conhecidos e resolve a reta (ganho + deslocamento). Isso corrige célula
+// com zona morta/pré-carga, em que um único ponto acerta o peso usado na
+// calibração mas erra os intermediários.
+long  g_hx_p1_raw            = 0;
+float g_hx_p1_g              = -1.0f;  // <0 = ponto não gravado
+long  g_hx_p2_raw            = 0;
+float g_hx_p2_g              = -1.0f;
 float g_hx_peso_g            = 0.0f;
 long  g_hx_raw_filtrado      = 0;
 String g_muda_ident          = "";     // etiqueta da muda ativa (NVS)
@@ -954,6 +962,10 @@ void carregarPrefs() {
   g_muda_ident     = prefs.getString("sc_muda", "");
   g_hx_fator_cal   = prefs.getFloat ("hx_fat", 1.0f);
   g_hx_zero_offset = prefs.getLong  ("hx_zer", 0);
+  g_hx_p1_raw      = prefs.getLong  ("hx_p1r", 0);
+  g_hx_p1_g        = prefs.getFloat ("hx_p1g", -1.0f);
+  g_hx_p2_raw      = prefs.getLong  ("hx_p2r", 0);
+  g_hx_p2_g        = prefs.getFloat ("hx_p2g", -1.0f);
   prefs.end();
 }
 
@@ -964,6 +976,10 @@ void salvarPerifericos() {
   prefs.putString("sc_muda", g_muda_ident);
   prefs.putFloat ("hx_fat",  g_hx_fator_cal);
   prefs.putLong  ("hx_zer",  g_hx_zero_offset);
+  prefs.putLong  ("hx_p1r",  g_hx_p1_raw);
+  prefs.putFloat ("hx_p1g",  g_hx_p1_g);
+  prefs.putLong  ("hx_p2r",  g_hx_p2_raw);
+  prefs.putFloat ("hx_p2g",  g_hx_p2_g);
   prefs.end();
 }
 
@@ -1407,6 +1423,9 @@ void tratarComando(JsonObject cmd) {
     // de gramas.
     g_hx_zero_offset = hxLerRawFiltrado(25);
     g_hx_raw_filtrado = g_hx_zero_offset;
+    // Zerar invalida os pontos anteriores da reta de dois pontos.
+    g_hx_p1_raw = 0; g_hx_p1_g = -1.0f;
+    g_hx_p2_raw = 0; g_hx_p2_g = -1.0f;
     g_hx_peso_g = 0.0f;
     salvarPerifericos();
     g_ts_ultimo_hx_envio = 0;
@@ -1424,9 +1443,45 @@ void tratarComando(JsonObject cmd) {
     }
     float pesoConhecido = p["peso_conhecido_g"] | 0.0f;
     float novoFator = p["fator"] | 0.0f;
-    // Calibração por massa conhecida é calculada no próprio ESP32 a partir
-    // das contagens brutas. Isso elimina leitura antiga e divergência entre o
-    // fator salvo no painel e o fator que realmente estava ativo no HX711.
+    int   ponto     = p["ponto"] | 0;   // v2.6.17: 1 ou 2 = calibração de 2 pontos
+
+    if (ponto == 1 || ponto == 2) {
+      if (!isfinite(pesoConhecido) || pesoConhecido <= 0.0f) {
+        Serial.println("[HX711] ponto ignorado: peso conhecido invalido");
+        return;
+      }
+      long rawPonto = hxLerRawFiltrado(25);
+      if (ponto == 1) { g_hx_p1_raw = rawPonto; g_hx_p1_g = pesoConhecido; }
+      else            { g_hx_p2_raw = rawPonto; g_hx_p2_g = pesoConhecido; }
+      g_hx_raw_filtrado = rawPonto;
+      Serial.printf("[HX711] ponto %d gravado: raw=%ld peso=%.2f g\n",
+                    ponto, rawPonto, pesoConhecido);
+
+      // Com os dois pontos válidos, resolve a reta peso = (raw - zero)/fator.
+      if (g_hx_p1_g > 0.0f && g_hx_p2_g > 0.0f) {
+        float dw = g_hx_p2_g - g_hx_p1_g;
+        long  dr = g_hx_p2_raw - g_hx_p1_raw;
+        if (fabsf(dw) < 1.0f || labs(dr) < 100) {
+          Serial.println("[HX711] pontos muito proximos; use pesos bem diferentes");
+        } else {
+          float fator = (float)dr / dw;
+          long  zero  = (long)((float)g_hx_p1_raw - g_hx_p1_g * fator);
+          g_hx_fator_cal   = fator;
+          g_hx_zero_offset = zero;
+          g_hx_peso_g      = hxLerPesoG();
+          salvarPerifericos();
+          g_ts_ultimo_hx_envio = 0;
+          Serial.printf("[HX711] reta de 2 pontos: fator=%.6f zero=%ld peso=%.2f g\n",
+                        g_hx_fator_cal, g_hx_zero_offset, g_hx_peso_g);
+          return;
+        }
+      }
+      salvarPerifericos();
+      return;
+    }
+
+    // Calibração por massa conhecida (1 ponto) é calculada no próprio ESP32 a
+    // partir das contagens brutas, usando a tara atual como zero.
     if (isfinite(pesoConhecido) && pesoConhecido > 0.0f) {
       long rawCal = hxLerRawFiltrado(25);
       long delta = rawCal - g_hx_zero_offset;
