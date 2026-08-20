@@ -390,15 +390,15 @@ function GraficoTemperaturaPage() {
                       : label;
 
                     return (
-                      <div className="flex flex-col gap-1">
-                        <div className="font-medium text-foreground">{formattedLabel}</div>
+                      <span className="flex flex-col gap-1">
+                        <span className="block font-medium text-foreground">{formattedLabel}</span>
                         {programada && (
-                          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-yellow-500">
+                          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-yellow-500">
                             <span className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
                             Luz Programada
-                          </div>
+                          </span>
                         )}
-                      </div>
+                      </span>
                     );
                   }}
                 />
