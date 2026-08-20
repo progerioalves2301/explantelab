@@ -59,7 +59,43 @@ function DashboardPage() {
     Record<string, { min: number; max: number }>
   >({});
   const [co2ByLab, setCo2ByLab] = useState<Record<string, { ppm: number; umid: number | null }>>({});
+  const [pesoByBancada, setPesoByBancada] = useState<Record<string, number>>({});
 
+  // Peso ao vivo vem da balança associada, não da telemetria de válvulas.
+  useEffect(() => {
+    let alive = true;
+    const carregarPesos = async () => {
+      const { data } = await supabase
+        .from("balancas")
+        .select("bancada_associada_id, ultima_leitura_g")
+        .eq("ativa", true)
+        .not("bancada_associada_id", "is", null);
+      if (!alive || !data) return;
+      const map: Record<string, number> = {};
+      for (const balanca of data) {
+        if (balanca.bancada_associada_id && balanca.ultima_leitura_g != null) {
+          map[balanca.bancada_associada_id] = Number(balanca.ultima_leitura_g);
+        }
+      }
+      setPesoByBancada(map);
+    };
+
+    void carregarPesos();
+    const channel = supabase
+      .channel("balancas-dashboard-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "balancas" },
+        () => void carregarPesos(),
+      )
+      .subscribe();
+    const id = setInterval(() => void carregarPesos(), 15_000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // CO₂ por sala (sensores independentes enviam para sensores_co2)
   useEffect(() => {
@@ -416,6 +452,7 @@ const filtradas = useMemo(() => {
               extremos30d={extremos30d[b.id] ?? null}
               co2Ppm={b.tem_co2 && b.laboratorio_id ? (co2ByLab[b.laboratorio_id]?.ppm ?? null) : null}
               umidadePct={b.tem_co2 && b.laboratorio_id ? (co2ByLab[b.laboratorio_id]?.umid ?? null) : null}
+              pesoAtualG={b.tem_balanca ? (pesoByBancada[b.id] ?? null) : null}
 
             />
           ))}
