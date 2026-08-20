@@ -75,6 +75,7 @@ interface Props {
   extremos30d?: { min: number; max: number } | null;
   co2Ppm?: number | null;
   umidadePct?: number | null;
+  pesoAtualG?: number | null;
 }
 
 
@@ -107,7 +108,7 @@ function eq(a: ValvulasEstado, b: ValvulasEstado) {
   );
 }
 
-export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio, variedade, extremos30d, co2Ppm, umidadePct }: Props) {
+export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio, variedade, extremos30d, co2Ppm, umidadePct, pesoAtualG }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [sending, setSending] = useState(false);
@@ -559,10 +560,8 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                       Peso Atual
                     </div>
                     <div className="font-mono text-2xl font-bold">
-                      {bancada.ultima_sync && bancada.status !== "Offline" 
-                        ? (bancada.valvulas as any).peso != null 
-                          ? `${Number((bancada.valvulas as any).peso).toFixed(2)} g`
-                          : "0.00 g"
+                      {pesoAtualG != null
+                        ? `${Number(pesoAtualG).toFixed(2)} g`
                         : "—"}
                     </div>
                   </div>
