@@ -1,7 +1,7 @@
 # Documentação Técnica do Firmware — VitroCeres Prateleira ESP32
 
-> Versão atual: **v2.6.14**  
-> Arquivo: `firmware/bancada_esp32_v2_6_14/bancada_esp32_v2_6_14.ino`
+> Versão atual: **v2.6.16**  
+> Arquivo: `firmware/bancada_esp32_v2_6_16/bancada_esp32_v2_6_16.ino`
 
 Este documento explica como o firmware funciona, pinagem, lógica de ciclos, luzes, ar-condicionado, sensores e atualização OTA. Use-o para entender o comportamento esperado, diagnosticar problemas e saber quando é necessário atualizar os equipamentos.
 
@@ -205,6 +205,8 @@ Para aparelhos não suportados nativamente, o backend pode enviar códigos **RAW
 - GPIO 16 (DOUT) / GPIO 17 (SCK).
 - Calibração (`fator_cal`, `zero_offset`) persistida na NVS.
 - **Comandos de Ajuste (v2.6.15+)**: `BALANCA_TARA` grava a contagem bruta atual como offset zero na NVS; `BALANCA_CALIBRAR` aplica e persiste o fator enviado pelo app. O fator pode ser positivo ou negativo conforme a orientação da célula, mas nunca zero.
+- **Filtro e calibração local (v2.6.16+)**: tara, leitura e calibração usam média aparada das contagens brutas, descartando os 20% maiores e menores valores. Ao calibrar com peso conhecido, o próprio ESP32 calcula `fator = (raw_filtrado - zero) / peso_conhecido`, sem depender de uma leitura atrasada do banco.
+- O fator calculado pelo dispositivo acompanha cada leitura e mantém o valor exibido no painel sincronizado com a NVS do ESP32.
 - **Log de Debug (v2.6.4)**: Imprime `[DEBUG BALANCA]` no Serial a cada leitura, mostrando valores raw, offset (zero), fator e o peso final em gramas.
 - Envia para `/api/public/scale/reading` com `X-Device-Token`.
 
@@ -323,7 +325,7 @@ Proteções acrescentadas na v2.6.0:
 
 ## 14. Arquivos relacionados
 
-- `firmware/bancada_esp32_v2_6_5/bancada_esp32_v2_6_5.ino` — código fonte.
+- `firmware/bancada_esp32_v2_6_16/bancada_esp32_v2_6_16.ino` — código fonte atual.
 - `firmware/FIACAO_VALVULAS.md` — diagrama de fiação e endereçamento.
 - `CHANGELOG.md` — histórico de alterações.
 - `mem://index.md` — memória consolidada do projeto.
