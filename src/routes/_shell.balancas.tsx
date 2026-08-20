@@ -177,9 +177,9 @@ function BalancasPage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground flex items-center gap-1">
-                      <KeyRound className="h-3 w-3" /> Pareamento:
+                      <KeyRound className="h-3 w-3" /> Conexão:
                     </span>
-                    <span className="font-medium">{b.paired_at ? "Concluído" : "Pendente"}</span>
+                    <span className="font-medium">{b.paired_at ? "Ativa" : "Aguardando prateleira"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Estabilização:</span>
@@ -188,9 +188,7 @@ function BalancasPage() {
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <Button size="sm" variant="outline" onClick={() => handleParear(b.id)} title="Gerar código de pareamento">
-                    <KeyRound className="h-3.5 w-3.5" />
-                  </Button>
+
                   <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditing(b)}>
                     <Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar
                   </Button>
