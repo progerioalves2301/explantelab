@@ -119,7 +119,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.6.15";
+static const char* FIRMWARE_VERSION = "2.6.16";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -244,6 +244,7 @@ bool  g_tem_hx711            = false;
 float g_hx_fator_cal         = 1.0f;   // calibração da célula (NVS)
 long  g_hx_zero_offset       = 0;      // tare (NVS)
 float g_hx_peso_g            = 0.0f;
+long  g_hx_raw_filtrado      = 0;
 String g_muda_ident          = "";     // etiqueta da muda ativa (NVS)
 String g_token_scale         = "";     // device_token da balança (NVS)
 // Token do sensor de CO2 já embutido — não precisa digitar nada no portal.
@@ -1401,7 +1402,11 @@ void tratarComando(JsonObject cmd) {
       return;
     }
     // O offset deve ser a contagem bruta atual, sem aplicar o fator antigo.
-    g_hx_zero_offset = g_balanca.read_average(20);
+    // Usa várias conversões e descarta os extremos. A média simples usada até
+    // a v2.6.15 podia incorporar um pico elétrico e deslocar o zero em dezenas
+    // de gramas.
+    g_hx_zero_offset = hxLerRawFiltrado(25);
+    g_hx_raw_filtrado = g_hx_zero_offset;
     g_hx_peso_g = 0.0f;
     salvarPerifericos();
     g_ts_ultimo_hx_envio = 0;
@@ -1417,7 +1422,23 @@ void tratarComando(JsonObject cmd) {
     } else {
       p = pv.as<JsonObjectConst>();
     }
+    float pesoConhecido = p["peso_conhecido_g"] | 0.0f;
     float novoFator = p["fator"] | 0.0f;
+    // Calibração por massa conhecida é calculada no próprio ESP32 a partir
+    // das contagens brutas. Isso elimina leitura antiga e divergência entre o
+    // fator salvo no painel e o fator que realmente estava ativo no HX711.
+    if (isfinite(pesoConhecido) && pesoConhecido > 0.0f) {
+      long rawCal = hxLerRawFiltrado(25);
+      long delta = rawCal - g_hx_zero_offset;
+      if (labs(delta) < 100) {
+        Serial.printf("[HX711] calibracao recusada: sinal insuficiente (delta=%ld)\n", delta);
+        return;
+      }
+      novoFator = (float)delta / pesoConhecido;
+      g_hx_raw_filtrado = rawCal;
+      Serial.printf("[HX711] calibracao por peso: raw=%ld zero=%ld delta=%ld peso=%.2f\n",
+                    rawCal, g_hx_zero_offset, delta, pesoConhecido);
+    }
     // O sinal depende da orientação da célula/fiação; só zero é inválido.
     if (!isfinite(novoFator) || fabsf(novoFator) < 0.0001f) {
       Serial.printf("[HX711] fator invalido ignorado: %.6f\n", novoFator);
@@ -2036,14 +2057,42 @@ void iniciarHx711() {
                 g_hx_fator_cal, g_hx_zero_offset);
 }
 
+long hxLerRawFiltrado(uint8_t amostras) {
+  if (amostras < 5) amostras = 5;
+  if (amostras > 25) amostras = 25;
+  long valores[25];
+  for (uint8_t i = 0; i < amostras; i++) {
+    valores[i] = g_balanca.read();
+    if (g_wdt_armado) esp_task_wdt_reset();
+  }
+  // Ordena e usa a média aparada: remove os 20% menores e maiores.
+  for (uint8_t i = 1; i < amostras; i++) {
+    long atual = valores[i];
+    int8_t j = (int8_t)i - 1;
+    while (j >= 0 && valores[j] > atual) {
+      valores[j + 1] = valores[j];
+      j--;
+    }
+    valores[j + 1] = atual;
+  }
+  uint8_t corte = amostras / 5;
+  int64_t soma = 0;
+  for (uint8_t i = corte; i < amostras - corte; i++) soma += valores[i];
+  return (long)(soma / (amostras - 2 * corte));
+}
+
 float hxLerPesoG() {
   if (!g_tem_hx711 || !g_balanca.is_ready()) return g_hx_peso_g;
   if (!isfinite(g_hx_fator_cal) || fabsf(g_hx_fator_cal) < 0.0001f) {
     Serial.println("[HX711] fator invalido; usando 1 temporariamente");
     g_hx_fator_cal = 1.0f;
   }
-  long raw = g_balanca.read_average(10);
-  return (raw - g_hx_zero_offset) / g_hx_fator_cal;
+  g_hx_raw_filtrado = hxLerRawFiltrado(15);
+  float peso = (g_hx_raw_filtrado - g_hx_zero_offset) / g_hx_fator_cal;
+  Serial.printf("[HX711] raw=%ld zero=%ld delta=%ld fator=%.6f peso=%.2f g\n",
+                g_hx_raw_filtrado, g_hx_zero_offset,
+                g_hx_raw_filtrado - g_hx_zero_offset, g_hx_fator_cal, peso);
+  return peso;
 }
 
 void hxConsultarStatus() {
