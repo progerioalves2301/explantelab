@@ -107,15 +107,26 @@ export const listarHistoricoCo2 = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const horas = PERIODOS[data.periodo] ?? 24;
     const desde = new Date(Date.now() - horas * 3600 * 1000).toISOString();
-    const { data: rows, error } = await context.supabase
-      .from("medicoes_co2")
-      .select("medido_em, ppm, umidade_pct")
-      .eq("laboratorio_id", data.laboratorio_id)
-      .gte("medido_em", desde)
-      .order("medido_em", { ascending: true })
-      .limit(5000);
-    if (error) throw new Error(error.message);
-    return (rows ?? []).map((r) => ({
+
+    // A API limita cada resposta a 1000 linhas; paginamos para não perder as
+    // leituras mais recentes (24 h = ~1440 pontos).
+    const pageSize = 1000;
+    const rows: { medido_em: string; ppm: number | null; umidade_pct: number | null }[] = [];
+    for (let offset = 0; offset < 60_000; offset += pageSize) {
+      const { data: page, error } = await context.supabase
+        .from("medicoes_co2")
+        .select("medido_em, ppm, umidade_pct")
+        .eq("laboratorio_id", data.laboratorio_id)
+        .gte("medido_em", desde)
+        .order("medido_em", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) throw new Error(error.message);
+      const lote = page ?? [];
+      rows.push(...(lote as any[]));
+      if (lote.length < pageSize) break;
+    }
+
+    return rows.map((r) => ({
       medido_em: r.medido_em as string,
       ppm: Number(r.ppm),
       umidade_pct: r.umidade_pct != null ? Number(r.umidade_pct) : null,
