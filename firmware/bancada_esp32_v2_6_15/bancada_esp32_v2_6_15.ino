@@ -119,7 +119,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.6.14";
+static const char* FIRMWARE_VERSION = "2.6.15";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -1395,6 +1395,40 @@ void tratarComando(JsonObject cmd) {
   } else if (strcmp(tipo, "RESUME") == 0) {
     pausado_manual = false;
     lastTelem = 0;
+  } else if (strcmp(tipo, "BALANCA_TARA") == 0) {
+    if (!g_tem_hx711 || !g_balanca.is_ready()) {
+      Serial.println("[HX711] TARA ignorada: sensor nao esta pronto");
+      return;
+    }
+    // O offset deve ser a contagem bruta atual, sem aplicar o fator antigo.
+    g_hx_zero_offset = g_balanca.read_average(20);
+    g_hx_peso_g = 0.0f;
+    salvarPerifericos();
+    g_ts_ultimo_hx_envio = 0;
+    Serial.printf("[HX711] TARA aplicada: zero=%ld\n", g_hx_zero_offset);
+  } else if (strcmp(tipo, "BALANCA_CALIBRAR") == 0) {
+    JsonVariantConst pv = cmd["payload"];
+    JsonDocument tmpDoc;
+    JsonObjectConst p;
+    if (pv.is<const char*>()) {
+      if (deserializeJson(tmpDoc, pv.as<const char*>()) == DeserializationError::Ok) {
+        p = tmpDoc.as<JsonObjectConst>();
+      }
+    } else {
+      p = pv.as<JsonObjectConst>();
+    }
+    float novoFator = p["fator"] | 0.0f;
+    // O sinal depende da orientação da célula/fiação; só zero é inválido.
+    if (!isfinite(novoFator) || fabsf(novoFator) < 0.0001f) {
+      Serial.printf("[HX711] fator invalido ignorado: %.6f\n", novoFator);
+      return;
+    }
+    g_hx_fator_cal = novoFator;
+    g_hx_peso_g = hxLerPesoG();
+    salvarPerifericos();
+    g_ts_ultimo_hx_envio = 0;
+    Serial.printf("[HX711] calibracao aplicada: fator=%.6f peso=%.2f g\n",
+                  g_hx_fator_cal, g_hx_peso_g);
   } else if (strcmp(tipo, "UPDATE_CONFIG") == 0) {
     JsonObject p = cmd["payload"].as<JsonObject>();
     cfg.tempo_injecao_segundos = p["tempo_injecao_segundos"] | cfg.tempo_injecao_segundos;
@@ -2004,6 +2038,10 @@ void iniciarHx711() {
 
 float hxLerPesoG() {
   if (!g_tem_hx711 || !g_balanca.is_ready()) return g_hx_peso_g;
+  if (!isfinite(g_hx_fator_cal) || fabsf(g_hx_fator_cal) < 0.0001f) {
+    Serial.println("[HX711] fator invalido; usando 1 temporariamente");
+    g_hx_fator_cal = 1.0f;
+  }
   long raw = g_balanca.read_average(10);
   return (raw - g_hx_zero_offset) / g_hx_fator_cal;
 }
