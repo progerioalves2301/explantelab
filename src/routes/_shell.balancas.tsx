@@ -243,22 +243,6 @@ function BalancasPage() {
           />
         )}
       </Dialog>
-      <Dialog open={!!pairingCode} onOpenChange={open => !open && setPairingCode(null)}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Código de pareamento</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-center">
-            <div className="font-mono text-4xl font-bold tracking-widest">{pairingCode}</div>
-            <p className="text-sm text-muted-foreground">Digite este código no portal VitroCeres do ESP32. Ele é válido por 24 horas e usado uma única vez.</p>
-            <Button className="w-full" onClick={async () => {
-              if (!pairingCode) return;
-              await navigator.clipboard.writeText(pairingCode);
-              toast.success("Código copiado");
-            }}><Copy className="mr-2 h-4 w-4" />Copiar código</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
