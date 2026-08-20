@@ -258,6 +258,9 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
   const [leitura, setLeitura] = useState<number | null>(balanca.ultima_leitura_g);
   const [fator, setFator] = useState(balanca.fator_calibracao.toString());
   const [pesoConhecido, setPesoConhecido] = useState("1000");
+  const [ponto1, setPonto1] = useState("218");
+  const [ponto2, setPonto2] = useState("1000");
+
 
 
   const handleTara = async () => {
