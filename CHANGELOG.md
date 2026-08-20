@@ -2,6 +2,14 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-20 — Firmware v2.6.12: balança por código de pareamento
+
+- **Sem token manual**: o cadastro da balança gera um código de 6 dígitos válido por 24 horas. O ESP32 troca esse código por uma credencial interna e a salva automaticamente.
+- **Leitura ao vivo**: o peso passa a atualizar no card mesmo sem uma muda identificada; a associação da muda continua opcional para registrar o histórico.
+- **Ação**: gravar `firmware/bancada_esp32_v2_6_12/bancada_esp32_v2_6_12.ino`, cadastrar/abrir a balança no painel, gerar o código e digitá-lo no portal VitroCeres.
+
+---
+
 ## 2026-08-18 — Firmware v2.6.10: polling confiável do SCD41
 
 - **Problema**: consultar o SCD41 exatamente a cada 5 s podia ocorrer instantes antes do fim da conversão; o cronômetro era reiniciado mesmo sem dado pronto e a leitura era perdida.

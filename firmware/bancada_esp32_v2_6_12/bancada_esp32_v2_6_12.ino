@@ -16,7 +16,7 @@
  * Provisionamento pelo portal Wi-Fi (WiFiManager):
  *   - código de pareamento (6 dígitos) → bench_pair
  *   - device_token do sensor CO2 (opcional, tela "Sensores CO2")
- *   - device_token da balança (opcional, tela "Balanças")
+ *   - código de pareamento da balança (opcional, tela "Balanças")
  *   - identificador da muda ativa (opcional)
  *
  * Comunicação:
@@ -119,7 +119,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.6.11";
+static const char* FIRMWARE_VERSION = "2.6.12";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -238,7 +238,7 @@ unsigned long g_ts_ultimo_co2_envio   = 0;
 // -------- HX711 balança (opcional — v2.4.0) --------
 // Cada ESP32 pode ter uma balança + célula de carga ligados; o firmware detecta
 // no boot e desabilita graciosamente se o HX711 não estiver presente. Cadastre
-// a balança na tela "Balanças" do painel, copie o token e cole no portal Wi-Fi.
+// a balança no painel e digite apenas o código de pareamento no portal Wi-Fi.
 HX711 g_balanca;
 bool  g_tem_hx711            = false;
 float g_hx_fator_cal         = 1.0f;   // calibração da célula (NVS)
@@ -1062,12 +1062,13 @@ void abrirPortalWifi(bool forcar) {
     "pattern='\\d{6}' inputmode='numeric' maxlength='6' placeholder='000000'");
   wm.addParameter(&param_pair);
 
-  // v2.6.9 — token do CO2 é fixo no firmware; só balança/muda seguem opcionais.
-  WiFiManagerParameter param_sc_tok(
-    "sc_tok",  "Token balança (opcional)",     g_token_scale.c_str(), 64);
+  // v2.6.12 — a credencial da balança é obtida automaticamente por código.
+  WiFiManagerParameter param_sc_pair(
+    "sc_pair", "Código da balança (6 dígitos, opcional)", "", 7,
+    "pattern='\\d{6}' inputmode='numeric' maxlength='6' placeholder='000000'");
   WiFiManagerParameter param_muda(
     "muda",    "Identificador da muda ativa (opcional)", g_muda_ident.c_str(), 64);
-  wm.addParameter(&param_sc_tok);
+  wm.addParameter(&param_sc_pair);
   wm.addParameter(&param_muda);
 
   // AP name único por dispositivo: "VitroCeres-XXXXXX" (últimos 3 bytes do MAC)
@@ -1089,9 +1090,10 @@ void abrirPortalWifi(bool forcar) {
     }
     strncpy(pairing_code_buf, param_pair.getValue(), sizeof(pairing_code_buf) - 1);
     pairing_code_buf[sizeof(pairing_code_buf) - 1] = 0;
-    // v2.6.9 — grava periféricos opcionais informados no portal (CO2 é fixo)
+    // O código da balança é trocado pela credencial interna depois que o Wi-Fi conecta.
     String v;
-    v = String(param_sc_tok .getValue()); v.trim(); if (v.length() > 0) g_token_scale = v;
+    v = String(param_sc_pair.getValue()); v.trim();
+    if (v.length() == 6) prefs.begin("genelab", false), prefs.putString("sc_pair", v), prefs.end();
     v = String(param_muda   .getValue()); v.trim(); g_muda_ident = v;   // pode limpar
     salvarPerifericos();
     Serial.println("[WM] Wi-Fi conectado");
@@ -1849,6 +1851,41 @@ bool postPublic(const char* path, const String& body, const String& token,
   return true;
 }
 
+bool postPublicSemToken(const char* path, const String& body, String& respOut) {
+  if (WiFi.status() != WL_CONNECTED) return false;
+  HTTPClient h;
+  WiFiClientSecure c;
+  c.setInsecure();
+  if (!h.begin(c, String(API_HOST) + path)) return false;
+  h.setTimeout(8000);
+  h.addHeader("Content-Type", "application/json");
+  int code = h.POST(body);
+  respOut = h.getString();
+  h.end();
+  if (code < 200 || code >= 300) {
+    Serial.printf("[SCALE PAIR] HTTP %d: %s\n", code, respOut.c_str());
+    return false;
+  }
+  return true;
+}
+
+bool parearBalanca(const String& code) {
+  String body = String("{\"pairing_code\":\"") + code + "\"}";
+  String resp;
+  if (!postPublicSemToken("/api/public/scale/pair", body, resp)) return false;
+  JsonDocument doc;
+  if (deserializeJson(doc, resp) != DeserializationError::Ok) return false;
+  const char* token = doc["device_token"] | "";
+  if (!*token) return false;
+  g_token_scale = token;
+  salvarPerifericos();
+  prefs.begin("genelab", false);
+  prefs.remove("sc_pair");
+  prefs.end();
+  Serial.println("[SCALE PAIR] balança pareada com sucesso");
+  return true;
+}
+
 bool getPublic(const char* path, const String& token, String& respOut) {
   if (WiFi.status() != WL_CONNECTED || token.length() < 8) return false;
   HTTPClient h;
@@ -1977,12 +2014,12 @@ void hxConsultarStatus() {
 }
 
 void hxEnviarLeitura(float g) {
-  if (g_muda_ident.length() == 0) return;
   String body = String("{\"valor_g\":") + String(g, 2) +
                 ",\"muda_identificador\":\"" + g_muda_ident + "\"}";
   String resp;
   if (postPublic("/api/public/scale/reading", body, g_token_scale, resp)) {
-    Serial.printf("[HX711] enviado %.2f g (muda=%s)\n", g, g_muda_ident.c_str());
+    Serial.printf("[HX711] enviado %.2f g%s\n", g,
+                  g_muda_ident.length() ? " com muda associada" : " para leitura ao vivo");
   }
 }
 
@@ -2131,6 +2168,15 @@ void setup() {
       apagarTudo();
       delay(2000);
       ESP.restart();
+    }
+  }
+
+  if (g_token_scale.length() < 8) {
+    prefs.begin("genelab", true);
+    String scalePair = prefs.getString("sc_pair", "");
+    prefs.end();
+    if (scalePair.length() == 6 && !parearBalanca(scalePair)) {
+      Serial.println("[SCALE PAIR] código inválido, expirado ou sem rede");
     }
   }
 
