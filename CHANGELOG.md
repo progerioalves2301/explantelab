@@ -2,6 +2,15 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-20 — Firmware v2.6.16: calibração direta no HX711
+
+- **Causa da escala incorreta**: a calibração automática era calculada no navegador com a última leitura enviada ao banco. Essa leitura podia pertencer a outro instante e produzir um fator incorreto; por isso uma massa de calibração parecia correta, mas outros pesos ficavam multiplicados.
+- **Correção**: o comando envia somente a massa conhecida. O ESP32 lê as contagens brutas naquele momento e calcula localmente `fator = (raw - tara) / massa`.
+- **Estabilidade**: leitura, tara e calibração agora usam média aparada, descartando os 20% menores e maiores valores para reduzir picos elétricos do HX711. O Serial mostra raw, zero, delta, fator e peso em cada amostra.
+- **Ação**: gravar `firmware/bancada_esp32_v2_6_16/bancada_esp32_v2_6_16.ino`; com a plataforma vazia fazer Tara, aguardar estabilizar, colocar o peso conhecido e usar Calibrar uma única vez.
+
+---
+
 ## 2026-08-20 — Gráfico de peso por balança
 
 - **Histórico de peso**: nova tabela `medicoes_balanca` guarda um ponto por minuto por balança (média das leituras do minuto, com contagem de amostras). Retenção de 90 dias, igual à temperatura.

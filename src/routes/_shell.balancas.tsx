@@ -324,56 +324,16 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
     if (!alvo || !isFinite(alvo) || alvo <= 0) return toast.error("Informe o peso conhecido em gramas");
     setLoading(true);
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
-
-      const lerAtual = async () => {
-        const { data } = await supabase
-          .from("balancas")
-          .select("ultima_leitura_g, ultima_sync, fator_calibracao")
-          .eq("id", balanca.id)
-          .maybeSingle();
-        return data;
-      };
-
-      // Aguarda uma leitura NOVA (enviada após o peso ser colocado na plataforma),
-      // senão o cálculo usa um valor antigo e o fator sai completamente errado.
-      const base = await lerAtual();
-      const syncBase = base?.ultima_sync ?? null;
-      let atual = base;
-      for (let i = 0; i < 20; i++) {
-        if (atual?.ultima_sync && atual.ultima_sync !== syncBase) break;
-        await new Promise((r) => setTimeout(r, 2000));
-        atual = await lerAtual();
-      }
-      if (!atual?.ultima_sync || atual.ultima_sync === syncBase) {
-        toast.error("Nenhuma leitura nova chegou do ESP32. Verifique se ele está online e tente de novo.");
-        return;
-      }
-
-      const lido = Number(atual.ultima_leitura_g);
-      if (!isFinite(lido) || lido === 0) {
-        toast.error("Leitura inválida da balança. Refaça a Tara com a plataforma vazia.");
-        return;
-      }
-      setLeitura(lido);
-
-      // Usa o fator realmente gravado no banco como base do cálculo.
-      const fatorAtual = Number(atual.fator_calibracao) || Number(fator) || 1;
-      const novoFator = Number(((fatorAtual * lido) / alvo).toFixed(4));
-      if (!isFinite(novoFator) || Math.abs(novoFator) < 0.0001) {
-        toast.error("Não foi possível calcular o fator");
-        return;
-      }
-      await modBalanca({ data: { id: balanca.id, fator_calibracao: novoFator } as any });
+      // A v2.6.16 calcula o fator diretamente das contagens brutas atuais do
+      // HX711. Não usamos mais a leitura atrasada do banco para calibrar.
       await comandar({
         data: {
           balanca_id: balanca.id,
           tipo: "BALANCA_CALIBRAR",
-          payload: { fator: novoFator },
+          payload: { peso_conhecido_g: alvo },
         },
       });
-      setFator(String(novoFator));
-      toast.success(`Novo fator: ${novoFator} (lido ${lido.toFixed(1)} g para alvo ${alvo} g)`);
+      toast.success(`Calibração de ${alvo} g enviada; aguarde a próxima leitura do ESP32.`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao calibrar");
     } finally {
