@@ -257,6 +257,8 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
   const [reading, setReading] = useState(false);
   const [leitura, setLeitura] = useState<number | null>(balanca.ultima_leitura_g);
   const [fator, setFator] = useState(balanca.fator_calibracao.toString());
+  const [pesoConhecido, setPesoConhecido] = useState("1000");
+
 
   const handleTara = async () => {
     setLoading(true);
@@ -316,6 +318,48 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
       setReading(false);
     }
   };
+
+  const handleCalibrarComPeso = async () => {
+    const alvo = Number(pesoConhecido);
+    if (!alvo || !isFinite(alvo) || alvo <= 0) return toast.error("Informe o peso conhecido em gramas");
+    setLoading(true);
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data } = await supabase
+        .from("balancas")
+        .select("ultima_leitura_g")
+        .eq("id", balanca.id)
+        .maybeSingle();
+      const lido = data?.ultima_leitura_g;
+      if (lido == null || !isFinite(Number(lido)) || Number(lido) === 0) {
+        toast.error("Sem leitura válida da balança. Aguarde o envio do ESP32 e tente de novo.");
+        return;
+      }
+      setLeitura(Number(lido));
+      const fatorAtual = Number(fator) || 1;
+      const novoFator = Number(((fatorAtual * Number(lido)) / alvo).toFixed(4));
+      if (!isFinite(novoFator) || novoFator === 0) {
+        toast.error("Não foi possível calcular o fator");
+        return;
+      }
+      await modBalanca({ data: { id: balanca.id, fator_calibracao: novoFator } as any });
+      await comandar({
+        data: {
+          balanca_id: balanca.id,
+          tipo: "BALANCA_CALIBRAR",
+          payload: { fator: novoFator },
+        },
+      });
+      setFator(String(novoFator));
+      toast.success(`Novo fator calculado: ${novoFator}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao calibrar");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
 
   return (
     <DialogContent className="sm:max-w-[425px]">
@@ -380,6 +424,31 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
             </Button>
           </div>
         </div>
+
+        {/* Calibração automática por peso conhecido */}
+        <div className="space-y-3 rounded-lg border border-primary/40 bg-primary/5 p-4">
+          <div className="space-y-1">
+            <Label>Calibrar com peso conhecido</Label>
+            <p className="text-[10px] text-muted-foreground">
+              1) Faça a <strong>Tara</strong> com a plataforma vazia. 2) Coloque o peso de referência.
+              3) Informe o valor em gramas e clique em Calibrar — o fator é calculado e gravado automaticamente.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              step="1"
+              value={pesoConhecido}
+              onChange={e => setPesoConhecido(e.target.value)}
+              placeholder="1000"
+              className="font-mono"
+            />
+            <Button onClick={handleCalibrarComPeso} disabled={loading}>
+              Calibrar
+            </Button>
+          </div>
+        </div>
+
       </div>
 
       <DialogFooter className="pt-4 border-t">
