@@ -11,7 +11,9 @@ import { z } from "zod";
 // atualiza ultima_leitura_g na balança (leitura ao vivo).
 
 const bodySchema = z.object({
-  valor_g: z.number().min(0).max(100000),
+  // Antes da tara/calibração, o HX711 pode enviar o valor bruto (inclusive
+  // negativo). Aceitá-lo permite diagnosticar e calibrar a célula no painel.
+  valor_g: z.number().finite().min(-10000000).max(10000000),
   muda_identificador: z.string().max(64).optional().nullable(),
 });
 
