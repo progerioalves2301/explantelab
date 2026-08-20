@@ -82,14 +82,6 @@ function BalancasPage() {
     }
   };
 
-  const handleParear = async (balancaId: string) => {
-    try {
-      const result = await gerarPareamento({ data: { balanca_id: balancaId } });
-      setPairingCode(result.pairing_code);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao gerar código");
-    }
-  };
 
   return (
     <div className="space-y-6">
