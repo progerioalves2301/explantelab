@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { listarBalancas, criarBalanca, editarBalanca, excluirBalanca, enviarComandoBalanca, regenerarPairingCodeBalanca, type Balanca } from "@/lib/balancas.functions";
+import { listarBalancas, criarBalanca, editarBalanca, excluirBalanca, enviarComandoBalanca, type Balanca } from "@/lib/balancas.functions";
 import { listBancadas } from "@/lib/bancadas.functions";
 import type { Bancada } from "@/lib/types";
 
