@@ -424,6 +424,31 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
             </Button>
           </div>
         </div>
+
+        {/* Calibração automática por peso conhecido */}
+        <div className="space-y-3 rounded-lg border border-primary/40 bg-primary/5 p-4">
+          <div className="space-y-1">
+            <Label>Calibrar com peso conhecido</Label>
+            <p className="text-[10px] text-muted-foreground">
+              1) Faça a <strong>Tara</strong> com a plataforma vazia. 2) Coloque o peso de referência.
+              3) Informe o valor em gramas e clique em Calibrar — o fator é calculado e gravado automaticamente.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              step="1"
+              value={pesoConhecido}
+              onChange={e => setPesoConhecido(e.target.value)}
+              placeholder="1000"
+              className="font-mono"
+            />
+            <Button onClick={handleCalibrarComPeso} disabled={loading}>
+              Calibrar
+            </Button>
+          </div>
+        </div>
+
       </div>
 
       <DialogFooter className="pt-4 border-t">
