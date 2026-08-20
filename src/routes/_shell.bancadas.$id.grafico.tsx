@@ -151,13 +151,13 @@ function GraficoTemperaturaPage() {
   }
 
   // 2. Mapeia CO2 e Umidade (SCD41) - arredondando para o mesmo minuto
-  if (temCo2 && (mostrarCo2 || mostrarUmidade)) {
+  if (temCo2) {
     for (const p of pontosCo2) {
       const ts = new Date(p.medido_em).getTime();
       const tsMinute = Math.round(ts / 60000) * 60000;
       const exist = porTs.get(tsMinute) ?? { ts: tsMinute };
-      if (mostrarCo2) exist.ppm = Number(p.ppm);
-      if (mostrarUmidade && p.umidade_pct != null) exist.umidade = Number(p.umidade_pct);
+      if (p.ppm != null) exist.ppm = Number(p.ppm);
+      if (p.umidade_pct != null) exist.umidade = Number(p.umidade_pct);
       porTs.set(tsMinute, exist);
     }
   }
