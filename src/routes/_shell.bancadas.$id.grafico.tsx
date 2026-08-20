@@ -138,16 +138,22 @@ function GraficoTemperaturaPage() {
     : null;
   const temCo2 = ppms.length > 0;
 
-  // Une as duas séries pelo instante da leitura (sem inventar pontos)
+  // Une as três séries pelo instante da leitura (sem inventar pontos)
   const porTs = new Map<number, { ts: number; valor?: number; ppm?: number; umidade?: number }>();
+  
+  // 1. Mapeia temperaturas (DS18B20) - arredondando para facilitar join
   for (const p of pontos) {
     const ts = new Date(p.minuto).getTime();
-    porTs.set(ts, { ...(porTs.get(ts) ?? { ts }), ts, valor: Number(p.valor) });
+    const tsMinute = Math.round(ts / 60000) * 60000;
+    const exist = porTs.get(tsMinute) ?? { ts: tsMinute };
+    exist.valor = Number(p.valor);
+    porTs.set(tsMinute, exist);
   }
+
+  // 2. Mapeia CO2 e Umidade (SCD41) - arredondando para o mesmo minuto
   if (temCo2 && (mostrarCo2 || mostrarUmidade)) {
     for (const p of pontosCo2) {
       const ts = new Date(p.medido_em).getTime();
-      // Arredonda para o minuto mais próximo para facilitar o alinhamento no gráfico
       const tsMinute = Math.round(ts / 60000) * 60000;
       const exist = porTs.get(tsMinute) ?? { ts: tsMinute };
       if (mostrarCo2) exist.ppm = Number(p.ppm);
@@ -155,6 +161,7 @@ function GraficoTemperaturaPage() {
       porTs.set(tsMinute, exist);
     }
   }
+
   const dadosGrafico = Array.from(porTs.values())
     .sort((a, b) => a.ts - b.ts)
     .map((p) => ({
