@@ -355,9 +355,9 @@ function GraficoTemperaturaPage() {
                   shared={true}
                   trigger="hover"
                   isAnimationActive={false}
-                  filterNull={false}
                   cursor={{ stroke: 'var(--primary)', strokeWidth: 1 }}
                   formatter={((v: any, name: string) => {
+                    if (v == null || isNaN(v)) return ["--", name];
                     if (name === "CO₂") return [`${Number(v).toFixed(0)} ppm`, "CO₂"];
                     if (name === "Umidade") return [`${Number(v).toFixed(1)}%`, "Umidade do Galão"];
                     return [`${Number(v).toFixed(2)}°C`, "Temperatura"];
