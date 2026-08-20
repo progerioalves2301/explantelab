@@ -136,7 +136,7 @@ function GraficoTemperaturaPage() {
   const co2Media = ppms.length
     ? ppms.reduce((a, b) => a + b, 0) / ppms.length
     : null;
-  const temCo2 = ppms.length > 0;
+  const temCo2 = bancada?.tem_co2 === true;
 
   // Une as três séries pelo instante da leitura (sem inventar pontos)
   const porTs = new Map<number, { ts: number; valor?: number; ppm?: number; umidade?: number }>();
