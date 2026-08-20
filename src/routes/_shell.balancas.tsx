@@ -47,7 +47,7 @@ function BalancasPage() {
   const addBalanca = useServerFn(criarBalanca);
   const modBalanca = useServerFn(editarBalanca);
   const delBalanca = useServerFn(excluirBalanca);
-  const gerarPareamento = useServerFn(regenerarPairingCodeBalanca);
+  
 
   const [balancas, setBalancas] = useState<Balanca[]>([]);
   const [bancadas, setBancadas] = useState<Bancada[]>([]);
