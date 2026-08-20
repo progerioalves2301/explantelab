@@ -2951,7 +2951,6 @@ DECLARE
   v_laboratorio_id uuid;
   v_qtd_ativas int;
   v_espera_ate timestamptz;
-  v_amostrar boolean;
   v_motivo text;
 BEGIN
   SELECT * INTO b
@@ -2974,18 +2973,15 @@ BEGIN
   v_espera_ate := b.ultimo_ciclo_fim + make_interval(mins => b.minutos_estabilizacao);
 
   IF v_qtd_ativas > 0 THEN
-    v_amostrar := false;
-    v_motivo := 'ciclo_hidraulico_ativo';
+    v_motivo := 'peso_ao_vivo_ciclo_ativo';
   ELSIF b.ultimo_ciclo_fim IS NOT NULL AND now() < v_espera_ate THEN
-    v_amostrar := false;
-    v_motivo := 'aguardando_estabilizacao';
+    v_motivo := 'peso_ao_vivo_estabilizando';
   ELSE
-    v_amostrar := true;
     v_motivo := 'ok';
   END IF;
 
   RETURN jsonb_build_object(
-    'amostrar', v_amostrar,
+    'amostrar', true,
     'motivo', v_motivo,
     'espera_ate', v_espera_ate,
     'minutos_estabilizacao', b.minutos_estabilizacao,
