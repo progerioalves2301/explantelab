@@ -61,7 +61,7 @@ function GraficoPesoPage() {
   const [periodo, setPeriodo] = useState<Periodo>("6h");
   const [dados, setDados] = useState<HistoricoPeso | null>(null);
   const [balanca, setBalanca] = useState<Balanca | null>(null);
-  const [mostrarTemp, setMostrarTemp] = useState(true);
+  const [mostrarTemp, setMostrarTemp] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const carregar = async () => {
@@ -103,7 +103,13 @@ function GraficoPesoPage() {
         porTs.set(ts, item);
       }
     }
+    // Só faz sentido mostrar a janela em que existe peso registrado; senão a
+    // curva fica comprimida no canto quando o histórico ainda é curto.
+    const primeiroPeso = dados.pontos.length
+      ? new Date(dados.pontos[0]!.minuto).getTime()
+      : 0;
     return Array.from(porTs.values())
+      .filter((p) => p.ts >= primeiroPeso)
       .sort((a, b) => a.ts - b.ts)
       .map((p) => ({
         ...p,
