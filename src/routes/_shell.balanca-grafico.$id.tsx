@@ -47,10 +47,10 @@ const PERIODOS = ["6h", "24h", "7d", "30d"] as const;
 type Periodo = (typeof PERIODOS)[number];
 
 const COR_FASE: Record<string, string> = {
-  Injetando: "hsl(var(--primary) / 0.12)",
-  Pausado: "hsl(var(--muted-foreground) / 0.12)",
-  Retornando: "hsl(var(--chart-2, 200 80% 50%) / 0.12)",
-  Alivio: "hsl(var(--muted-foreground) / 0.1)",
+  Injetando: "color-mix(in oklab, var(--primary) 14%, transparent)",
+  Pausado: "color-mix(in oklab, var(--muted-foreground) 12%, transparent)",
+  Retornando: "color-mix(in oklab, var(--accent, var(--primary)) 12%, transparent)",
+  Alivio: "color-mix(in oklab, var(--muted-foreground) 10%, transparent)",
 };
 
 function GraficoPesoPage() {
@@ -259,8 +259,8 @@ function GraficoPesoPage() {
                   ) : null}
                   <Tooltip
                     contentStyle={{
-                      background: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
+                      background: "var(--popover)",
+                      border: "1px solid var(--border)",
                       borderRadius: 8,
                       fontSize: 12,
                     }}
@@ -275,7 +275,7 @@ function GraficoPesoPage() {
                         yAxisId="peso"
                         x1={x1}
                         x2={x2}
-                        fill={COR_FASE[f.status] ?? "hsl(var(--muted) / 0.1)"}
+                        fill={COR_FASE[f.status] ?? "color-mix(in oklab, var(--muted) 12%, transparent)"}
                         strokeOpacity={0}
                       />
                     );
@@ -285,7 +285,7 @@ function GraficoPesoPage() {
                     type="monotone"
                     dataKey="peso"
                     name="Peso (g)"
-                    stroke="hsl(var(--primary))"
+                    stroke="var(--primary)"
                     strokeWidth={2}
                     dot={(dados?.pontos.length ?? 0) <= 80 ? { r: 2 } : false}
                     connectNulls
