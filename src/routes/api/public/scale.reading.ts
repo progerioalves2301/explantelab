@@ -14,6 +14,9 @@ const bodySchema = z.object({
   // Antes da tara/calibração, o HX711 pode enviar o valor bruto (inclusive
   // negativo). Aceitá-lo permite diagnosticar e calibrar a célula no painel.
   valor_g: z.number().finite().min(-10000000).max(10000000),
+  fator_calibracao: z.number().finite().min(-1000000).max(1000000)
+    .refine((valor) => Math.abs(valor) >= 0.0001)
+    .optional(),
   muda_identificador: z.string().max(64).optional().nullable(),
 });
 
@@ -41,6 +44,14 @@ export const Route = createFileRoute("/api/public/scale/reading")({
         const { supabaseAdmin } = await import(
           "@/integrations/supabase/client.server"
         );
+
+        if (payload.fator_calibracao !== undefined) {
+          const { error: fatorError } = await supabaseAdmin
+            .from("balancas")
+            .update({ fator_calibracao: payload.fator_calibracao })
+            .eq("device_token", token);
+          if (fatorError) return json({ error: fatorError.message }, 500);
+        }
 
         const { data, error } = await supabaseAdmin.rpc("scale_push_reading", {
           _device_token: token,

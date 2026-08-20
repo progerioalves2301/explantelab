@@ -7,6 +7,7 @@
 - **Causa da escala incorreta**: a calibração automática era calculada no navegador com a última leitura enviada ao banco. Essa leitura podia pertencer a outro instante e produzir um fator incorreto; por isso uma massa de calibração parecia correta, mas outros pesos ficavam multiplicados.
 - **Correção**: o comando envia somente a massa conhecida. O ESP32 lê as contagens brutas naquele momento e calcula localmente `fator = (raw - tara) / massa`.
 - **Estabilidade**: leitura, tara e calibração agora usam média aparada, descartando os 20% menores e maiores valores para reduzir picos elétricos do HX711. O Serial mostra raw, zero, delta, fator e peso em cada amostra.
+- **Sincronização**: cada leitura também informa o fator ativo no ESP32, mantendo o painel alinhado com o valor persistido no dispositivo.
 - **Ação**: gravar `firmware/bancada_esp32_v2_6_16/bancada_esp32_v2_6_16.ino`; com a plataforma vazia fazer Tara, aguardar estabilizar, colocar o peso conhecido e usar Calibrar uma única vez.
 
 ---

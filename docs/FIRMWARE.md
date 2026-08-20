@@ -206,6 +206,7 @@ Para aparelhos não suportados nativamente, o backend pode enviar códigos **RAW
 - Calibração (`fator_cal`, `zero_offset`) persistida na NVS.
 - **Comandos de Ajuste (v2.6.15+)**: `BALANCA_TARA` grava a contagem bruta atual como offset zero na NVS; `BALANCA_CALIBRAR` aplica e persiste o fator enviado pelo app. O fator pode ser positivo ou negativo conforme a orientação da célula, mas nunca zero.
 - **Filtro e calibração local (v2.6.16+)**: tara, leitura e calibração usam média aparada das contagens brutas, descartando os 20% maiores e menores valores. Ao calibrar com peso conhecido, o próprio ESP32 calcula `fator = (raw_filtrado - zero) / peso_conhecido`, sem depender de uma leitura atrasada do banco.
+- O fator calculado pelo dispositivo acompanha cada leitura e mantém o valor exibido no painel sincronizado com a NVS do ESP32.
 - **Log de Debug (v2.6.4)**: Imprime `[DEBUG BALANCA]` no Serial a cada leitura, mostrando valores raw, offset (zero), fator e o peso final em gramas.
 - Envia para `/api/public/scale/reading` com `X-Device-Token`.
 

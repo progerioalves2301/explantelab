@@ -2107,6 +2107,7 @@ void hxConsultarStatus() {
 
 void hxEnviarLeitura(float g) {
   String body = String("{\"valor_g\":") + String(g, 2) +
+                ",\"fator_calibracao\":" + String(g_hx_fator_cal, 6) +
                 ",\"muda_identificador\":\"" + g_muda_ident + "\"}";
   String resp;
   if (postPublic("/api/public/scale/reading", body, g_token_scale, resp)) {
