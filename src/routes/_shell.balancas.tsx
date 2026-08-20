@@ -325,20 +325,42 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
     setLoading(true);
     try {
       const { supabase } = await import("@/integrations/supabase/client");
-      const { data } = await supabase
-        .from("balancas")
-        .select("ultima_leitura_g")
-        .eq("id", balanca.id)
-        .maybeSingle();
-      const lido = data?.ultima_leitura_g;
-      if (lido == null || !isFinite(Number(lido)) || Number(lido) === 0) {
-        toast.error("Sem leitura válida da balança. Aguarde o envio do ESP32 e tente de novo.");
+
+      const lerAtual = async () => {
+        const { data } = await supabase
+          .from("balancas")
+          .select("ultima_leitura_g, ultima_sync, fator_calibracao")
+          .eq("id", balanca.id)
+          .maybeSingle();
+        return data;
+      };
+
+      // Aguarda uma leitura NOVA (enviada após o peso ser colocado na plataforma),
+      // senão o cálculo usa um valor antigo e o fator sai completamente errado.
+      const base = await lerAtual();
+      const syncBase = base?.ultima_sync ?? null;
+      let atual = base;
+      for (let i = 0; i < 20; i++) {
+        if (atual?.ultima_sync && atual.ultima_sync !== syncBase) break;
+        await new Promise((r) => setTimeout(r, 2000));
+        atual = await lerAtual();
+      }
+      if (!atual?.ultima_sync || atual.ultima_sync === syncBase) {
+        toast.error("Nenhuma leitura nova chegou do ESP32. Verifique se ele está online e tente de novo.");
         return;
       }
-      setLeitura(Number(lido));
-      const fatorAtual = Number(fator) || 1;
-      const novoFator = Number(((fatorAtual * Number(lido)) / alvo).toFixed(4));
-      if (!isFinite(novoFator) || novoFator === 0) {
+
+      const lido = Number(atual.ultima_leitura_g);
+      if (!isFinite(lido) || lido === 0) {
+        toast.error("Leitura inválida da balança. Refaça a Tara com a plataforma vazia.");
+        return;
+      }
+      setLeitura(lido);
+
+      // Usa o fator realmente gravado no banco como base do cálculo.
+      const fatorAtual = Number(atual.fator_calibracao) || Number(fator) || 1;
+      const novoFator = Number(((fatorAtual * lido) / alvo).toFixed(4));
+      if (!isFinite(novoFator) || Math.abs(novoFator) < 0.0001) {
         toast.error("Não foi possível calcular o fator");
         return;
       }
@@ -351,13 +373,14 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
         },
       });
       setFator(String(novoFator));
-      toast.success(`Novo fator calculado: ${novoFator}`);
+      toast.success(`Novo fator: ${novoFator} (lido ${lido.toFixed(1)} g para alvo ${alvo} g)`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao calibrar");
     } finally {
       setLoading(false);
     }
   };
+
 
 
 
