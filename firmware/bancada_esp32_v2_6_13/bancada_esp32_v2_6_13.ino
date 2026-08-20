@@ -2029,7 +2029,17 @@ void hxEnviarLeitura(float g) {
 }
 
 void tickBalanca(unsigned long now) {
-  if (!g_tem_hx711 || g_token_scale.length() < 8) return;
+  if (!g_tem_hx711) return;
+  // v2.6.13 — se a balança foi cadastrada depois, tenta obter a credencial a cada 5 min.
+  if (g_token_scale.length() < 8) {
+    static unsigned long ts_claim = 0;
+    if (ts_claim == 0 || now - ts_claim >= 300000UL) {
+      ts_claim = now;
+      buscarCredencialBalanca();
+    }
+    return;
+  }
+
   if (now - g_ts_ultima_hx_leitura >= 2000UL) {
     g_ts_ultima_hx_leitura = now;
     g_hx_peso_g = hxLerPesoG();
