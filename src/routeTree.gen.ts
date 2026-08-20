@@ -32,6 +32,7 @@ import { Route as ShellArCondicionadoRouteImport } from './routes/_shell.ar-cond
 import { Route as ShellAlertasIndexRouteImport } from './routes/_shell.alertas.index'
 import { Route as ShellMudasIdRouteImport } from './routes/_shell.mudas.$id'
 import { Route as ShellBancadasNovaRouteImport } from './routes/_shell.bancadas.nova'
+import { Route as ShellBalancaGraficoIdRouteImport } from './routes/_shell.balanca-grafico.$id'
 import { Route as ShellAlertasDestinosRouteImport } from './routes/_shell.alertas.destinos'
 import { Route as ApiPublicScaleStatusRouteImport } from './routes/api/public/scale.status'
 import { Route as ApiPublicScaleReadingRouteImport } from './routes/api/public/scale.reading'
@@ -44,7 +45,6 @@ import { Route as ApiPublicBenchTelemetryRouteImport } from './routes/api/public
 import { Route as ApiPublicBenchPairRouteImport } from './routes/api/public/bench.pair'
 import { Route as ApiPublicBenchCommandsRouteImport } from './routes/api/public/bench.commands'
 import { Route as ShellBancadasIdGraficoRouteImport } from './routes/_shell.bancadas.$id.grafico'
-import { Route as ShellBalancasIdGraficoRouteImport } from './routes/_shell.balancas.$id.grafico'
 
 const TvRoute = TvRouteImport.update({
   id: '/tv',
@@ -161,6 +161,11 @@ const ShellBancadasNovaRoute = ShellBancadasNovaRouteImport.update({
   path: '/bancadas/nova',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellBalancaGraficoIdRoute = ShellBalancaGraficoIdRouteImport.update({
+  id: '/balanca-grafico/$id',
+  path: '/balanca-grafico/$id',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellAlertasDestinosRoute = ShellAlertasDestinosRouteImport.update({
   id: '/alertas/destinos',
   path: '/alertas/destinos',
@@ -222,11 +227,6 @@ const ShellBancadasIdGraficoRoute = ShellBancadasIdGraficoRouteImport.update({
   path: '/bancadas/$id/grafico',
   getParentRoute: () => ShellRoute,
 } as any)
-const ShellBalancasIdGraficoRoute = ShellBalancasIdGraficoRouteImport.update({
-  id: '/$id/grafico',
-  path: '/$id/grafico',
-  getParentRoute: () => ShellBalancasRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -235,7 +235,7 @@ export interface FileRoutesByFullPath {
   '/ar-condicionado': typeof ShellArCondicionadoRoute
   '/area-testes': typeof ShellAreaTestesRoute
   '/atualizacao': typeof ShellAtualizacaoRoute
-  '/balancas': typeof ShellBalancasRouteWithChildren
+  '/balancas': typeof ShellBalancasRoute
   '/co2': typeof ShellCo2Route
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dados': typeof ShellDadosRoute
@@ -249,10 +249,10 @@ export interface FileRoutesByFullPath {
   '/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
+  '/balanca-grafico/$id': typeof ShellBalancaGraficoIdRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
   '/mudas/$id': typeof ShellMudasIdRoute
   '/alertas/': typeof ShellAlertasIndexRoute
-  '/balancas/$id/grafico': typeof ShellBalancasIdGraficoRoute
   '/bancadas/$id/grafico': typeof ShellBancadasIdGraficoRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
@@ -272,7 +272,7 @@ export interface FileRoutesByTo {
   '/ar-condicionado': typeof ShellArCondicionadoRoute
   '/area-testes': typeof ShellAreaTestesRoute
   '/atualizacao': typeof ShellAtualizacaoRoute
-  '/balancas': typeof ShellBalancasRouteWithChildren
+  '/balancas': typeof ShellBalancasRoute
   '/co2': typeof ShellCo2Route
   '/configuracoes': typeof ShellConfiguracoesRoute
   '/dados': typeof ShellDadosRoute
@@ -286,10 +286,10 @@ export interface FileRoutesByTo {
   '/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/usuarios': typeof ShellUsuariosRoute
   '/alertas/destinos': typeof ShellAlertasDestinosRoute
+  '/balanca-grafico/$id': typeof ShellBalancaGraficoIdRoute
   '/bancadas/nova': typeof ShellBancadasNovaRoute
   '/mudas/$id': typeof ShellMudasIdRoute
   '/alertas': typeof ShellAlertasIndexRoute
-  '/balancas/$id/grafico': typeof ShellBalancasIdGraficoRoute
   '/bancadas/$id/grafico': typeof ShellBancadasIdGraficoRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
@@ -311,7 +311,7 @@ export interface FileRoutesById {
   '/_shell/ar-condicionado': typeof ShellArCondicionadoRoute
   '/_shell/area-testes': typeof ShellAreaTestesRoute
   '/_shell/atualizacao': typeof ShellAtualizacaoRoute
-  '/_shell/balancas': typeof ShellBalancasRouteWithChildren
+  '/_shell/balancas': typeof ShellBalancasRoute
   '/_shell/co2': typeof ShellCo2Route
   '/_shell/configuracoes': typeof ShellConfiguracoesRoute
   '/_shell/dados': typeof ShellDadosRoute
@@ -325,10 +325,10 @@ export interface FileRoutesById {
   '/_shell/relatorios-temperatura': typeof ShellRelatoriosTemperaturaRoute
   '/_shell/usuarios': typeof ShellUsuariosRoute
   '/_shell/alertas/destinos': typeof ShellAlertasDestinosRoute
+  '/_shell/balanca-grafico/$id': typeof ShellBalancaGraficoIdRoute
   '/_shell/bancadas/nova': typeof ShellBancadasNovaRoute
   '/_shell/mudas/$id': typeof ShellMudasIdRoute
   '/_shell/alertas/': typeof ShellAlertasIndexRoute
-  '/_shell/balancas/$id/grafico': typeof ShellBalancasIdGraficoRoute
   '/_shell/bancadas/$id/grafico': typeof ShellBancadasIdGraficoRoute
   '/api/public/bench/commands': typeof ApiPublicBenchCommandsRoute
   '/api/public/bench/pair': typeof ApiPublicBenchPairRoute
@@ -364,10 +364,10 @@ export interface FileRouteTypes {
     | '/relatorios-temperatura'
     | '/usuarios'
     | '/alertas/destinos'
+    | '/balanca-grafico/$id'
     | '/bancadas/nova'
     | '/mudas/$id'
     | '/alertas/'
-    | '/balancas/$id/grafico'
     | '/bancadas/$id/grafico'
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
@@ -401,10 +401,10 @@ export interface FileRouteTypes {
     | '/relatorios-temperatura'
     | '/usuarios'
     | '/alertas/destinos'
+    | '/balanca-grafico/$id'
     | '/bancadas/nova'
     | '/mudas/$id'
     | '/alertas'
-    | '/balancas/$id/grafico'
     | '/bancadas/$id/grafico'
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
@@ -439,10 +439,10 @@ export interface FileRouteTypes {
     | '/_shell/relatorios-temperatura'
     | '/_shell/usuarios'
     | '/_shell/alertas/destinos'
+    | '/_shell/balanca-grafico/$id'
     | '/_shell/bancadas/nova'
     | '/_shell/mudas/$id'
     | '/_shell/alertas/'
-    | '/_shell/balancas/$id/grafico'
     | '/_shell/bancadas/$id/grafico'
     | '/api/public/bench/commands'
     | '/api/public/bench/pair'
@@ -636,6 +636,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellBancadasNovaRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/balanca-grafico/$id': {
+      id: '/_shell/balanca-grafico/$id'
+      path: '/balanca-grafico/$id'
+      fullPath: '/balanca-grafico/$id'
+      preLoaderRoute: typeof ShellBalancaGraficoIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/alertas/destinos': {
       id: '/_shell/alertas/destinos'
       path: '/alertas/destinos'
@@ -720,27 +727,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellBancadasIdGraficoRouteImport
       parentRoute: typeof ShellRoute
     }
-    '/_shell/balancas/$id/grafico': {
-      id: '/_shell/balancas/$id/grafico'
-      path: '/$id/grafico'
-      fullPath: '/balancas/$id/grafico'
-      preLoaderRoute: typeof ShellBalancasIdGraficoRouteImport
-      parentRoute: typeof ShellBalancasRoute
-    }
   }
 }
-
-interface ShellBalancasRouteChildren {
-  ShellBalancasIdGraficoRoute: typeof ShellBalancasIdGraficoRoute
-}
-
-const ShellBalancasRouteChildren: ShellBalancasRouteChildren = {
-  ShellBalancasIdGraficoRoute: ShellBalancasIdGraficoRoute,
-}
-
-const ShellBalancasRouteWithChildren = ShellBalancasRoute._addFileChildren(
-  ShellBalancasRouteChildren,
-)
 
 interface ShellMudasRouteChildren {
   ShellMudasIdRoute: typeof ShellMudasIdRoute
@@ -758,7 +746,7 @@ interface ShellRouteChildren {
   ShellArCondicionadoRoute: typeof ShellArCondicionadoRoute
   ShellAreaTestesRoute: typeof ShellAreaTestesRoute
   ShellAtualizacaoRoute: typeof ShellAtualizacaoRoute
-  ShellBalancasRoute: typeof ShellBalancasRouteWithChildren
+  ShellBalancasRoute: typeof ShellBalancasRoute
   ShellCo2Route: typeof ShellCo2Route
   ShellConfiguracoesRoute: typeof ShellConfiguracoesRoute
   ShellDadosRoute: typeof ShellDadosRoute
@@ -772,6 +760,7 @@ interface ShellRouteChildren {
   ShellRelatoriosTemperaturaRoute: typeof ShellRelatoriosTemperaturaRoute
   ShellUsuariosRoute: typeof ShellUsuariosRoute
   ShellAlertasDestinosRoute: typeof ShellAlertasDestinosRoute
+  ShellBalancaGraficoIdRoute: typeof ShellBalancaGraficoIdRoute
   ShellBancadasNovaRoute: typeof ShellBancadasNovaRoute
   ShellAlertasIndexRoute: typeof ShellAlertasIndexRoute
   ShellBancadasIdGraficoRoute: typeof ShellBancadasIdGraficoRoute
@@ -781,7 +770,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellArCondicionadoRoute: ShellArCondicionadoRoute,
   ShellAreaTestesRoute: ShellAreaTestesRoute,
   ShellAtualizacaoRoute: ShellAtualizacaoRoute,
-  ShellBalancasRoute: ShellBalancasRouteWithChildren,
+  ShellBalancasRoute: ShellBalancasRoute,
   ShellCo2Route: ShellCo2Route,
   ShellConfiguracoesRoute: ShellConfiguracoesRoute,
   ShellDadosRoute: ShellDadosRoute,
@@ -795,6 +784,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellRelatoriosTemperaturaRoute: ShellRelatoriosTemperaturaRoute,
   ShellUsuariosRoute: ShellUsuariosRoute,
   ShellAlertasDestinosRoute: ShellAlertasDestinosRoute,
+  ShellBalancaGraficoIdRoute: ShellBalancaGraficoIdRoute,
   ShellBancadasNovaRoute: ShellBancadasNovaRoute,
   ShellAlertasIndexRoute: ShellAlertasIndexRoute,
   ShellBancadasIdGraficoRoute: ShellBancadasIdGraficoRoute,
