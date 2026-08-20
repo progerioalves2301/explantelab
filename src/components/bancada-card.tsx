@@ -587,20 +587,17 @@ export function BancadaCard({ bancada, onConfigure, segments, clock, laboratorio
                     </div>
                   </div>
 
-                  {umidadePct != null && (
-                    <div className="flex items-center gap-3 rounded-md border border-blue-500/30 bg-blue-500/5 px-2.5 py-3 text-blue-700 dark:text-blue-300">
-                      <Droplets className="h-5 w-5 shrink-0" />
-                      <div className="flex-1">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600/80 dark:text-blue-400/80">
-                          Umidade do Galão
-                        </div>
-
-                        <div className="font-mono text-2xl font-bold">
-                          {umidadePct.toFixed(1)} %
-                        </div>
+                  <div className="flex items-center gap-3 rounded-md border border-blue-500/30 bg-blue-500/5 px-2.5 py-3 text-blue-700 dark:text-blue-300">
+                    <Droplets className="h-5 w-5 shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600/80 dark:text-blue-400/80">
+                        Umidade do Galão
+                      </div>
+                      <div className="font-mono text-2xl font-bold">
+                        {umidadePct != null ? `${umidadePct.toFixed(1)} %` : "—"}
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 
