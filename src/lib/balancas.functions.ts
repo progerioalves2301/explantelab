@@ -74,7 +74,9 @@ export const editarBalanca = createServerFn({ method: "POST" })
     ativa: z.boolean().optional(),
     minutos_estabilizacao: z.number().int().min(0).max(60).optional(),
     outlier_delta_g: z.number().min(0.1).max(1000).optional(),
-    fator_calibracao: z.number().positive().max(1000000).optional(),
+    fator_calibracao: z.number().finite().min(-1000000).max(1000000)
+      .refine((valor) => Math.abs(valor) >= 0.0001, "O fator não pode ser zero")
+      .optional(),
     tara_g: z.number().optional(),
   }))
   .handler(async ({ data, context }) => {

@@ -2,6 +2,15 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-20 — Firmware v2.6.15: tara e calibração da balança
+
+- **Causa do valor bruto persistente**: a v2.6.14 recebia os comandos do painel, porém `tratarComando()` não implementava `BALANCA_TARA` nem `BALANCA_CALIBRAR`; portanto o offset permanecia em zero e o fator permanecia em 1.
+- **Correção**: Tara agora grava na NVS a média bruta atual do HX711 como zero; Calibração aplica e persiste o fator recebido e força um novo envio do peso.
+- **Fator com sinal**: fatores negativos são aceitos quando a orientação/fiação da célula produz contagens decrescentes ao adicionar peso. Fator zero continua bloqueado.
+- **Ação**: gravar `firmware/bancada_esp32_v2_6_15/bancada_esp32_v2_6_15.ino`. Depois, com a plataforma vazia, clicar em **Tara (Zerar)**; colocar um peso conhecido, calcular o fator e salvar.
+
+---
+
 ## 2026-08-20 — Firmware v2.6.14: diagnóstico e envio rápido da balança
 
 - **Causa do 0,00 g**: o ESP32 estava conectado e consultando o servidor, mas a balança sem tara/calibração produzia um valor bruto fora do intervalo aceito; a leitura era rejeitada antes de chegar ao painel.
