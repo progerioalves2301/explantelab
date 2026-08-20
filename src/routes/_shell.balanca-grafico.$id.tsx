@@ -23,7 +23,7 @@ import {
   type HistoricoPeso,
 } from "@/lib/balancas.functions";
 
-export const Route = createFileRoute("/_shell/balancas/$id/grafico")({
+export const Route = createFileRoute("/_shell/balanca-grafico/$id")({
   ssr: false,
   head: () => ({
     meta: [
@@ -54,7 +54,7 @@ const COR_FASE: Record<string, string> = {
 };
 
 function GraficoPesoPage() {
-  const { id } = useParams({ from: "/_shell/balancas/$id/grafico" });
+  const { id } = useParams({ from: "/_shell/balanca-grafico/$id" });
   const listarHistorico = useServerFn(listarHistoricoPeso);
   const listar = useServerFn(listarBalancas);
 

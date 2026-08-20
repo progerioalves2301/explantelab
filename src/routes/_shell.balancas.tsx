@@ -188,7 +188,7 @@ function BalancasPage() {
 
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button asChild size="sm" variant="outline" className="flex-1">
-                    <Link to="/balancas/$id/grafico" params={{ id: b.id }}>
+                    <Link to="/balanca-grafico/$id" params={{ id: b.id }}>
                       <LineChartIcon className="mr-1.5 h-3.5 w-3.5" /> Gráfico
                     </Link>
                   </Button>
