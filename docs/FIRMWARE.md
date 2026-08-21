@@ -1,7 +1,7 @@
 # Documentação Técnica do Firmware — VitroCeres Prateleira ESP32
 
-> Versão atual: **v2.6.17**  
-> Arquivo: `firmware/bancada_esp32_v2_6_17/bancada_esp32_v2_6_17.ino`
+> Versão atual: **v2.6.18**  
+> Arquivo: `firmware/bancada_esp32_v2_6_18/bancada_esp32_v2_6_18.ino`
 
 Este documento explica como o firmware funciona, pinagem, lógica de ciclos, luzes, ar-condicionado, sensores e atualização OTA. Use-o para entender o comportamento esperado, diagnosticar problemas e saber quando é necessário atualizar os equipamentos.
 
@@ -206,7 +206,7 @@ Para aparelhos não suportados nativamente, o backend pode enviar códigos **RAW
 - Calibração (`fator_cal`, `zero_offset`) persistida na NVS.
 - **Comandos de Ajuste (v2.6.15+)**: `BALANCA_TARA` grava a contagem bruta atual como offset zero na NVS; `BALANCA_CALIBRAR` aplica e persiste o fator enviado pelo app. O fator pode ser positivo ou negativo conforme a orientação da célula, mas nunca zero.
 - **Filtro e calibração local (v2.6.16+)**: tara, leitura e calibração usam média aparada das contagens brutas, descartando os 20% maiores e menores valores. Ao calibrar com peso conhecido, o próprio ESP32 calcula `fator = (raw_filtrado - zero) / peso_conhecido`, sem depender de uma leitura atrasada do banco.
-- **Calibração de 2 pontos (v2.6.17+)**: `BALANCA_CALIBRAR` com `payload.ponto = 1` ou `2` grava as contagens brutas de dois pesos conhecidos (`hx_p1r/hx_p1g/hx_p2r/hx_p2g` em NVS). Com os dois pontos válidos o firmware calcula `fator = (raw2 - raw1) / (peso2 - peso1)` e `zero = raw1 - peso1 * fator`, corrigindo ganho e deslocamento (zona morta/pré-carga). Pontos com pesos muito próximos (< 1 g de diferença ou < 100 contagens) são recusados. A Tara limpa os pontos gravados.
+- **Calibração segmentada (v2.6.18+)**: `BALANCA_CALIBRAR` com `payload.ponto = 1` ou `2` grava as contagens brutas de dois pesos conhecidos (`hx_p1r/hx_p1g/hx_p2r/hx_p2g` em NVS). O firmware preserva a Tara real como referência de 0 g e usa dois trechos lineares: `0 g → ponto 1` para cargas baixas e `ponto 1 → ponto 2` para cargas médias/altas. Isso corrige a zona morta sem deslocar o zero; a v2.6.17 podia deixar a plataforma vazia marcando peso ao extrapolar a reta dos dois pesos. Pontos fora de ordem, invertidos ou muito próximos são recusados. A Tara limpa os pontos gravados.
 - O fator calculado pelo dispositivo acompanha cada leitura e mantém o valor exibido no painel sincronizado com a NVS do ESP32.
 - **Log de Debug (v2.6.4)**: Imprime `[DEBUG BALANCA]` no Serial a cada leitura, mostrando valores raw, offset (zero), fator e o peso final em gramas.
 - Envia para `/api/public/scale/reading` com `X-Device-Token`.
@@ -326,8 +326,8 @@ Proteções acrescentadas na v2.6.0:
 
 ## 14. Arquivos relacionados
 
-- `firmware/bancada_esp32_v2_6_17/bancada_esp32_v2_6_17.ino` — código fonte atual.
-- `firmware/bancada_esp32_v2_6_16/bancada_esp32_v2_6_16.ino` — versão anterior.
+- `firmware/bancada_esp32_v2_6_18/bancada_esp32_v2_6_18.ino` — código fonte atual.
+- `firmware/bancada_esp32_v2_6_17/bancada_esp32_v2_6_17.ino` — versão anterior.
 - `firmware/FIACAO_VALVULAS.md` — diagrama de fiação e endereçamento.
 - `CHANGELOG.md` — histórico de alterações.
 - `mem://index.md` — memória consolidada do projeto.

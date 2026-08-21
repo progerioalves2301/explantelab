@@ -2,6 +2,16 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-21 — Firmware v2.6.18: calibração preserva a Tara em 0 g
+
+- **Causa dos 167 g sem carga**: a v2.6.17 calculava uma única reta entre os pesos menor e maior e substituía a Tara pelo ponto em que essa reta chegava a 0 g. Como a célula tem resposta diferente na faixa baixa, esse zero extrapolado não coincidia com a plataforma vazia.
+- **Correção**: a Tara real permanece imutável. A leitura usa três referências e dois trechos: `Tara (0 g) → peso menor` e `peso menor → peso maior`. Assim a plataforma vazia volta a 0 g e os dois pesos de referência continuam exatos.
+- **Validação**: o ESP32 recusa pontos fora de ordem, com sentido incompatível ou sinal insuficiente, evitando salvar uma curva inválida.
+- **Painel**: as instruções deixam explícito que a Tara deve ser feita uma única vez, antes do Ponto 1, e não pode ser repetida entre os dois pesos.
+- **Ação**: gravar `firmware/bancada_esp32_v2_6_18/bancada_esp32_v2_6_18.ino`; depois fazer Tara vazia, Ponto 1 com o peso menor e Ponto 2 com o peso maior.
+
+---
+
 ## 2026-08-20 — Firmware v2.6.17: calibração de 2 pontos (célula 5 kg)
 
 - **Problema**: com um único ponto de calibração, a célula de 5 kg acertava 1 kg mas mostrava ~18–31 g para 218–258 g. A reta ficava com deslocamento de ~200 g (zona morta/pré-carga da célula), o que nenhum ajuste de fator sozinho corrige.

@@ -343,8 +343,8 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
       setLoading(false);
     }
   };
-  // Calibração de dois pontos (v2.6.17): corrige célula com zona morta/pré-carga,
-  // em que um ponto único acerta o peso calibrado mas erra os intermediários.
+  // Calibração segmentada (v2.6.18): preserva a tara como zero e usa dois pesos
+  // para corrigir separadamente as faixas baixa e alta da célula.
   const handlePonto = async (ponto: 1 | 2, valor: string) => {
     const alvo = Number(valor);
     if (!alvo || !isFinite(alvo) || alvo <= 0) return toast.error("Informe o peso em gramas");
@@ -360,7 +360,7 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
       toast.success(
         ponto === 1
           ? `Ponto 1 (${alvo} g) enviado. Agora troque para o peso maior.`
-          : `Ponto 2 (${alvo} g) enviado; a reta será calculada no ESP32.`,
+          : `Ponto 2 (${alvo} g) enviado; a curva será calculada sem alterar a tara.`,
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao enviar ponto");
@@ -460,14 +460,14 @@ function AjustesBalancaDialog({ balanca, onDone }: { balanca: Balanca, onDone: (
           </div>
         </div>
 
-        {/* Calibração de dois pontos — firmware 2.6.17+ */}
+        {/* Calibração segmentada — firmware 2.6.18+ */}
         <div className="space-y-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
           <div className="space-y-1">
-            <Label>Calibração de 2 pontos (recomendada)</Label>
+            <Label>Calibração de 2 pesos (recomendada)</Label>
             <p className="text-[10px] text-muted-foreground">
-              Corrige célula com zona morta (acerta 1 kg mas erra pesos menores).
-              Requer firmware <strong>2.6.17</strong>. Faça a <strong>Tara</strong> vazia,
-              coloque o peso menor e grave o Ponto 1; troque pelo peso maior e grave o Ponto 2.
+              Mantém a Tara em 0 g e corrige pesos baixos e altos separadamente.
+              Requer firmware <strong>2.6.18</strong>. Faça a <strong>Tara</strong> vazia uma vez,
+              coloque o peso menor e grave o Ponto 1; sem refazer a Tara, troque pelo peso maior e grave o Ponto 2.
             </p>
           </div>
           <div className="flex gap-2">
