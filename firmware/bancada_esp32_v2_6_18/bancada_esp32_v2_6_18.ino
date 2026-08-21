@@ -1442,7 +1442,7 @@ void tratarComando(JsonObject cmd) {
     }
     float pesoConhecido = p["peso_conhecido_g"] | 0.0f;
     float novoFator = p["fator"] | 0.0f;
-    int   ponto     = p["ponto"] | 0;   // v2.6.17: 1 ou 2 = calibração de 2 pontos
+    int   ponto     = p["ponto"] | 0;   // v2.6.18: 1 ou 2 = calibração segmentada
 
     if (ponto == 1 || ponto == 2) {
       if (!isfinite(pesoConhecido) || pesoConhecido <= 0.0f) {
