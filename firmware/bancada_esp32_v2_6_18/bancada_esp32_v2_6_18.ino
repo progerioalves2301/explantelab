@@ -119,7 +119,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.6.17";
+static const char* FIRMWARE_VERSION = "2.6.18";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -243,10 +243,9 @@ HX711 g_balanca;
 bool  g_tem_hx711            = false;
 float g_hx_fator_cal         = 1.0f;   // calibração da célula (NVS)
 long  g_hx_zero_offset       = 0;      // tare (NVS)
-// v2.6.17 — calibração de dois pontos. Guarda as contagens brutas de dois
-// pesos conhecidos e resolve a reta (ganho + deslocamento). Isso corrige célula
-// com zona morta/pré-carga, em que um único ponto acerta o peso usado na
-// calibração mas erra os intermediários.
+// v2.6.18 — calibração segmentada com três referências: tara real (0 g) e
+// dois pesos conhecidos. A tara nunca é substituída por um zero extrapolado.
+// O primeiro trecho corrige pesos baixos e o segundo, pesos médios/altos.
 long  g_hx_p1_raw            = 0;
 float g_hx_p1_g              = -1.0f;  // <0 = ponto não gravado
 long  g_hx_p2_raw            = 0;
@@ -1457,21 +1456,24 @@ void tratarComando(JsonObject cmd) {
       Serial.printf("[HX711] ponto %d gravado: raw=%ld peso=%.2f g\n",
                     ponto, rawPonto, pesoConhecido);
 
-      // Com os dois pontos válidos, resolve a reta peso = (raw - zero)/fator.
+      // Com os dois pontos válidos, preserva a tara real e habilita a curva
+      // segmentada 0 g -> ponto 1 -> ponto 2. A v2.6.17 extrapolava a reta dos
+      // dois pesos até zero e podia fazer a plataforma vazia marcar ~167 g.
       if (g_hx_p1_g > 0.0f && g_hx_p2_g > 0.0f) {
         float dw = g_hx_p2_g - g_hx_p1_g;
         long  dr = g_hx_p2_raw - g_hx_p1_raw;
-        if (fabsf(dw) < 1.0f || labs(dr) < 100) {
-          Serial.println("[HX711] pontos muito proximos; use pesos bem diferentes");
+        long  d1 = g_hx_p1_raw - g_hx_zero_offset;
+        bool mesmaDirecao = (d1 > 0 && dr > 0) || (d1 < 0 && dr < 0);
+        if (dw < 1.0f || labs(d1) < 100 || labs(dr) < 100 || !mesmaDirecao) {
+          Serial.println("[HX711] pontos invalidos; use peso 1 menor, peso 2 maior e nao refaca a tara entre eles");
         } else {
-          float fator = (float)dr / dw;
-          long  zero  = (long)((float)g_hx_p1_raw - g_hx_p1_g * fator);
-          g_hx_fator_cal   = fator;
-          g_hx_zero_offset = zero;
+          // Mantém um fator de compatibilidade para telemetria e firmwares
+          // antigos, mas hxLerPesoG usa os dois trechos quando os pontos existem.
+          g_hx_fator_cal = (float)dr / dw;
           g_hx_peso_g      = hxLerPesoG();
           salvarPerifericos();
           g_ts_ultimo_hx_envio = 0;
-          Serial.printf("[HX711] reta de 2 pontos: fator=%.6f zero=%ld peso=%.2f g\n",
+          Serial.printf("[HX711] curva 0-P1-P2 ativa: fator2=%.6f tara=%ld peso=%.2f g\n",
                         g_hx_fator_cal, g_hx_zero_offset, g_hx_peso_g);
           return;
         }
@@ -2143,10 +2145,38 @@ float hxLerPesoG() {
     g_hx_fator_cal = 1.0f;
   }
   g_hx_raw_filtrado = hxLerRawFiltrado(15);
-  float peso = (g_hx_raw_filtrado - g_hx_zero_offset) / g_hx_fator_cal;
+  float peso;
+  long deltaAtual = g_hx_raw_filtrado - g_hx_zero_offset;
+  long deltaP1 = g_hx_p1_raw - g_hx_zero_offset;
+  long deltaP2 = g_hx_p2_raw - g_hx_zero_offset;
+  bool pontosValidos = g_hx_p1_g > 0.0f &&
+                       g_hx_p2_g > g_hx_p1_g &&
+                       labs(deltaP1) >= 100 &&
+                       labs(deltaP2 - deltaP1) >= 100 &&
+                       ((deltaP1 > 0 && deltaP2 > deltaP1) ||
+                        (deltaP1 < 0 && deltaP2 < deltaP1));
+
+  if (pontosValidos) {
+    // Normaliza o sentido para comparar células cuja contagem cresce ou cai.
+    float sentido = deltaP1 > 0 ? 1.0f : -1.0f;
+    float x = (float)deltaAtual * sentido;
+    float x1 = (float)deltaP1 * sentido;
+    float x2 = (float)deltaP2 * sentido;
+    if (x <= x1) {
+      // Inclui x=0, portanto plataforma na tara sempre resulta exatamente 0 g.
+      peso = x * g_hx_p1_g / x1;
+    } else {
+      // Interpola entre os pesos e prolonga a inclinação do segundo trecho
+      // para cargas acima do ponto 2.
+      peso = g_hx_p1_g + (x - x1) *
+             (g_hx_p2_g - g_hx_p1_g) / (x2 - x1);
+    }
+  } else {
+    peso = deltaAtual / g_hx_fator_cal;
+  }
   Serial.printf("[HX711] raw=%ld zero=%ld delta=%ld fator=%.6f peso=%.2f g\n",
                 g_hx_raw_filtrado, g_hx_zero_offset,
-                g_hx_raw_filtrado - g_hx_zero_offset, g_hx_fator_cal, peso);
+                deltaAtual, g_hx_fator_cal, peso);
   return peso;
 }
 
