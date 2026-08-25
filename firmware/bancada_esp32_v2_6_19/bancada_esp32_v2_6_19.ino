@@ -15,8 +15,8 @@
  *
  * Provisionamento pelo portal Wi-Fi (WiFiManager):
  *   - código de pareamento (6 dígitos) → bench_pair
- *   - device_token do sensor CO2 (opcional, tela "Sensores CO2")
- *   - código de pareamento da balança (opcional, tela "Balanças")
+ *   - credencial de CO2 fixa no firmware
+ *   - credencial da balança buscada automaticamente pela prateleira associada
  *   - identificador da muda ativa (opcional)
  *
  * Comunicação:
@@ -119,7 +119,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.6.18";
+static const char* FIRMWARE_VERSION = "2.6.19";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
