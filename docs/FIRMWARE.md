@@ -1,7 +1,7 @@
 # Documentação Técnica do Firmware — VitroCeres Prateleira ESP32
 
-> Versão atual: **v2.6.18**  
-> Arquivo: `firmware/bancada_esp32_v2_6_18/bancada_esp32_v2_6_18.ino`
+> Versão atual: **v2.6.19**  
+> Arquivo: `firmware/bancada_esp32_v2_6_19/bancada_esp32_v2_6_19.ino`
 
 Este documento explica como o firmware funciona, pinagem, lógica de ciclos, luzes, ar-condicionado, sensores e atualização OTA. Use-o para entender o comportamento esperado, diagnosticar problemas e saber quando é necessário atualizar os equipamentos.
 
@@ -204,6 +204,7 @@ Para aparelhos não suportados nativamente, o backend pode enviar códigos **RAW
 
 - GPIO 16 (DOUT) / GPIO 17 (SCK).
 - Calibração (`fator_cal`, `zero_offset`) persistida na NVS.
+- **Boot protegido (v2.6.19+)**: SCD41/HX711 são inicializados depois do portal Wi‑Fi. Assim, sensor opcional ausente ou com fiação instável não impede a tela de configuração de aparecer.
 - **Comandos de Ajuste (v2.6.15+)**: `BALANCA_TARA` grava a contagem bruta atual como offset zero na NVS; `BALANCA_CALIBRAR` aplica e persiste o fator enviado pelo app. O fator pode ser positivo ou negativo conforme a orientação da célula, mas nunca zero.
 - **Filtro e calibração local (v2.6.16+)**: tara, leitura e calibração usam média aparada das contagens brutas, descartando os 20% maiores e menores valores. Ao calibrar com peso conhecido, o próprio ESP32 calcula `fator = (raw_filtrado - zero) / peso_conhecido`, sem depender de uma leitura atrasada do banco.
 - **Calibração segmentada (v2.6.18+)**: `BALANCA_CALIBRAR` com `payload.ponto = 1` ou `2` grava as contagens brutas de dois pesos conhecidos (`hx_p1r/hx_p1g/hx_p2r/hx_p2g` em NVS). O firmware preserva a Tara real como referência de 0 g e usa dois trechos lineares: `0 g → ponto 1` para cargas baixas e `ponto 1 → ponto 2` para cargas médias/altas. Isso corrige a zona morta sem deslocar o zero; a v2.6.17 podia deixar a plataforma vazia marcando peso ao extrapolar a reta dos dois pesos. Pontos fora de ordem, invertidos ou muito próximos são recusados. A Tara limpa os pontos gravados.
@@ -271,14 +272,15 @@ O carimbo `rtc_ts` (usado para detectar bateria fraca do DS3231 quando o relógi
 No primeiro boot (ou após reset de fábrica), o ESP32 abre um portal com:
 
 - SSID: `VitroCeres-XXXXXX` (onde XXXXXX são os últimos dígitos do MAC).
-- Senha: não definida (rede aberta).
+- Senha: `1234567890`.
 - O usuário conecta e informa:
   - Código de pareamento de 6 dígitos (cadastrado no app).
   - Wi-Fi da rede local.
-  - Tokens opcionais de CO2 e balança.
   - Identificador da muda (opcional).
 
-Após o pareamento, as credenciais são salvas na NVS e o portal não abre mais, a menos que o botão de reset seja pressionado por 5 s.
+Na v2.6.19+, o portal não expira sozinho e é aberto antes da inicialização dos sensores opcionais. Se o celular não abrir a tela automaticamente, acesse `http://192.168.4.1` conectado à rede `VitroCeres-XXXXXX`.
+
+Após o pareamento, as credenciais são salvas na NVS e o portal não abre mais, a menos que o botão BOOT/RESET seja pressionado por 5 s ou a flash/NVS seja apagada.
 
 ---
 
@@ -326,8 +328,8 @@ Proteções acrescentadas na v2.6.0:
 
 ## 14. Arquivos relacionados
 
-- `firmware/bancada_esp32_v2_6_18/bancada_esp32_v2_6_18.ino` — código fonte atual.
-- `firmware/bancada_esp32_v2_6_17/bancada_esp32_v2_6_17.ino` — versão anterior.
+- `firmware/bancada_esp32_v2_6_19/bancada_esp32_v2_6_19.ino` — código fonte atual.
+- `firmware/bancada_esp32_v2_6_18/bancada_esp32_v2_6_18.ino` — versão anterior.
 - `firmware/FIACAO_VALVULAS.md` — diagrama de fiação e endereçamento.
 - `CHANGELOG.md` — histórico de alterações.
 - `mem://index.md` — memória consolidada do projeto.

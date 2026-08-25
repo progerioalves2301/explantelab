@@ -2,6 +2,15 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-25 — Firmware v2.6.19: portal Wi‑Fi abre antes dos sensores opcionais
+
+- **Causa provável do travamento aparente**: nas versões anteriores, o boot inicializava SCD41/HX711 antes de abrir o portal Wi‑Fi. Se algum sensor opcional estivesse ausente, com fiação instável ou segurando o barramento, o Serial parava logo após mensagens como `[SCD41] nao iniciou` e dava a impressão de que a interface web não partia.
+- **Correção**: o portal de configuração agora é chamado antes da inicialização dos sensores opcionais. Assim, no primeiro boot, a rede `VitroCeres-XXXXXX` aparece mesmo que CO2/balança não estejam respondendo.
+- **Portal sem expiração**: o timeout do portal foi removido; ele fica aguardando o pareamento em vez de reiniciar após alguns minutos. O Serial agora imprime SSID, senha e `http://192.168.4.1`.
+- **Ação**: gravar `firmware/bancada_esp32_v2_6_19/bancada_esp32_v2_6_19.ino`. Para forçar o portal em uma placa que já tenha credenciais salvas, segure o botão BOOT/RESET por 5 s ou apague a flash/NVS antes da gravação.
+
+---
+
 ## 2026-08-21 — Firmware v2.6.18: calibração preserva a Tara em 0 g
 
 - **Causa dos 167 g sem carga**: a v2.6.17 calculava uma única reta entre os pesos menor e maior e substituía a Tara pelo ponto em que essa reta chegava a 0 g. Como a célula tem resposta diferente na faixa baixa, esse zero extrapolado não coincidia com a plataforma vazia.
