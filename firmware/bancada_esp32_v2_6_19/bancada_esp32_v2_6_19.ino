@@ -1063,7 +1063,10 @@ static const char PORTAL_FOOT[] PROGMEM =
 
 void abrirPortalWifi(bool forcar) {
   WiFiManager wm;
-  wm.setConfigPortalTimeout(300);
+  wm.setConfigPortalTimeout(0);
+  wm.setConnectTimeout(20);
+  wm.setSaveConnectTimeout(20);
+  wm.setBreakAfterConfig(false);
   wm.setClass("invert");
   wm.setTitle("VitroCeres — Prateleira");
   wm.setCustomHeadElement(PORTAL_HEAD);
@@ -1095,6 +1098,8 @@ void abrirPortalWifi(bool forcar) {
   if (forcar) {
     // Primeiro boot / reset manual — precisa abrir portal p/ receber SSID+código.
     wm.resetSettings();
+    Serial.printf("[WM] portal aberto: SSID=%s senha=%s IP=192.168.4.1\n", apName, apPass);
+    Serial.println("[WM] conecte o celular nessa rede e acesse http://192.168.4.1 se a tela nao abrir sozinha");
     bool ok = wm.startConfigPortal(apName, apPass);
     if (!ok) {
       Serial.println("[WM] falha no portal; reiniciando…");
