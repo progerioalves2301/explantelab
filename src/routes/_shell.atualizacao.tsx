@@ -52,6 +52,14 @@ export const Route = createFileRoute("/_shell/atualizacao")({
         content:
           "Faça upload de firmware e dispare atualizações OTA para as prateleiras ESP32.",
       },
+      { property: "og:title", content: "Atualização OTA — Explante" },
+      {
+        property: "og:description",
+        content:
+          "Faça upload de firmware e dispare atualizações OTA para as prateleiras ESP32.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AtualizacaoPage,

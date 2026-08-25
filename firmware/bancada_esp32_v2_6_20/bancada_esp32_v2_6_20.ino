@@ -1956,7 +1956,7 @@ void tickCiclo() {
   switch (fase) {
     case REPOUSO:
       // Não dispara sozinho: o backend agenda os ciclos por horário
-      // (America/Sao_Paulo) e envia FORCE_CYCLE via bench_pull_commands.
+      // (America/Sao_Paulo) e envia FORCE_CYCLE pela API de comandos.
       break;
     case INJETANDO:
       if (decorrido >= cfg.tempo_injecao_segundos) aplicarFase(PAUSADO);
