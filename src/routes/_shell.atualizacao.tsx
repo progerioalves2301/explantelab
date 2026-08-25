@@ -52,6 +52,14 @@ export const Route = createFileRoute("/_shell/atualizacao")({
         content:
           "Faça upload de firmware e dispare atualizações OTA para as prateleiras ESP32.",
       },
+      { property: "og:title", content: "Atualização OTA — Explante" },
+      {
+        property: "og:description",
+        content:
+          "Faça upload de firmware e dispare atualizações OTA para as prateleiras ESP32.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AtualizacaoPage,
@@ -447,7 +455,7 @@ function AtualizacaoPage() {
             className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground hover:file:bg-primary/90"
           />
           <p className="text-xs text-muted-foreground">
-            Compile o sketch <code>bancada_esp32_v2_6_19.ino</code> em{" "}
+            Compile o sketch <code>bancada_esp32_v2_6_20.ino</code> em{" "}
             <em>Sketch → Export Compiled Binary</em> e envie o{" "}
             <code>.bin</code> gerado.
 
