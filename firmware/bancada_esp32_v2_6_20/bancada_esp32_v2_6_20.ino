@@ -14,13 +14,14 @@
  * roda em qualquer prateleira, com ou sem CO2/balança.
  *
  * Provisionamento pelo portal Wi-Fi (WiFiManager):
- *   - código de pareamento (6 dígitos) → bench_pair
+ *   - código de pareamento (6 dígitos) → /api/public/bench/pair
  *   - credencial de CO2 fixa no firmware
  *   - credencial da balança buscada automaticamente pela prateleira associada
  *   - identificador da muda ativa (opcional)
  *
  * Comunicação:
- *   - Prateleira/AC: RPC direta ao Supabase (bench_push_telemetry / _pull_commands)
+ *   - Prateleira: POST/GET https://explantelab.lovable.app/api/public/bench/*
+ *   - IR/AC: RPC direta para funções de aprendizado IR
  *   - CO2:  POST https://explantelab.lovable.app/api/public/co2/reading
  *   - Peso: POST https://explantelab.lovable.app/api/public/scale/reading
  *
@@ -119,7 +120,7 @@ static const int PIN_HX_DOUT = 16;
 static const int PIN_HX_SCK  = 17;
 // v2.4.0 — SCD41 usa mesmo barramento I2C do DS3231 (SDA=21 / SCL=22).
 
-static const char* FIRMWARE_VERSION = "2.6.19";
+static const char* FIRMWARE_VERSION = "2.6.20";
 
 // -------- IR (ar-condicionado) --------
 // Estado local do ar (última decisão aplicada) — usado só para telemetria/debug.
@@ -1168,15 +1169,64 @@ bool supabaseRpc(const char* fn, const String& body, String& outBody) {
   return true;
 }
 
+// v2.6.20 — comunicação principal da prateleira pelo mesmo domínio do app.
+// Isso evita que pareamento/telemetria dependam da chamada RPC direta e deixa
+// o Serial mostrar exatamente qual endpoint HTTP falhou.
+bool appPostPublic(const char* path, const String& body, const String& token,
+                   String& respOut) {
+  if (WiFi.status() != WL_CONNECTED) return false;
+  HTTPClient h;
+  WiFiClientSecure c;
+  c.setInsecure();
+  String url = String(API_HOST) + path;
+  if (!h.begin(c, url)) {
+    Serial.printf("[APP] begin falhou %s\n", url.c_str());
+    return false;
+  }
+  h.setTimeout(8000);
+  h.addHeader("Content-Type", "application/json");
+  if (token.length() > 0) h.addHeader("X-Device-Token", token);
+  int code = h.POST(body);
+  respOut = h.getString();
+  h.end();
+  if (code < 200 || code >= 300) {
+    Serial.printf("[APP] POST %s => %d: %s\n", path, code, respOut.c_str());
+    return false;
+  }
+  return true;
+}
+
+bool appGetPublic(const char* path, const String& token, String& respOut) {
+  if (WiFi.status() != WL_CONNECTED || token.length() < 8) return false;
+  HTTPClient h;
+  WiFiClientSecure c;
+  c.setInsecure();
+  String url = String(API_HOST) + path;
+  if (!h.begin(c, url)) {
+    Serial.printf("[APP] begin falhou %s\n", url.c_str());
+    return false;
+  }
+  h.setTimeout(8000);
+  h.addHeader("X-Device-Token", token);
+  int code = h.GET();
+  respOut = h.getString();
+  h.end();
+  if (code < 200 || code >= 300) {
+    Serial.printf("[APP] GET %s => %d: %s\n", path, code, respOut.c_str());
+    return false;
+  }
+  return true;
+}
+
 // -------- Pareamento --------
 bool parear(const char* code) {
   JsonDocument body;
-  body["_pairing_code"] = code;
+  body["pairing_code"] = code;
   String bodyStr;
   serializeJson(body, bodyStr);
 
   String resp;
-  if (!supabaseRpc("bench_pair", bodyStr, resp)) {
+  if (!appPostPublic("/api/public/bench/pair", bodyStr, "", resp)) {
     Serial.println("[PAIR] falha na chamada");
     return false;
   }
@@ -1212,17 +1262,15 @@ bool enviarTelemetria() {
   if (creds.device_token.length() == 0) return false;
 
   JsonDocument doc;
-  doc["_bancada_id"]   = creds.bancada_id;
-  doc["_device_token"] = creds.device_token;
-  doc["_status"]       = faseNome(fase);
-  JsonObject v = doc["_valvulas"].to<JsonObject>();
+  doc["status"]       = faseNome(fase);
+  JsonObject v = doc["valvulas"].to<JsonObject>();
   v["v1"] = relayRead(PIN_V1);
   v["v2"] = relayRead(PIN_V2);
   v["v3"] = relayRead(PIN_V3);
   v["v4"] = relayRead(PIN_V4);
   v["v5"] = false;   // V5 removida do projeto (v1.9.2+)
-  doc["_proximo_ciclo_segundos"] = proxCicloSegRest();
-  doc["_firmware_version"]       = FIRMWARE_VERSION;
+  doc["proximo_ciclo_segundos"] = proxCicloSegRest();
+  doc["firmware_version"]       = FIRMWARE_VERSION;
   
   // Se o SCD41 estiver presente, envia CO2 e umidade na telemetria da prateleira também
   if (g_tem_scd41) {
@@ -1232,14 +1280,14 @@ bool enviarTelemetria() {
 
 
 
-  doc["_tem_rtc"]                = g_tem_rtc;
-  doc["_rtc_bateria_fraca"]      = g_rtc_bat_fraca;
-  doc["_rtc_hora_perdida"]       = g_rtc_hora_perdida;
-  doc["_rtc_desvio_segundos"]    = g_rtc_desvio_medido ? g_rtc_desvio_seg : 0;
-  doc["_ip_local"]               = WiFi.localIP().toString();
-  doc["_luz_ligada"]             = g_luz_ligada;
-  doc["_sensor_travado"]         = g_sensor_travado;
-  doc["_sensor_reinicios"]       = g_temp_reinicios;
+  doc["tem_rtc"]                = g_tem_rtc;
+  doc["rtc_bateria_fraca"]      = g_rtc_bat_fraca;
+  doc["rtc_hora_perdida"]       = g_rtc_hora_perdida;
+  doc["rtc_desvio_segundos"]    = g_rtc_desvio_medido ? g_rtc_desvio_seg : 0;
+  doc["ip_local"]               = WiFi.localIP().toString();
+  doc["luz_ligada"]             = g_luz_ligada;
+  doc["sensor_travado"]         = g_sensor_travado;
+  doc["sensor_reinicios"]       = g_temp_reinicios;
 
   // v2.6.0 — diagnóstico de queda: motivo do último boot, tempo ligado, menor
   // heap livre já visto, quedas de Wi-Fi e força do sinal.
@@ -1247,27 +1295,27 @@ bool enviarTelemetria() {
     uint32_t heap_agora = ESP.getFreeHeap();
     if (heap_agora < g_heap_min) g_heap_min = heap_agora;
   }
-  doc["_reset_reason"]           = g_reset_reason;
-  doc["_uptime_s"]               = (uint32_t)(millis() / 1000UL);
-  doc["_heap_min"]               = (uint32_t)(g_heap_min == 0xFFFFFFFF ? 0 : g_heap_min);
-  doc["_wifi_reconexoes"]        = g_wifi_reconexoes;
-  doc["_rssi"]                   = (int)WiFi.RSSI();
+  doc["reset_reason"]           = g_reset_reason;
+  doc["uptime_s"]               = (uint32_t)(millis() / 1000UL);
+  doc["heap_min"]               = (uint32_t)(g_heap_min == 0xFFFFFFFF ? 0 : g_heap_min);
+  doc["wifi_reconexoes"]        = g_wifi_reconexoes;
+  doc["rssi"]                   = (int)WiFi.RSSI();
 
   // v2.0.1: envia somente leitura real do DS18B20. Não reenvia temperatura
   // em cache como válida, porque isso fazia o dashboard parecer travado/atual.
   if (g_temperatura_valida && !isnan(g_temperatura_planta)) {
-    doc["_temperatura_valida"] = true;
-    doc["_temperatura_planta"] = g_temperatura_planta;
+    doc["temperatura_valida"] = true;
+    doc["temperatura_planta"] = g_temperatura_planta;
   } else {
-    doc["_temperatura_valida"] = false;
-    doc["_temperatura_planta"] = nullptr;
+    doc["temperatura_valida"] = false;
+    doc["temperatura_planta"] = nullptr;
   }
 
   String body;
   serializeJson(doc, body);
 
   String resp;
-  if (!supabaseRpc("bench_push_telemetry", body, resp)) return false;
+  if (!appPostPublic("/api/public/bench/telemetry", body, creds.device_token, resp)) return false;
 
   JsonDocument r;
   if (deserializeJson(r, resp) != DeserializationError::Ok) return false;
@@ -1873,14 +1921,8 @@ void tratarComando(JsonObject cmd) {
 
 void puxarComandos() {
   if (creds.device_token.length() == 0) return;
-  JsonDocument body;
-  body["_bancada_id"]   = creds.bancada_id;
-  body["_device_token"] = creds.device_token;
-  String bodyStr;
-  serializeJson(body, bodyStr);
-
   String resp;
-  if (!supabaseRpc("bench_pull_commands", bodyStr, resp)) return;
+  if (!appGetPublic("/api/public/bench/commands", creds.device_token, resp)) return;
 
   JsonDocument doc;
   if (deserializeJson(doc, resp) != DeserializationError::Ok) return;
