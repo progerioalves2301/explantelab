@@ -1,7 +1,7 @@
 # Documentação Técnica do Firmware — VitroCeres Prateleira ESP32
 
-> Versão atual: **v2.6.19**  
-> Arquivo: `firmware/bancada_esp32_v2_6_19/bancada_esp32_v2_6_19.ino`
+> Versão atual: **v2.6.20**  
+> Arquivo: `firmware/bancada_esp32_v2_6_20/bancada_esp32_v2_6_20.ino`
 
 Este documento explica como o firmware funciona, pinagem, lógica de ciclos, luzes, ar-condicionado, sensores e atualização OTA. Use-o para entender o comportamento esperado, diagnosticar problemas e saber quando é necessário atualizar os equipamentos.
 
@@ -224,10 +224,13 @@ Para aparelhos não suportados nativamente, o backend pode enviar códigos **RAW
 
 ## 10. Comunicação com o backend
 
-A prateleira se comunica com o Supabase via RPC:
+A prateleira se comunica com o backend pela API pública do app:
 
-- `bench_push_telemetry`: envia estado, temperatura, luz, bateria RTC, etc.
-- `_pull_commands`: recebe comandos pendentes (ciclo, AC, OTA, configuração).
+- `POST /api/public/bench/pair`: troca o código de 6 dígitos por `bancada_id` e `device_token`.
+- `POST /api/public/bench/telemetry`: envia estado, temperatura, luz, bateria RTC, diagnóstico de reset, RSSI e versão do firmware.
+- `GET /api/public/bench/commands`: recebe comandos pendentes (ciclo, AC, OTA, configuração).
+
+As rotinas de aprendizado/debug IR ainda usam chamadas RPC específicas, mas a presença online da prateleira não depende mais delas.
 
 ### Limites de taxa
 
@@ -328,8 +331,8 @@ Proteções acrescentadas na v2.6.0:
 
 ## 14. Arquivos relacionados
 
-- `firmware/bancada_esp32_v2_6_19/bancada_esp32_v2_6_19.ino` — código fonte atual.
-- `firmware/bancada_esp32_v2_6_18/bancada_esp32_v2_6_18.ino` — versão anterior.
+- `firmware/bancada_esp32_v2_6_20/bancada_esp32_v2_6_20.ino` — código fonte atual.
+- `firmware/bancada_esp32_v2_6_19/bancada_esp32_v2_6_19.ino` — versão anterior.
 - `firmware/FIACAO_VALVULAS.md` — diagrama de fiação e endereçamento.
 - `CHANGELOG.md` — histórico de alterações.
 - `mem://index.md` — memória consolidada do projeto.

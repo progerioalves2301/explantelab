@@ -2311,7 +2311,7 @@ void setup() {
 
   Serial.begin(115200);
   delay(200);
-  Serial.printf("\n== VitroCeres Prateleira ESP32 v%s (direct-Supabase) ==\n", FIRMWARE_VERSION);
+  Serial.printf("\n== VitroCeres Prateleira ESP32 v%s (API app) ==\n", FIRMWARE_VERSION);
   // v2.6.0 — motivo do último boot (brownout = queda de tensão na comutação da
   // válvula; task_wdt/panic = travamento de software).
   g_reset_reason = nomeResetReason();

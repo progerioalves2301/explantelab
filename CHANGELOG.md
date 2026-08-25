@@ -2,6 +2,15 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-25 — Firmware v2.6.20: prateleira envia telemetria pela API do app
+
+- **Causa provável do “conecta no Wi‑Fi mas fica offline”**: a prateleira ainda usava chamadas RPC diretas para pareamento, telemetria e busca de comandos. Qualquer diferença na assinatura da função ou bloqueio de permissão podia impedir `ultima_sync` de atualizar, mesmo com Wi‑Fi conectado.
+- **Correção**: pareamento, telemetria e comandos agora usam os endpoints públicos do app: `/api/public/bench/pair`, `/api/public/bench/telemetry` e `/api/public/bench/commands`, autenticados pelo `device_token` da prateleira.
+- **Diagnóstico no Serial**: falhas agora aparecem como `[APP] POST/GET ... => código`, facilitando distinguir Wi‑Fi conectado de comunicação rejeitada pelo servidor.
+- **Ação**: gravar `firmware/bancada_esp32_v2_6_20/bancada_esp32_v2_6_20.ino`. Se a placa já estiver pareada com token salvo, basta atualizar; se continuar sem sincronizar, refazer o pareamento com um novo código de 6 dígitos.
+
+---
+
 ## 2026-08-25 — Firmware v2.6.19: portal Wi‑Fi abre antes dos sensores opcionais
 
 - **Causa provável do travamento aparente**: nas versões anteriores, o boot inicializava SCD41/HX711 antes de abrir o portal Wi‑Fi. Se algum sensor opcional estivesse ausente, com fiação instável ou segurando o barramento, o Serial parava logo após mensagens como `[SCD41] nao iniciou` e dava a impressão de que a interface web não partia.
