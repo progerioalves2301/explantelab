@@ -2,6 +2,17 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-08-26 — Ar-condicionado: referência de temperatura por prateleira controladora
+
+- **Sintoma**: na sala 11, aquecer ou esfriar o sensor da P8S11 não ligava/desligava o ar. A decisão usava a **maior temperatura entre todas as prateleiras da sala** (24,4 °C na média das outras), então o ar ficava sempre em `cool` independentemente da P8S11 (20,9 °C).
+- **Nova opção de agregação**: `controladora` — usa somente a `temperatura_planta` da prateleira controladora como referência (`decidir_ar_condicionado()`). Máxima e média da sala continuam disponíveis.
+- **Reação mais rápida**: o piso do intervalo mínimo entre comandos caiu de 300 s para 60 s, respeitando o valor configurado em `intervalo_min_comando_s`.
+- **Transparência na UI**: o card do ar mostra a temperatura de referência, a origem dela (prateleira / máxima / média), o último comando e a próxima janela em que um comando pode sair.
+- **Ressincronizar estado**: botão que reenvia o código IR do estado atual (ligado/desligado), útil quando o banco e o aparelho ficam dessincronizados após testes manuais ou queda de energia.
+- **Ação**: o ar da sala 11 já foi migrado para `controladora`. Sem mudança de firmware. Publicar o app para aplicar a alteração de banco.
+
+---
+
 ## 2026-08-25 — Firmware v2.6.20: prateleira envia telemetria pela API do app
 
 - **Causa provável do “conecta no Wi‑Fi mas fica offline”**: a prateleira ainda usava chamadas RPC diretas para pareamento, telemetria e busca de comandos. Qualquer diferença na assinatura da função ou bloqueio de permissão podia impedir `ultima_sync` de atualizar, mesmo com Wi‑Fi conectado.
