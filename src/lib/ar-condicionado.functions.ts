@@ -102,10 +102,8 @@ export const salvarArCondicionado = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    if (data.setpoint_min >= data.setpoint_max) {
-      throw new Error("setpoint_min deve ser menor que setpoint_max");
-    }
     const { id, ...payload } = data;
+
     if (id) {
       const { error } = await supabaseAdmin
         .from("ar_condicionados")
