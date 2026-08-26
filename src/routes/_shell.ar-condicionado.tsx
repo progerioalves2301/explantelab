@@ -154,7 +154,6 @@ function ArCondicionadoPage() {
       histerese: Number(ar.histerese),
       intervalo_min_comando_s: ar.intervalo_min_comando_s,
       permanencia_min_s: ar.permanencia_min_s ?? 600,
-
       agregacao: ar.agregacao,
       suporta_aquecimento: ar.suporta_aquecimento,
     });
@@ -186,10 +185,9 @@ function ArCondicionadoPage() {
             | "ELECTRA"
             | "CONSUL",
           ativo: editing.ativo,
-          setpoint_min: editing.setpoint_min,
-          setpoint_max: editing.setpoint_max,
           histerese: editing.histerese,
           intervalo_min_comando_s: editing.intervalo_min_comando_s,
+          permanencia_min_s: editing.permanencia_min_s,
           agregacao: editing.agregacao,
           suporta_aquecimento: editing.suporta_aquecimento,
         },
