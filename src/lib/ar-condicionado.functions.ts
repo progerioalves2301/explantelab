@@ -14,7 +14,7 @@ export interface ArCondicionado {
   setpoint_max: number;
   histerese: number;
   intervalo_min_comando_s: number;
-  agregacao: "media" | "maxima";
+  agregacao: "media" | "maxima" | "controladora";
   ligado: boolean;
   modo_atual: "off" | "cool" | "heat";
   setpoint_atual: number | null;
@@ -53,7 +53,7 @@ const arSchema = z.object({
   setpoint_max: z.number().min(16).max(30),
   histerese: z.number().min(0.1).max(5),
   intervalo_min_comando_s: z.number().int().min(30).max(3600),
-  agregacao: z.enum(["media", "maxima"]),
+  agregacao: z.enum(["media", "maxima", "controladora"]),
   suporta_aquecimento: z.boolean(),
 });
 
@@ -214,4 +214,70 @@ export const aprenderIr = createServerFn({ method: "POST" })
     });
     if (cmdErr) throw new Error(cmdErr.message);
     return { ok: true, timeout_s };
+  });
+
+// Reenvia o último estado desejado (liga/desliga) para o aparelho. Útil quando
+// o banco acredita que o ar está ligado mas o aparelho está desligado — por
+// exemplo depois de testes manuais ou de uma queda de energia.
+export const ressincronizarArCondicionado = createServerFn({ method: "POST" })
+  .middleware([requireTecnico])
+  .inputValidator((data: { id: string }) =>
+    z.object({ id: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: ar, error } = await supabaseAdmin
+      .from("ar_condicionados")
+      .select("*")
+      .eq("id", data.id)
+      .single();
+    if (error || !ar) throw new Error(error?.message ?? "Ar não encontrado");
+    const arRow = ar as unknown as ArCondicionado;
+    if (!arRow.bancada_controladora_id) {
+      throw new Error("Defina a prateleira controladora antes de ressincronizar");
+    }
+
+    const acao = arRow.ligado ? "on" : "off";
+    const modo = arRow.ligado ? (arRow.modo_atual === "heat" ? "heat" : "cool") : "off";
+    const raw = !arRow.ligado
+      ? arRow.codigo_ir_raw_off
+      : modo === "heat"
+        ? arRow.codigo_ir_raw_heat
+        : arRow.codigo_ir_raw;
+    if (arRow.ir_protocol === "RAW" && !raw) {
+      throw new Error(
+        acao === "off"
+          ? "Nenhum código IR de DESLIGAR aprendido."
+          : "Nenhum código IR de LIGAR aprendido.",
+      );
+    }
+
+    // Não empilha: descarta comandos de AC ainda não entregues.
+    await supabaseAdmin
+      .from("comandos")
+      .delete()
+      .eq("bancada_id", arRow.bancada_controladora_id)
+      .eq("tipo", "AC_CONTROL")
+      .is("entregue_em", null);
+
+    const { error: cmdErr } = await supabaseAdmin.from("comandos").insert({
+      bancada_id: arRow.bancada_controladora_id,
+      tipo: "AC_CONTROL",
+      payload: {
+        acao,
+        modo: modo === "off" ? "cool" : modo,
+        setpoint: arRow.setpoint_atual,
+        protocolo: arRow.ir_protocol,
+        ar_id: arRow.id,
+        raw: raw ?? undefined,
+      } as never,
+    });
+    if (cmdErr) throw new Error(cmdErr.message);
+
+    await supabaseAdmin
+      .from("ar_condicionados")
+      .update({ ultimo_comando_em: new Date().toISOString() })
+      .eq("id", arRow.id);
+
+    return { ok: true, acao };
   });
