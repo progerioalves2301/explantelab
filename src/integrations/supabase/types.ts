@@ -125,6 +125,9 @@ export type Database = {
           marca: string
           modelo: string | null
           modo_atual: string
+          pendente_contagem: number
+          pendente_estado: string | null
+          permanencia_min_s: number
           setpoint_atual: number | null
           setpoint_max: number
           setpoint_min: number
@@ -151,6 +154,9 @@ export type Database = {
           marca?: string
           modelo?: string | null
           modo_atual?: string
+          pendente_contagem?: number
+          pendente_estado?: string | null
+          permanencia_min_s?: number
           setpoint_atual?: number | null
           setpoint_max?: number
           setpoint_min?: number
@@ -177,6 +183,9 @@ export type Database = {
           marca?: string
           modelo?: string | null
           modo_atual?: string
+          pendente_contagem?: number
+          pendente_estado?: string | null
+          permanencia_min_s?: number
           setpoint_atual?: number | null
           setpoint_max?: number
           setpoint_min?: number
@@ -198,6 +207,59 @@ export type Database = {
             columns: ["laboratorio_id"]
             isOneToOne: false
             referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ar_decisoes_log: {
+        Row: {
+          ar_id: string
+          comando_enviado: boolean
+          criado_em: string
+          decisao: string | null
+          estado_atual: string | null
+          histerese: number | null
+          id: number
+          motivo: string
+          origem: string | null
+          temp_max: number | null
+          temp_min: number | null
+          temperatura_ref: number | null
+        }
+        Insert: {
+          ar_id: string
+          comando_enviado?: boolean
+          criado_em?: string
+          decisao?: string | null
+          estado_atual?: string | null
+          histerese?: number | null
+          id?: number
+          motivo: string
+          origem?: string | null
+          temp_max?: number | null
+          temp_min?: number | null
+          temperatura_ref?: number | null
+        }
+        Update: {
+          ar_id?: string
+          comando_enviado?: boolean
+          criado_em?: string
+          decisao?: string | null
+          estado_atual?: string | null
+          histerese?: number | null
+          id?: number
+          motivo?: string
+          origem?: string | null
+          temp_max?: number | null
+          temp_min?: number | null
+          temperatura_ref?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ar_decisoes_log_ar_id_fkey"
+            columns: ["ar_id"]
+            isOneToOne: false
+            referencedRelation: "ar_condicionados"
             referencedColumns: ["id"]
           },
         ]

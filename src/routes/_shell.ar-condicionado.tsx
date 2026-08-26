@@ -38,6 +38,7 @@ import {
 } from "@/lib/ar-condicionado.functions";
 import { listLaboratorios } from "@/lib/laboratorios.functions";
 import { listBancadas } from "@/lib/bancadas.functions";
+import { ArDiagnostico } from "@/components/ar-diagnostico";
 import type { Bancada, Laboratorio } from "@/lib/types";
 
 export const Route = createFileRoute("/_shell/ar-condicionado")({
@@ -58,10 +59,10 @@ type FormState = {
   modelo: string;
   ir_protocol: string;
   ativo: boolean;
-  setpoint_min: number;
-  setpoint_max: number;
   histerese: number;
   intervalo_min_comando_s: number;
+  permanencia_min_s: number;
+
   agregacao: "media" | "maxima" | "controladora";
   suporta_aquecimento: boolean;
 };
@@ -87,10 +88,10 @@ function emptyForm(labs: Laboratorio[]): FormState {
     modelo: "",
     ir_protocol: "RAW",
     ativo: true,
-    setpoint_min: 22,
-    setpoint_max: 26,
     histerese: 1,
     intervalo_min_comando_s: 180,
+    permanencia_min_s: 600,
+
     agregacao: "maxima",
     suporta_aquecimento: false,
   };
@@ -151,10 +152,9 @@ function ArCondicionadoPage() {
       modelo: ar.modelo ?? "",
       ir_protocol: ar.ir_protocol,
       ativo: ar.ativo,
-      setpoint_min: Number(ar.setpoint_min),
-      setpoint_max: Number(ar.setpoint_max),
       histerese: Number(ar.histerese),
       intervalo_min_comando_s: ar.intervalo_min_comando_s,
+      permanencia_min_s: ar.permanencia_min_s ?? 600,
       agregacao: ar.agregacao,
       suporta_aquecimento: ar.suporta_aquecimento,
     });
@@ -186,10 +186,9 @@ function ArCondicionadoPage() {
             | "ELECTRA"
             | "CONSUL",
           ativo: editing.ativo,
-          setpoint_min: editing.setpoint_min,
-          setpoint_max: editing.setpoint_max,
           histerese: editing.histerese,
           intervalo_min_comando_s: editing.intervalo_min_comando_s,
+          permanencia_min_s: editing.permanencia_min_s,
           agregacao: editing.agregacao,
           suporta_aquecimento: editing.suporta_aquecimento,
         },
@@ -603,6 +602,7 @@ function ArCondicionadoPage() {
                   Ressincronizar estado
                 </Button>
               </div>
+              <ArDiagnostico arId={ar.id} />
             </CardContent>
           </Card>
         );
@@ -733,7 +733,7 @@ function ArCondicionadoPage() {
               );
             })()}
 
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-3">
               <div className="grid gap-1.5">
                 <Label>Histerese (°C)</Label>
                 <Input
@@ -749,6 +749,18 @@ function ArCondicionadoPage() {
                   value={editing.intervalo_min_comando_s}
                   onChange={(e) => setEditing({ ...editing, intervalo_min_comando_s: Number(e.target.value) })}
                 />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Permanência mín. no estado (s)</Label>
+                <Input
+                  type="number" min={60} max={7200} step={30}
+                  value={editing.permanencia_min_s}
+                  onChange={(e) => setEditing({ ...editing, permanencia_min_s: Number(e.target.value) })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Depois de ligar ou desligar, o ar fica nesse estado por no
+                  mínimo esse tempo (evita liga/desliga em sequência).
+                </p>
               </div>
             </div>
 

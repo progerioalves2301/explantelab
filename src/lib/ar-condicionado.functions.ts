@@ -10,10 +10,10 @@ export interface ArCondicionado {
   modelo: string | null;
   ir_protocol: string;
   ativo: boolean;
-  setpoint_min: number;
-  setpoint_max: number;
   histerese: number;
   intervalo_min_comando_s: number;
+  /** Tempo mínimo que o ar permanece no estado atual antes de comutar (s). */
+  permanencia_min_s: number;
   agregacao: "media" | "maxima" | "controladora";
   ligado: boolean;
   modo_atual: "off" | "cool" | "heat";
@@ -28,6 +28,32 @@ export interface ArCondicionado {
   ir_learn_debug: { evento: string; pulsos: number; extra?: Record<string, string | number | boolean | null>; em: string } | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface DecisaoAr {
+  id: number;
+  criado_em: string;
+  temperatura_ref: number | null;
+  origem: string | null;
+  temp_min: number | null;
+  temp_max: number | null;
+  histerese: number | null;
+  estado_atual: string | null;
+  decisao: string | null;
+  motivo: string;
+  comando_enviado: boolean;
+}
+
+export interface DiagnosticoAr {
+  ultimo_comando: {
+    created_at: string;
+    entregue_em: string | null;
+    acao: string | null;
+    modo: string | null;
+  } | null;
+  temp_no_comando: number | null;
+  temp_atual: number | null;
+  decisoes: DecisaoAr[];
 }
 
 export const PROTOCOLOS_IR = [
@@ -49,13 +75,13 @@ const arSchema = z.object({
   modelo: z.string().max(60).nullable().optional(),
   ir_protocol: z.enum(["RAW", "LG", "SAMSUNG", "FUJITSU", "MIDEA", "ELECTROLUX", "ELGIN", "ELECTRA", "CONSUL"]),
   ativo: z.boolean(),
-  setpoint_min: z.number().min(16).max(30),
-  setpoint_max: z.number().min(16).max(30),
   histerese: z.number().min(0.1).max(5),
   intervalo_min_comando_s: z.number().int().min(30).max(3600),
+  permanencia_min_s: z.number().int().min(60).max(7200),
   agregacao: z.enum(["media", "maxima", "controladora"]),
   suporta_aquecimento: z.boolean(),
 });
+
 
 export const listArCondicionados = createServerFn({ method: "GET" }).handler(
   async (): Promise<ArCondicionado[]> => {
@@ -76,10 +102,8 @@ export const salvarArCondicionado = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    if (data.setpoint_min >= data.setpoint_max) {
-      throw new Error("setpoint_min deve ser menor que setpoint_max");
-    }
     const { id, ...payload } = data;
+
     if (id) {
       const { error } = await supabaseAdmin
         .from("ar_condicionados")
@@ -138,12 +162,19 @@ export const testarArCondicionado = createServerFn({ method: "POST" })
     if (modo === "heat" && !arRow.suporta_aquecimento) {
       throw new Error("Este ar não está marcado como suporte a aquecimento");
     }
-    // Alvo = limite que dispara: no frio o teto (setpoint_max), no quente o piso
-    // (setpoint_min). Como o comando é IR RAW aprendido, esse valor é só
-    // informativo pra UI — o replay envia exatamente o código capturado.
+    // Alvo = limite que dispara, lido da faixa de alerta da prateleira
+    // controladora (única fonte de faixa). Como o comando é IR RAW aprendido,
+    // esse valor é só informativo pra UI — o replay envia o código capturado.
+    const { data: ctrl } = await supabaseAdmin
+      .from("bancadas")
+      .select("temp_min, temp_max")
+      .eq("id", arRow.bancada_controladora_id)
+      .single();
+    const faixa = (ctrl ?? {}) as { temp_min: number | null; temp_max: number | null };
     const setpoint = data.acao === "on"
-      ? (modo === "heat" ? Number(arRow.setpoint_min) : Number(arRow.setpoint_max))
+      ? (modo === "heat" ? faixa.temp_min : faixa.temp_max)
       : null;
+
     // Cada estado tem seu próprio código IR aprendido. Muitos aparelhos
     // (Fujitsu, Consul…) usam frames diferentes pra ligar e desligar — se
     // reenviarmos o código de LIGAR no OFF, o ar liga mas nunca desliga.
@@ -280,4 +311,80 @@ export const ressincronizarArCondicionado = createServerFn({ method: "POST" })
       .eq("id", arRow.id);
 
     return { ok: true, acao };
+  });
+
+// Diagnóstico: último comando enviado, se foi entregue, temperatura no momento
+// do comando vs. agora (pra ver se o aparelho realmente reagiu) e o histórico
+// de decisões da automação com o motivo de cada uma.
+export const diagnosticoArCondicionado = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string }) =>
+    z.object({ id: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data }): Promise<DiagnosticoAr> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: ar } = await supabaseAdmin
+      .from("ar_condicionados")
+      .select("bancada_controladora_id")
+      .eq("id", data.id)
+      .single();
+    const bancadaId = (ar as { bancada_controladora_id: string | null } | null)
+      ?.bancada_controladora_id ?? null;
+
+    const { data: decisoes } = await supabaseAdmin
+      .from("ar_decisoes_log")
+      .select("*")
+      .eq("ar_id", data.id)
+      .order("criado_em", { ascending: false })
+      .limit(15);
+
+    let ultimo: DiagnosticoAr["ultimo_comando"] = null;
+    let tempNoComando: number | null = null;
+    let tempAtual: number | null = null;
+
+    if (bancadaId) {
+      const { data: cmd } = await supabaseAdmin
+        .from("comandos")
+        .select("created_at, entregue_em, payload")
+        .eq("bancada_id", bancadaId)
+        .eq("tipo", "AC_CONTROL")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (cmd) {
+        const row = cmd as {
+          created_at: string;
+          entregue_em: string | null;
+          payload: { acao?: string; modo?: string } | null;
+        };
+        ultimo = {
+          created_at: row.created_at,
+          entregue_em: row.entregue_em,
+          acao: row.payload?.acao ?? null,
+          modo: row.payload?.modo ?? null,
+        };
+        const minuto = new Date(row.created_at);
+        minuto.setSeconds(0, 0);
+        const { data: m } = await supabaseAdmin
+          .from("medicoes_temperatura")
+          .select("valor")
+          .eq("bancada_id", bancadaId)
+          .eq("minuto", minuto.toISOString())
+          .maybeSingle();
+        tempNoComando = m ? Number((m as { valor: number }).valor) : null;
+      }
+      const { data: b } = await supabaseAdmin
+        .from("bancadas")
+        .select("temperatura_planta")
+        .eq("id", bancadaId)
+        .single();
+      const tp = (b as { temperatura_planta: number | null } | null)?.temperatura_planta;
+      tempAtual = tp != null ? Number(tp) : null;
+    }
+
+    return {
+      ultimo_comando: ultimo,
+      temp_no_comando: tempNoComando,
+      temp_atual: tempAtual,
+      decisoes: (decisoes ?? []) as unknown as DecisaoAr[],
+    };
   });
