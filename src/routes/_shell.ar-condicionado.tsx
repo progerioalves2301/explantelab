@@ -103,6 +103,7 @@ function ArCondicionadoPage() {
   const salvar = useServerFn(salvarArCondicionado);
   const excluir = useServerFn(excluirArCondicionado);
   const testar = useServerFn(testarArCondicionado);
+  const ressincronizar = useServerFn(ressincronizarArCondicionado);
   const aprender = useServerFn(aprenderIr);
 
   const [ars, setArs] = useState<ArCondicionado[]>([]);
@@ -210,6 +211,21 @@ function ArCondicionadoPage() {
       await reload();
     } catch (e) {
       toast.error("Falha", { description: String(e) });
+    }
+  };
+
+  const handleRessincronizar = async (id: string) => {
+    setTestingId(id);
+    try {
+      const r = await ressincronizar({ data: { id } });
+      toast.success(
+        `Estado reenviado ao aparelho (${r.acao === "on" ? "LIGADO" : "DESLIGADO"})`,
+      );
+      await reload();
+    } catch (e) {
+      toast.error("Falha ao ressincronizar", { description: String(e) });
+    } finally {
+      setTestingId(null);
     }
   };
 
