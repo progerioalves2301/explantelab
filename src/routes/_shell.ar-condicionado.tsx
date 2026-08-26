@@ -540,8 +540,39 @@ function ArCondicionadoPage() {
                 </div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Última temp (sala)</div>
-                <div>{ar.ultimo_temp_lida != null ? `${ar.ultimo_temp_lida}°C` : "—"}</div>
+                <div className="text-xs text-muted-foreground">
+                  Temp. de referência
+                </div>
+                <div>
+                  {ar.ultimo_temp_lida != null
+                    ? `${Number(ar.ultimo_temp_lida).toFixed(1)}°C`
+                    : "—"}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {ar.agregacao === "controladora"
+                    ? `origem: prateleira ${ctrl?.nome ?? "controladora"}`
+                    : ar.agregacao === "media"
+                      ? "origem: média da sala"
+                      : "origem: máxima da sala"}
+                </div>
+              </div>
+              <div className="col-span-2 sm:col-span-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-2 text-xs text-muted-foreground">
+                <span>
+                  Último comando:{" "}
+                  {ar.ultimo_comando_em
+                    ? new Date(ar.ultimo_comando_em).toLocaleString("pt-BR")
+                    : "—"}
+                </span>
+                <span>Próximo comando possível: {proximaJanela(ar)}</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7"
+                  disabled={testingId === ar.id}
+                  onClick={() => handleRessincronizar(ar.id)}
+                >
+                  Ressincronizar estado
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -697,14 +728,23 @@ function ArCondicionadoPage() {
                 <Label>Agregação de temperatura</Label>
                 <Select
                   value={editing.agregacao}
-                  onValueChange={(v) => setEditing({ ...editing, agregacao: v as "media" | "maxima" })}
+                  onValueChange={(v) =>
+                    setEditing({ ...editing, agregacao: v as FormState["agregacao"] })
+                  }
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="maxima">Máxima (mais conservador)</SelectItem>
-                    <SelectItem value="media">Média</SelectItem>
+                    <SelectItem value="controladora">
+                      Somente a prateleira controladora
+                    </SelectItem>
+                    <SelectItem value="maxima">Máxima da sala (mais conservador)</SelectItem>
+                    <SelectItem value="media">Média da sala</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Define qual temperatura liga/desliga o ar. Em "somente a
+                  prateleira controladora", só o sensor dela conta.
+                </p>
               </div>
               <div className="flex items-center gap-3 rounded-md border px-3 py-2">
                 <Switch
