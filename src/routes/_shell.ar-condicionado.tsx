@@ -58,10 +58,10 @@ type FormState = {
   modelo: string;
   ir_protocol: string;
   ativo: boolean;
-  setpoint_min: number;
-  setpoint_max: number;
   histerese: number;
   intervalo_min_comando_s: number;
+  permanencia_min_s: number;
+
   agregacao: "media" | "maxima" | "controladora";
   suporta_aquecimento: boolean;
 };
