@@ -14,7 +14,7 @@ export interface ArCondicionado {
   setpoint_max: number;
   histerese: number;
   intervalo_min_comando_s: number;
-  agregacao: "media" | "maxima";
+  agregacao: "media" | "maxima" | "controladora";
   ligado: boolean;
   modo_atual: "off" | "cool" | "heat";
   setpoint_atual: number | null;
@@ -53,7 +53,7 @@ const arSchema = z.object({
   setpoint_max: z.number().min(16).max(30),
   histerese: z.number().min(0.1).max(5),
   intervalo_min_comando_s: z.number().int().min(30).max(3600),
-  agregacao: z.enum(["media", "maxima"]),
+  agregacao: z.enum(["media", "maxima", "controladora"]),
   suporta_aquecimento: z.boolean(),
 });
 
