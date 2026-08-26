@@ -151,10 +151,10 @@ function ArCondicionadoPage() {
       modelo: ar.modelo ?? "",
       ir_protocol: ar.ir_protocol,
       ativo: ar.ativo,
-      setpoint_min: Number(ar.setpoint_min),
-      setpoint_max: Number(ar.setpoint_max),
       histerese: Number(ar.histerese),
       intervalo_min_comando_s: ar.intervalo_min_comando_s,
+      permanencia_min_s: ar.permanencia_min_s ?? 600,
+
       agregacao: ar.agregacao,
       suporta_aquecimento: ar.suporta_aquecimento,
     });
