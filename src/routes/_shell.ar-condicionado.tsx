@@ -731,7 +731,7 @@ function ArCondicionadoPage() {
               );
             })()}
 
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-3">
               <div className="grid gap-1.5">
                 <Label>Histerese (°C)</Label>
                 <Input
@@ -747,6 +747,18 @@ function ArCondicionadoPage() {
                   value={editing.intervalo_min_comando_s}
                   onChange={(e) => setEditing({ ...editing, intervalo_min_comando_s: Number(e.target.value) })}
                 />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Permanência mín. no estado (s)</Label>
+                <Input
+                  type="number" min={60} max={7200} step={30}
+                  value={editing.permanencia_min_s}
+                  onChange={(e) => setEditing({ ...editing, permanencia_min_s: Number(e.target.value) })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Depois de ligar ou desligar, o ar fica nesse estado por no
+                  mínimo esse tempo (evita liga/desliga em sequência).
+                </p>
               </div>
             </div>
 
