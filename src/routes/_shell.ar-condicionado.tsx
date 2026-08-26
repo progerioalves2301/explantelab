@@ -38,6 +38,7 @@ import {
 } from "@/lib/ar-condicionado.functions";
 import { listLaboratorios } from "@/lib/laboratorios.functions";
 import { listBancadas } from "@/lib/bancadas.functions";
+import { ArDiagnostico } from "@/components/ar-diagnostico";
 import type { Bancada, Laboratorio } from "@/lib/types";
 
 export const Route = createFileRoute("/_shell/ar-condicionado")({
@@ -601,6 +602,7 @@ function ArCondicionadoPage() {
                   Ressincronizar estado
                 </Button>
               </div>
+              <ArDiagnostico arId={ar.id} />
             </CardContent>
           </Card>
         );
