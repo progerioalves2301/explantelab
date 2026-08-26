@@ -162,12 +162,19 @@ export const testarArCondicionado = createServerFn({ method: "POST" })
     if (modo === "heat" && !arRow.suporta_aquecimento) {
       throw new Error("Este ar não está marcado como suporte a aquecimento");
     }
-    // Alvo = limite que dispara: no frio o teto (setpoint_max), no quente o piso
-    // (setpoint_min). Como o comando é IR RAW aprendido, esse valor é só
-    // informativo pra UI — o replay envia exatamente o código capturado.
+    // Alvo = limite que dispara, lido da faixa de alerta da prateleira
+    // controladora (única fonte de faixa). Como o comando é IR RAW aprendido,
+    // esse valor é só informativo pra UI — o replay envia o código capturado.
+    const { data: ctrl } = await supabaseAdmin
+      .from("bancadas")
+      .select("temp_min, temp_max")
+      .eq("id", arRow.bancada_controladora_id)
+      .single();
+    const faixa = (ctrl ?? {}) as { temp_min: number | null; temp_max: number | null };
     const setpoint = data.acao === "on"
-      ? (modo === "heat" ? Number(arRow.setpoint_min) : Number(arRow.setpoint_max))
+      ? (modo === "heat" ? faixa.temp_min : faixa.temp_max)
       : null;
+
     // Cada estado tem seu próprio código IR aprendido. Muitos aparelhos
     // (Fujitsu, Consul…) usam frames diferentes pra ligar e desligar — se
     // reenviarmos o código de LIGAR no OFF, o ar liga mas nunca desliga.
