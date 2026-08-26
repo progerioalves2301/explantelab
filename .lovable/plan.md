@@ -13,7 +13,7 @@ Diagnóstico da causa do OFF ainda **não está confirmado** — falta registro 
 ## O que fazer
 
 1. **Registrar cada decisão da automação** (nova tabela de log): temperatura de referência, origem, limites usados, histerese, decisão tomada e motivo ("acima do teto", "abaixo do piso", "sem leitura recente", "aguardando intervalo mínimo"). Sem isso, qualquer explicação é chute.
-2. **Acabar com a faixa duplicada**: a automação passa a usar uma única fonte de limites. A tela de Ar-condicionado edita os limites da prateleira controladora e deixa de exibir/gravar os campos 22–26 do cadastro do ar, para não haver dois números conflitantes.
+2. **Faixa única = limites de alerta da prateleira controladora**: continua sendo o único lugar de cadastro (Temperatura mínima/máxima da prateleira). Os campos `setpoint_min`/`setpoint_max` do cadastro do ar (22–26) saem da tela e deixam de ser gravados — eram só ruído, a automação nunca os usou. A tela de Ar-condicionado passa a exibir a faixa de alerta em destaque, com atalho para editar os limites da prateleira controladora.
 3. **Nunca desligar por falta de leitura**: hoje, se a leitura da prateleira ficar mais de 3 minutos sem atualizar, a lógica manda OFF. Passa a **manter o estado atual** e apenas registrar "sem leitura recente" — isso elimina o ping-pong ON/OFF.
 4. **Exigir confirmação antes de comutar**: só liga/desliga depois de 3 leituras consecutivas do mesmo lado do limite, respeitando o intervalo mínimo entre comandos.
 5. **Não gerar comando ao editar limites**: mudança de faixa não dispara comutação imediata; entra na mesma regra de confirmação.
