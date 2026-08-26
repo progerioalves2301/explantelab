@@ -87,10 +87,10 @@ function emptyForm(labs: Laboratorio[]): FormState {
     modelo: "",
     ir_protocol: "RAW",
     ativo: true,
-    setpoint_min: 22,
-    setpoint_max: 26,
     histerese: 1,
     intervalo_min_comando_s: 180,
+    permanencia_min_s: 600,
+
     agregacao: "maxima",
     suporta_aquecimento: false,
   };
