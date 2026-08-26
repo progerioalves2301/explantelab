@@ -31,6 +31,7 @@ import {
   salvarArCondicionado,
   excluirArCondicionado,
   testarArCondicionado,
+  ressincronizarArCondicionado,
   aprenderIr,
   PROTOCOLOS_IR,
   type ArCondicionado,
@@ -61,9 +62,21 @@ type FormState = {
   setpoint_max: number;
   histerese: number;
   intervalo_min_comando_s: number;
-  agregacao: "media" | "maxima";
+  agregacao: "media" | "maxima" | "controladora";
   suporta_aquecimento: boolean;
 };
+
+// Espelha o piso aplicado em decidir_ar_condicionado(): nunca menos de 60 s.
+function proximaJanela(ar: ArCondicionado): string {
+  if (!ar.ultimo_comando_em) return "agora";
+  const espera = Math.max(ar.intervalo_min_comando_s, 60) * 1000;
+  const alvo = new Date(ar.ultimo_comando_em).getTime() + espera;
+  const faltam = Math.ceil((alvo - Date.now()) / 1000);
+  if (faltam <= 0) return "agora";
+  return faltam >= 60
+    ? `em ${Math.ceil(faltam / 60)} min`
+    : `em ${faltam}s`;
+}
 
 function emptyForm(labs: Laboratorio[]): FormState {
   return {
