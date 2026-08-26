@@ -10,10 +10,10 @@ export interface ArCondicionado {
   modelo: string | null;
   ir_protocol: string;
   ativo: boolean;
-  setpoint_min: number;
-  setpoint_max: number;
   histerese: number;
   intervalo_min_comando_s: number;
+  /** Tempo mínimo que o ar permanece no estado atual antes de comutar (s). */
+  permanencia_min_s: number;
   agregacao: "media" | "maxima" | "controladora";
   ligado: boolean;
   modo_atual: "off" | "cool" | "heat";
@@ -28,6 +28,32 @@ export interface ArCondicionado {
   ir_learn_debug: { evento: string; pulsos: number; extra?: Record<string, string | number | boolean | null>; em: string } | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface DecisaoAr {
+  id: number;
+  criado_em: string;
+  temperatura_ref: number | null;
+  origem: string | null;
+  temp_min: number | null;
+  temp_max: number | null;
+  histerese: number | null;
+  estado_atual: string | null;
+  decisao: string | null;
+  motivo: string;
+  comando_enviado: boolean;
+}
+
+export interface DiagnosticoAr {
+  ultimo_comando: {
+    created_at: string;
+    entregue_em: string | null;
+    acao: string | null;
+    modo: string | null;
+  } | null;
+  temp_no_comando: number | null;
+  temp_atual: number | null;
+  decisoes: DecisaoAr[];
 }
 
 export const PROTOCOLOS_IR = [
@@ -49,13 +75,13 @@ const arSchema = z.object({
   modelo: z.string().max(60).nullable().optional(),
   ir_protocol: z.enum(["RAW", "LG", "SAMSUNG", "FUJITSU", "MIDEA", "ELECTROLUX", "ELGIN", "ELECTRA", "CONSUL"]),
   ativo: z.boolean(),
-  setpoint_min: z.number().min(16).max(30),
-  setpoint_max: z.number().min(16).max(30),
   histerese: z.number().min(0.1).max(5),
   intervalo_min_comando_s: z.number().int().min(30).max(3600),
+  permanencia_min_s: z.number().int().min(60).max(7200),
   agregacao: z.enum(["media", "maxima", "controladora"]),
   suporta_aquecimento: z.boolean(),
 });
+
 
 export const listArCondicionados = createServerFn({ method: "GET" }).handler(
   async (): Promise<ArCondicionado[]> => {
