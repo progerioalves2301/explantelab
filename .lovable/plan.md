@@ -10,21 +10,22 @@ Consultei o banco agora:
 
 Ou seja: o ESP32 está online e falando com o servidor normalmente; **o que falha é o barramento 1-Wire do DS18B20 daquela prateleira**. O firmware já trata isso: 2 tentativas por leitura, e após 3 leituras inválidas seguidas ele marca `sensor_travado` e reinicia o 1-Wire (contador de reinícios). O valor antigo é preservado na tela para não piscar.
 
-Como o problema é concentrado em 2–3 prateleiras e não em todas (mesmo firmware em todas), a causa provável é **elétrica/mecânica no sensor**: resistor de pull-up de 4,7 kΩ ausente/fraco ou longe do ESP32, cabo longo/emenda ruim no GPIO 14, ou ruído dos relés/solenoides acoplando no fio de dados. Isso não pode ser afirmado com certeza pelo banco — precisa do teste físico abaixo.
+Como o problema é concentrado em 2–3 prateleiras e não em todas (mesmo firmware em todas), a causa provável é **elétrica no barramento 1-Wire**. Com **cabo de 3 m e pull-up de 4,7 kΩ** você está no limite recomendado do DS18B20 em 12 bits: a capacitância do cabo arredonda os pulsos e, com o chaveamento dos relés/solenoides por perto, aparecem CRCs ruins e o clássico `-127`/`85,00`. Isso explica bem por que só as prateleiras com esse trecho de cabo falham.
 
 ## Plano
 
-### 1. Verificação física (você faz, é o passo decisivo)
+### 1. Ajustes físicos (rápidos, no cabo atual de 3 m)
 
-Na P7S11 (e depois P5S11):
+1. Trocar o pull-up para **2,2 kΩ** (ou 3,3 kΩ) entre DATA e 3,3 V, montado **junto ao ESP32**.
+2. Usar **par trançado** (DATA + GND no mesmo par) ou cabo blindado com a malha só no GND do ESP32; afastar do cabo dos relés e da rede elétrica.
+3. Colocar **100 nF entre VDD e GND no próprio sensor** (na ponta do cabo).
+4. Alimentar o sensor em **3,3 V com fio dedicado**, nunca pela saída do módulo de relés (sem modo parasita).
+5. Teste cruzado: trocar o sensor da P7S11 por um de prateleira estável — se a falha migrar, é o sensor; se ficar, é o trecho de cabo/ruído.
 
-1. Conferir o pull-up **4,7 kΩ entre DATA (GPIO 14) e 3,3 V**, instalado o mais perto possível do ESP32.
-2. Refazer as emendas do cabo do sensor; usar par trançado/cabo blindado com a malha no GND, afastado dos fios de 127/220 V e dos relés.
-3. Alimentar o DS18B20 em **3,3 V com fio dedicado** (não pela saída do módulo de relés).
-4. Teste cruzado: trocar o sensor da P7S11 por um de prateleira estável. Se a falha migrar com o sensor, é o sensor; se ficar na prateleira, é fiação/ruído.
 
 ### 2. Firmware v2.6.21 — endurecer a leitura
 
+- Baixar a resolução do DS18B20 de **12 para 11 bits** (0,125 °C, precisão mais que suficiente aqui): conversão mais curta e muito mais tolerante a cabo de 3 m.
 - Subir de 2 para **4 tentativas** por ciclo de leitura, com pequeno intervalo entre elas.
 - Tratar **85,00 °C e -127 °C** explicitamente como inválidos (hoje 85 só é evitado no laço de tentativa).
 - Após reiniciar o 1-Wire, esperar o tempo de conversão antes da primeira leitura nova, evitando falha imediata que conta como novo reinício.
