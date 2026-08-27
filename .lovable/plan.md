@@ -25,6 +25,7 @@ Como o problema é concentrado em 2–3 prateleiras e não em todas (mesmo firmw
 
 ### 2. Firmware v2.6.21 — endurecer a leitura
 
+- Baixar a resolução do DS18B20 de **12 para 11 bits** (0,125 °C, precisão mais que suficiente aqui): conversão mais curta e muito mais tolerante a cabo de 3 m.
 - Subir de 2 para **4 tentativas** por ciclo de leitura, com pequeno intervalo entre elas.
 - Tratar **85,00 °C e -127 °C** explicitamente como inválidos (hoje 85 só é evitado no laço de tentativa).
 - Após reiniciar o 1-Wire, esperar o tempo de conversão antes da primeira leitura nova, evitando falha imediata que conta como novo reinício.
