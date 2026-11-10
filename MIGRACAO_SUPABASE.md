@@ -50,6 +50,7 @@ VITE_SUPABASE_PROJECT_ID      = SEU-REF
 SUPABASE_URL                  = https://SEU-REF.supabase.co
 SUPABASE_PUBLISHABLE_KEY      = <anon/publishable>
 SUPABASE_SERVICE_ROLE_KEY     = <service_role>
+TELEGRAM_BOT_TOKEN            = <token do @BotFather>
 ```
 
 Depois faça **Redeploy** (variáveis novas só valem em build novo).
@@ -110,5 +111,5 @@ O certificado usado no *pinning* (ISRG Root X1) continua válido — o novo proj
 ## Observações
 
 - O ambiente de pré-visualização aqui no Lovable continua ligado ao banco atual; o banco da sua conta vale para o Vercel. Os dois **não** se sincronizam.
-- O segredo `TELEGRAM_API_KEY` precisa ser configurado como variável de ambiente no Vercel também, com o mesmo valor do bot.
+- Fora do Lovable, os alertas vão direto para a API oficial do Telegram. Configure `TELEGRAM_BOT_TOKEN` no Vercel com o token do bot (o que o @BotFather entrega). `LOVABLE_API_KEY` e `TELEGRAM_API_KEY` não são mais usados.
 - Se as três ações de usuários mostrarem a mensagem "Esta ação exige a chave privilegiada do banco", é sinal de que `SUPABASE_SERVICE_ROLE_KEY` não chegou ao servidor — revise a variável e refaça o deploy.

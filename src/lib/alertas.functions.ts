@@ -167,22 +167,11 @@ export const testarDestino = createServerFn({ method: "POST" })
   .middleware([requireOperador])
   .inputValidator((d: { chat_id: string }) => z.object({ chat_id: z.string() }).parse(d))
   .handler(async ({ data }) => {
-    const lovableKey = process.env.LOVABLE_API_KEY;
-    const tgKey = process.env.TELEGRAM_API_KEY;
-    if (!lovableKey || !tgKey) throw new Error("Telegram não configurado");
-    const res = await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "X-Connection-Api-Key": tgKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        chat_id: data.chat_id,
-        text: "✅ <b>Explante Lab</b>\nTeste de notificação — destino configurado com sucesso.",
-        parse_mode: "HTML",
-      }),
-    });
+    const { enviarTelegram } = await import("@/lib/telegram.server");
+    const res = await enviarTelegram(
+      data.chat_id,
+      "✅ <b>Explante Lab</b>\nTeste de notificação — destino configurado com sucesso.",
+    );
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(`Telegram ${res.status}: ${JSON.stringify(body)}`);
     return { ok: true };

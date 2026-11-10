@@ -2,6 +2,15 @@
 
 > Histórico técnico de alterações do projeto. Cada entrada explica **o que mudou**, **como funciona** e **se exige ação** (ex: atualizar firmware dos ESP32, reconfigurar no app, etc.).
 
+## 2026-11-10 — Saída do Lovable: Telegram direto e firmware v2.6.21 no domínio próprio
+
+- **Telegram**: os alertas e o botão de teste deixam de passar pelo intermediário do Lovable (`connector-gateway.lovable.dev` + `LOVABLE_API_KEY`). Agora vão direto para `api.telegram.org` com o token do bot em `TELEGRAM_BOT_TOKEN` (`src/lib/telegram.server.ts`).
+- **Nova rota** `POST /api/public/bench/rpc/<fn>`: repassa ao banco só as quatro funções de IR (`bench_ir_debug`, `bench_ir_save_raw`, `bench_ir_save_raw_heat`, `bench_ir_save_raw_off`). Antes o firmware chamava o Supabase direto, com endereço e chave fixos.
+- **Firmware v2.6.21**: `API_HOST` passa a ser `https://vitroceres.com.br` e o endereço/chave do Supabase saem do binário. Trocar de servidor ou de banco não exige mais regravar as placas, desde que o domínio continue o mesmo.
+- **Ação**: no Vercel, definir `TELEGRAM_BOT_TOKEN` e deixar `vitroceres.com.br` como domínio principal (sem redirecionar para `www`, porque o ESP32 não segue redirecionamento em POST). Gravar a v2.6.21 nas prateleiras **só depois** que vitroceres.com.br estiver apontando para o novo servidor.
+
+---
+
 ## 2026-08-26 — Ar-condicionado: referência de temperatura por prateleira controladora
 
 - **Sintoma**: na sala 11, aquecer ou esfriar o sensor da P8S11 não ligava/desligava o ar. A decisão usava a **maior temperatura entre todas as prateleiras da sala** (24,4 °C na média das outras), então o ar ficava sempre em `cool` independentemente da P8S11 (20,9 °C).

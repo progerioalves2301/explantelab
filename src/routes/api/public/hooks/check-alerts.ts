@@ -43,9 +43,8 @@ export const Route = createFileRoute("/api/public/hooks/check-alerts")({
           .select("chat_id")
           .eq("ativo", true);
 
-        const lovableKey = process.env.LOVABLE_API_KEY;
-        const tgKey = process.env.TELEGRAM_API_KEY;
-        const canSend = !!(lovableKey && tgKey && destinos && destinos.length > 0);
+        const { enviarTelegram, telegramConfigurado } = await import("@/lib/telegram.server");
+        const canSend = !!(telegramConfigurado() && destinos && destinos.length > 0);
 
         let enviados = 0;
         const ids: string[] = [];
@@ -62,19 +61,7 @@ export const Route = createFileRoute("/api/public/hooks/check-alerts")({
 
           for (const d of destinos!) {
             try {
-              const res = await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${lovableKey}`,
-                  "X-Connection-Api-Key": tgKey!,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  chat_id: d.chat_id,
-                  text,
-                  parse_mode: "HTML",
-                }),
-              });
+              const res = await enviarTelegram(d.chat_id, text);
               if (res.ok) enviados++;
               else console.error("Telegram falhou", res.status, await res.text());
             } catch (e) {
@@ -115,15 +102,7 @@ export const Route = createFileRoute("/api/public/hooks/check-alerts")({
 
             for (const d of destinos!) {
               try {
-                const res = await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
-                  method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${lovableKey}`,
-                    "X-Connection-Api-Key": tgKey!,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({ chat_id: d.chat_id, text, parse_mode: "HTML" }),
-                });
+                const res = await enviarTelegram(d.chat_id, text);
                 if (res.ok) recuperados++;
                 else console.error("Telegram recuperação falhou", res.status, await res.text());
               } catch (e) {

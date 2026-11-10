@@ -45,6 +45,7 @@ import { Route as ApiPublicBenchTelemetryRouteImport } from './routes/api/public
 import { Route as ApiPublicBenchPairRouteImport } from './routes/api/public/bench.pair'
 import { Route as ApiPublicBenchCommandsRouteImport } from './routes/api/public/bench.commands'
 import { Route as ShellBancadasIdGraficoRouteImport } from './routes/_shell.bancadas.$id.grafico'
+import { Route as ApiPublicBenchRpcFnRouteImport } from './routes/api/public/bench.rpc.$fn'
 
 const TvRoute = TvRouteImport.update({
   id: '/tv',
@@ -227,6 +228,11 @@ const ShellBancadasIdGraficoRoute = ShellBancadasIdGraficoRouteImport.update({
   path: '/bancadas/$id/grafico',
   getParentRoute: () => ShellRoute,
 } as any)
+const ApiPublicBenchRpcFnRoute = ApiPublicBenchRpcFnRouteImport.update({
+  id: '/api/public/bench/rpc/$fn',
+  path: '/api/public/bench/rpc/$fn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -264,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/api/public/scale/claim': typeof ApiPublicScaleClaimRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
   '/api/public/scale/status': typeof ApiPublicScaleStatusRoute
+  '/api/public/bench/rpc/$fn': typeof ApiPublicBenchRpcFnRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -301,6 +308,7 @@ export interface FileRoutesByTo {
   '/api/public/scale/claim': typeof ApiPublicScaleClaimRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
   '/api/public/scale/status': typeof ApiPublicScaleStatusRoute
+  '/api/public/bench/rpc/$fn': typeof ApiPublicBenchRpcFnRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/api/public/scale/claim': typeof ApiPublicScaleClaimRoute
   '/api/public/scale/reading': typeof ApiPublicScaleReadingRoute
   '/api/public/scale/status': typeof ApiPublicScaleStatusRoute
+  '/api/public/bench/rpc/$fn': typeof ApiPublicBenchRpcFnRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -379,6 +388,7 @@ export interface FileRouteTypes {
     | '/api/public/scale/claim'
     | '/api/public/scale/reading'
     | '/api/public/scale/status'
+    | '/api/public/bench/rpc/$fn'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -416,6 +426,7 @@ export interface FileRouteTypes {
     | '/api/public/scale/claim'
     | '/api/public/scale/reading'
     | '/api/public/scale/status'
+    | '/api/public/bench/rpc/$fn'
   id:
     | '__root__'
     | '/'
@@ -454,6 +465,7 @@ export interface FileRouteTypes {
     | '/api/public/scale/claim'
     | '/api/public/scale/reading'
     | '/api/public/scale/status'
+    | '/api/public/bench/rpc/$fn'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -471,6 +483,7 @@ export interface RootRouteChildren {
   ApiPublicScaleClaimRoute: typeof ApiPublicScaleClaimRoute
   ApiPublicScaleReadingRoute: typeof ApiPublicScaleReadingRoute
   ApiPublicScaleStatusRoute: typeof ApiPublicScaleStatusRoute
+  ApiPublicBenchRpcFnRoute: typeof ApiPublicBenchRpcFnRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -727,6 +740,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellBancadasIdGraficoRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/api/public/bench/rpc/$fn': {
+      id: '/api/public/bench/rpc/$fn'
+      path: '/api/public/bench/rpc/$fn'
+      fullPath: '/api/public/bench/rpc/$fn'
+      preLoaderRoute: typeof ApiPublicBenchRpcFnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -807,6 +827,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicScaleClaimRoute: ApiPublicScaleClaimRoute,
   ApiPublicScaleReadingRoute: ApiPublicScaleReadingRoute,
   ApiPublicScaleStatusRoute: ApiPublicScaleStatusRoute,
+  ApiPublicBenchRpcFnRoute: ApiPublicBenchRpcFnRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
